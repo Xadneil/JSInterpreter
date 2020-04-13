@@ -1,0 +1,48 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace JSInterpreter.AST
+{
+    class Identifier
+    {
+        public readonly string name;
+
+        public Identifier(string name)
+        {
+            this.name = name;
+        }
+
+        public IReadOnlyList<string> BoundNames()
+        {
+            return new[] { name };
+        }
+
+        public Completion BindingInitialization(IValue value, LexicalEnvironment environment)
+        {
+            if (environment != null)
+            {
+                environment.EnvironmentRecord.InitializeBinding(name, value);
+                return Completion.NormalCompletion(UndefinedValue.Instance);
+            }
+            var lhsComp = Interpreter.Instance().ResolveBinding(name);
+            if (lhsComp.IsAbrupt()) return lhsComp;
+            var lhs = lhsComp.value as ReferenceValue;
+            return lhs.PutValue(value);
+        }
+    }
+    class IdentifierReference : IPrimaryExpression, IPropertyDefinition
+    {
+        public readonly Identifier identifier;
+
+        public IdentifierReference(Identifier identifier)
+        {
+            this.identifier = identifier;
+        }
+
+        public Completion Evaluate(Interpreter interpreter)
+        {
+            return interpreter.ResolveBinding(identifier.name);
+        }
+    }
+}

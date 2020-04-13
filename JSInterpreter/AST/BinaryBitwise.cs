@@ -1,0 +1,111 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace JSInterpreter.AST
+{
+    interface IBitwiseAndExpression : IBitwiseXorExpression
+    {
+    }
+
+    enum BitwiseOperator
+    {
+        And, Xor, Or
+    }
+
+    abstract class BitwiseExpression
+    {
+        public Completion Evaluate(Interpreter interpreter)
+        {
+            var left = Left.Evaluate(interpreter).GetValue();
+            if (left.IsAbrupt()) return left;
+            var leftValue = left.value;
+
+            var right = Right.Evaluate(interpreter).GetValue();
+            if (right.IsAbrupt()) return right;
+            var rightValue = right.value;
+
+            return Completion.NormalCompletion(Calculate(leftValue, BitwiseOperator, rightValue));
+        }
+
+        public static IValue Calculate(IValue leftValue, BitwiseOperator bitwiseOperator, IValue rightValue)
+        {
+            var left = (int)leftValue.ToNumber().number;
+            var right = (int)rightValue.ToNumber().number;
+
+            return new NumberValue(bitwiseOperator switch
+            {
+                BitwiseOperator.And => left & right,
+                BitwiseOperator.Xor => left ^ right,
+                BitwiseOperator.Or => left | right,
+                _ => throw new InvalidOperationException($"BitwiseExpression.Evaluate: invalid BitwiseOperator enum value {(int)bitwiseOperator}")
+            });
+        }
+
+        protected abstract BitwiseOperator BitwiseOperator { get; }
+        protected abstract IExpression Left { get; }
+        protected abstract IExpression Right { get; }
+    }
+
+    class BitwiseAndExpression : BitwiseExpression, IBitwiseAndExpression
+    {
+        public readonly IEqualityExpression equalityExpression;
+        public readonly IBitwiseAndExpression bitwiseAndExpression;
+
+        public BitwiseAndExpression(IBitwiseAndExpression bitwiseAndExpression, IEqualityExpression equalityExpression)
+        {
+            this.bitwiseAndExpression = bitwiseAndExpression;
+            this.equalityExpression = equalityExpression;
+        }
+
+        protected override BitwiseOperator BitwiseOperator => BitwiseOperator.And;
+
+        protected override IExpression Left => bitwiseAndExpression;
+
+        protected override IExpression Right => equalityExpression;
+    }
+
+    interface IBitwiseXorExpression : IBitwiseOrExpression
+    {
+    }
+
+    class BitwiseXorExpression : BitwiseExpression, IBitwiseXorExpression
+    {
+        public readonly IBitwiseAndExpression bitwiseAndExpression;
+        public readonly IBitwiseXorExpression bitwiseXorExpression;
+
+        public BitwiseXorExpression(IBitwiseXorExpression bitwiseXorExpression, IBitwiseAndExpression bitwiseAndExpression)
+        {
+            this.bitwiseXorExpression = bitwiseXorExpression;
+            this.bitwiseAndExpression = bitwiseAndExpression;
+        }
+
+        protected override BitwiseOperator BitwiseOperator => BitwiseOperator.Xor;
+
+        protected override IExpression Left => bitwiseXorExpression;
+
+        protected override IExpression Right => bitwiseAndExpression;
+    }
+
+    interface IBitwiseOrExpression : ILogicalAndExpression
+    {
+    }
+
+    class BitwiseOrExpression : BitwiseExpression, IBitwiseOrExpression
+    {
+        public readonly IBitwiseXorExpression bitwiseXorExpression;
+        public readonly IBitwiseOrExpression bitwiseOrExpression;
+
+        public BitwiseOrExpression(IBitwiseOrExpression bitwiseOrExpression, IBitwiseXorExpression bitwiseXorExpression)
+        {
+            this.bitwiseOrExpression = bitwiseOrExpression;
+            this.bitwiseXorExpression = bitwiseXorExpression;
+        }
+
+        protected override BitwiseOperator BitwiseOperator => BitwiseOperator.Or;
+
+        protected override IExpression Left => bitwiseOrExpression;
+
+        protected override IExpression Right => bitwiseXorExpression;
+    }
+}
