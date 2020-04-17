@@ -141,10 +141,5 @@ namespace JSInterpreter
         {
             return new BooleanCompletion(CompletionType.Normal, null, null, b);
         }
-
-        public static implicit operator bool(BooleanCompletion b)
-        {
-            return b.Other;
-        }
     }
 }
