@@ -64,8 +64,8 @@ namespace JSInterpreter.AST
                         if (!(value is Object @object))
                             throw new InvalidOperationException($"ArrayLiteral: tried to initialize an array using a spread on a non-object");
                         var iteratorComp = @object.GetIterator();
-                        if (iteratorComp.Item1.IsAbrupt()) return iteratorComp.Item1;
-                        var iterator = iteratorComp.Item2;
+                        if (iteratorComp.IsAbrupt()) return iteratorComp;
+                        var iterator = iteratorComp.Other;
                         while (true)
                         {
                             var next = iterator.MoveNext();

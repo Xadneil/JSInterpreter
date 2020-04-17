@@ -20,12 +20,14 @@ namespace JSInterpreter
             Intrinsics.ThrowTypeError = Utils.CreateBuiltinFunction(() => Completion.ThrowTypeError(), Utils.EmptyList<string>(), this, null);
             Intrinsics.FunctionPrototype = Utils.CreateBuiltinFunction(() => Completion.NormalCompletion(), Utils.EmptyList<string>(), this, Intrinsics.ObjectPrototype);
             Intrinsics.ThrowTypeError.SetPrototypeOf(Intrinsics.FunctionPrototype);
-
+            AddRestrictedFunctionProperties(Intrinsics.FunctionPrototype);
+#warning add the rest of the global properties
         }
 
         private void AddRestrictedFunctionProperties(FunctionObject F)
         {
-#warning implement getters and setters and resume here.
+            F.DefinePropertyOrThrow("caller", new PropertyDescriptor() { Get = Intrinsics.ThrowTypeError, Set = Intrinsics.ThrowTypeError, Enumerable = false, Configurable = true });
+            F.DefinePropertyOrThrow("arguments", new PropertyDescriptor() { Get = Intrinsics.ThrowTypeError, Set = Intrinsics.ThrowTypeError, Enumerable = false, Configurable = true });
         }
 
         public Object GlobalObject { get; private set; }

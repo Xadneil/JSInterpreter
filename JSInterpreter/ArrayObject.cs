@@ -18,63 +18,63 @@ namespace JSInterpreter
             return A;
         }
 
-        public override Completion DefineOwnProperty(string P, PropertyDescriptor Desc)
+        public override BooleanCompletion DefineOwnProperty(string P, PropertyDescriptor Desc)
         {
             if (P == "length")
                 return ArraySetLength(Desc);
             else if (int.TryParse(P, out int index))
             {
                 var oldLenDescComp = OrdinaryGetOwnProperty("length");
-                if (oldLenDescComp.IsAbrupt() || oldLenDescComp.propertyDescriptor == null || !(oldLenDescComp.propertyDescriptor.Value is NumberValue))
+                if (oldLenDescComp.IsAbrupt() || oldLenDescComp.Other == null || !(oldLenDescComp.Other.Value is NumberValue))
                     throw new InvalidOperationException("Spec 9.4.2.1 Step 3b");
-                var oldLenDesc = oldLenDescComp.propertyDescriptor;
+                var oldLenDesc = oldLenDescComp.Other;
                 var oldLen = (int)(oldLenDesc.Value as NumberValue).number;
 
-                if (index >= oldLen && oldLenDesc.writeable.HasValue && oldLenDesc.writeable.Value)
-                    return Completion.NormalCompletion(BooleanValue.False);
+                if (index >= oldLen && oldLenDesc.Writable.HasValue && oldLenDesc.Writable.Value)
+                    return false;
                 var succeeded = OrdinaryDefineOwnProperty(P, Desc).value;
                 if (succeeded == BooleanValue.False)
-                    return Completion.NormalCompletion(BooleanValue.False);
+                    return false;
                 if (index >= oldLen)
                 {
                     oldLenDesc.Value = new NumberValue(index + 1);
                     var s = OrdinaryDefineOwnProperty("length", oldLenDesc);
-                    if (s.IsAbrupt() || s.value != BooleanValue.True)
+                    if (s.IsAbrupt() || s.Other == false)
                         throw new InvalidOperationException("Spec 9.4.2.1 step 3hiii");
                 }
-                return Completion.NormalCompletion(BooleanValue.True);
+                return true;
             }
             return OrdinaryDefineOwnProperty(P, Desc);
         }
 
-        private Completion ArraySetLength(PropertyDescriptor Desc)
+        private BooleanCompletion ArraySetLength(PropertyDescriptor Desc)
         {
             if (Desc.Value == null)
             {
                 return OrdinaryDefineOwnProperty("length", Desc);
             }
-            var newLenDesc = new PropertyDescriptor(Desc.Value, Desc.writeable, Desc.enumerable, Desc.configurable);
+            var newLenDesc = new PropertyDescriptor(Desc.Value, Desc.Writable, Desc.Enumerable, Desc.Configurable);
             var newLen = (int)(Desc.Value as NumberValue).number;
             var oldLenDescComp = OrdinaryGetOwnProperty("length");
-            if (oldLenDescComp.IsAbrupt() || oldLenDescComp.propertyDescriptor == null || !(oldLenDescComp.propertyDescriptor.Value is NumberValue))
+            if (oldLenDescComp.IsAbrupt() || oldLenDescComp.Other == null || !(oldLenDescComp.Other.Value is NumberValue))
                 throw new InvalidOperationException("Spec 9.4.2.4 Step 8");
-            var oldLenDesc = oldLenDescComp.propertyDescriptor;
+            var oldLenDesc = oldLenDescComp.Other;
             var oldLen = (int)(oldLenDesc.Value as NumberValue).number;
             if (oldLen >= newLen)
                 return OrdinaryDefineOwnProperty("length", newLenDesc);
-            if (oldLenDesc.writeable.HasValue && !oldLenDesc.writeable.Value)
-                return Completion.NormalCompletion(BooleanValue.False);
+            if (oldLenDesc.Writable.HasValue && !oldLenDesc.Writable.Value)
+                return false;
             bool newWritable;
-            if (!newLenDesc.writeable.HasValue || newLenDesc.writeable.Value == true)
+            if (!newLenDesc.Writable.HasValue || newLenDesc.Writable.Value == true)
                 newWritable = true;
             else
             {
                 newWritable = false;
-                newLenDesc.writeable = true;
+                newLenDesc.Writable = true;
             }
             var succeeded = OrdinaryDefineOwnProperty("length", newLenDesc).value as BooleanValue;
             if (succeeded == BooleanValue.False)
-                return Completion.NormalCompletion(BooleanValue.False);
+                return false;
             while (newLen < oldLen)
             {
                 oldLen--;
@@ -82,14 +82,14 @@ namespace JSInterpreter
                 if (deleteSucceeded == BooleanValue.False)
                 {
                     newLenDesc.Value = new NumberValue(oldLen + 1);
-                    if (!newWritable) newLenDesc.writeable = false;
+                    if (!newWritable) newLenDesc.Writable = false;
                     OrdinaryDefineOwnProperty("length", newLenDesc);
-                    return Completion.NormalCompletion(BooleanValue.False);
+                    return false;
                 }
             }
             if (!newWritable)
-                return OrdinaryDefineOwnProperty("length", new PropertyDescriptor(Value: null, writeable: false, enumerable: null, configurable: null));
-            return Completion.NormalCompletion(BooleanValue.True);
+                return OrdinaryDefineOwnProperty("length", new PropertyDescriptor(value: null, writable: false, enumerable: null, configurable: null));
+            return true;
         }
     }
 }

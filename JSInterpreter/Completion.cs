@@ -13,7 +13,7 @@ namespace JSInterpreter
         Throw
     }
 
-    struct Completion
+    class Completion
     {
         public readonly CompletionType completionType;
         public readonly IValue value;
@@ -95,6 +95,56 @@ namespace JSInterpreter
             if (!(@base is EnvironmentRecord envRec))
                 throw new InvalidOperationException("Completion.GetValue: baseValue is not a recognized IReferenceable");
             return envRec.GetBindingValue(reference.referencedName, reference.strict);
+        }
+
+        public static CompletionOr<T> NormalWith<T>(T other)
+        {
+            return new CompletionOr<T>(CompletionType.Normal, null, null, other);
+        }
+
+        public CompletionOr<T> WithEmpty<T>()
+        {
+            return new CompletionOr<T>(completionType, value, target);
+        }
+
+        public BooleanCompletion WithEmptyBool()
+        {
+            return new BooleanCompletion(CompletionType.Normal, null, null, default);
+        }
+    }
+
+    class CompletionOr<T> : Completion
+    {
+        public readonly T Other;
+
+        public CompletionOr(CompletionType completionType, IValue value, string target) : base(completionType, value, target)
+        {
+        }
+
+        public CompletionOr(CompletionType completionType, IValue value, string target, T other) : base(completionType, value, target)
+        {
+            Other = other;
+        }
+    }
+
+    class BooleanCompletion : CompletionOr<bool>
+    {
+        public BooleanCompletion(CompletionType completionType, IValue value, string target) : base(completionType, value, target)
+        {
+        }
+
+        public BooleanCompletion(CompletionType completionType, IValue value, string target, bool other) : base(completionType, value, target, other)
+        {
+        }
+
+        public static implicit operator BooleanCompletion(bool b)
+        {
+            return new BooleanCompletion(CompletionType.Normal, null, null, b);
+        }
+
+        public static implicit operator bool(BooleanCompletion b)
+        {
+            return b.Other;
         }
     }
 }

@@ -2,7 +2,7 @@
 {
     abstract class EnvironmentRecord : IReferenceable
     {
-        public abstract Completion HasBinding(string name);
+        public abstract BooleanCompletion HasBinding(string name);
 
         public abstract Completion CreateImmutableBinding(string name, bool strict);
 
@@ -14,7 +14,7 @@
 
         public abstract Completion GetBindingValue(string name, bool strict);
 
-        public abstract Completion DeleteBinding(string name);
+        public abstract BooleanCompletion DeleteBinding(string name);
 
         public abstract bool HasThisBinding();
 

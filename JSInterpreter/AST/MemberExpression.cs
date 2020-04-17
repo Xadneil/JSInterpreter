@@ -144,12 +144,12 @@ namespace JSInterpreter.AST
             if (constructorComp.IsAbrupt()) return constructorComp;
             var constructor = constructorComp.value;
 
-            var (completion, argumentValues) = newArguments.ArgumentListEvaluation();
-            if (completion.IsAbrupt()) return completion;
+            var argumentValues = newArguments.ArgumentListEvaluation();
+            if (argumentValues.IsAbrupt()) return argumentValues;
 
             if (!(constructor is FunctionObject @object))
                 return Completion.ThrowTypeError("NewMemberExpression: Constructor is not an object.");
-            return @object.Construct(argumentValues);
+            return @object.Construct(argumentValues.Other);
         }
     }
 }

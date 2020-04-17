@@ -20,10 +20,10 @@ namespace JSInterpreter
 
         public override Completion CreateMutableBinding(string name, bool deletable)
         {
-            return BindingObject.DefineOwnPropertyOrThrow(name, new PropertyDescriptor(UndefinedValue.Instance, true, true, deletable));
+            return BindingObject.DefinePropertyOrThrow(name, new PropertyDescriptor(UndefinedValue.Instance, true, true, deletable));
         }
 
-        public override Completion DeleteBinding(string name)
+        public override BooleanCompletion DeleteBinding(string name)
         {
             return BindingObject.Delete(name);
         }
@@ -43,13 +43,13 @@ namespace JSInterpreter
             return BindingObject.Get(name);
         }
 
-        public override Completion HasBinding(string name)
+        public override BooleanCompletion HasBinding(string name)
         {
             var foundBindingsComp = BindingObject.HasProperty(name);
             if (foundBindingsComp.IsAbrupt()) return foundBindingsComp;
-            var foundBindings = (foundBindingsComp.value as BooleanValue).boolean;
-            if (!foundBindings) return foundBindingsComp;
-            if (!withEnvironment) return Completion.NormalCompletion(BooleanValue.True);
+            var foundBindings = foundBindingsComp.Other;
+            if (!foundBindings) return false;
+            if (!withEnvironment) return true;
             throw new NotImplementedException("With statements are not supported.");
         }
 

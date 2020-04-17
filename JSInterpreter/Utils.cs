@@ -13,18 +13,18 @@ namespace JSInterpreter
             return EmptyListClass<T>.Instance;
         }
 
-        public static Completion CreateDataProperty(IValue o, string p, IValue v)
+        public static BooleanCompletion CreateDataProperty(IValue o, string p, IValue v)
         {
             if (!(o is Object O))
                 throw new InvalidOperationException("Spec 7.3.4 step 1");
             return O.DefineOwnProperty(p, new PropertyDescriptor(v, true, true, true));
         }
 
-        public static Completion CreateDataPropertyOrThrow(Object O, string P, IValue V)
+        public static BooleanCompletion CreateDataPropertyOrThrow(Object O, string P, IValue V)
         {
             var success = CreateDataProperty(O, P, V);
             if (success.IsAbrupt()) return success;
-            if (success.value == BooleanValue.False) return Completion.ThrowTypeError();
+            if (success.Other == false) return Completion.ThrowTypeError().WithEmptyBool();
             return success;
         }
 
@@ -40,9 +40,9 @@ namespace JSInterpreter
                 if (!excluded)
                 {
                     var descComp = from.GetOwnProperty(nextKey);
-                    if (descComp.IsAbrupt()) return descComp.completion;
-                    var desc = descComp.propertyDescriptor;
-                    if (desc != null && desc.enumerable.HasValue && desc.enumerable.Value)
+                    if (descComp.IsAbrupt()) return descComp;
+                    var desc = descComp.Other;
+                    if (desc != null && desc.Enumerable.HasValue && desc.Enumerable.Value)
                     {
                         var propValue = from.Get(nextKey);
                         if (propValue.IsAbrupt()) return propValue;
@@ -65,7 +65,7 @@ namespace JSInterpreter
             return obj;
         }
 
-        public static (Completion, List<IValue>) EvaluateArgument(Interpreter interpreter, IArgumentItem a)
+        public static CompletionOr<List<IValue>> EvaluateArgument(Interpreter interpreter, IArgumentItem a)
         {
             List<IValue> ret = new List<IValue>();
             Completion valueComp;
@@ -74,31 +74,31 @@ namespace JSInterpreter
             {
                 case SpreadElement spreadElement:
                     valueComp = spreadElement.assignmentExpression.Evaluate(interpreter).GetValue();
-                    if (valueComp.IsAbrupt()) return (valueComp, null);
+                    if (valueComp.IsAbrupt()) return valueComp.WithEmpty<List<IValue>>();
                     value = valueComp.value;
                     if (!(value is Object @object))
                         throw new InvalidOperationException($"NewMemberExpression: tried to create an argument list using a spread on a non-object");
                     var iteratorRecordComp = @object.GetIterator();
-                    if (iteratorRecordComp.Item1.IsAbrupt()) return (iteratorRecordComp.Item1, null);
-                    var iteratorRecord = iteratorRecordComp.Item2;
+                    if (iteratorRecordComp.IsAbrupt()) return iteratorRecordComp.WithEmpty<List<IValue>>();
+                    var iteratorRecord = iteratorRecordComp.Other;
                     while (true)
                     {
                         var next = iteratorRecord.MoveNext();
-                        if (iteratorRecord.Current.IsAbrupt()) return (iteratorRecord.Current, null);
+                        if (iteratorRecord.Current.IsAbrupt()) return iteratorRecord.Current.WithEmpty<List<IValue>>();
                         if (!next) break;
                         ret.Add(iteratorRecord.Current.value);
                     }
                     break;
                 case IAssignmentExpression assignmentExpression:
                     valueComp = assignmentExpression.Evaluate(interpreter).GetValue();
-                    if (valueComp.IsAbrupt()) return (valueComp, null);
+                    if (valueComp.IsAbrupt()) return valueComp.WithEmpty<List<IValue>>();
                     value = valueComp.value;
                     ret.Add(value);
                     break;
                 default:
                     throw new InvalidOperationException($"NewMemberExpression: unhandled IArgumentItem type {a.GetType()}");
             }
-            return (Completion.NormalCompletion(), ret);
+            return Completion.NormalWith(ret);
         }
 
         public static Completion EvaluateCall(IValue func, IValue @ref, Arguments arguments, bool tailCall)
@@ -118,8 +118,8 @@ namespace JSInterpreter
             else
                 thisValue = UndefinedValue.Instance;
 
-            var (completion, argList) = arguments.ArgumentListEvaluation();
-            if (completion.IsAbrupt()) return completion;
+            var argList = arguments.ArgumentListEvaluation();
+            if (argList.IsAbrupt()) return argList;
 
             if (!(func is Callable functionObject))
                 return Completion.ThrowTypeError("Utils.EvaluateCall: func must be a function object.");
@@ -127,7 +127,7 @@ namespace JSInterpreter
             {
                 throw new NotImplementedException("Utils.EvaluateCall: tail calls not implemented");
             }
-            return functionObject.Call(thisValue, argList);
+            return functionObject.Call(thisValue, argList.Other);
         }
 
         internal static Completion OrdinaryCreateFromConstructor(Object constructor, string intrinsicDefaultProto, IEnumerable<string> internalSlotsList = null)

@@ -126,7 +126,7 @@ namespace JSInterpreter.AST
             return Completion.NormalCompletion(UndefinedValue.Instance);
         }
 
-        protected (Completion, IEnumerator<Completion>) ForInOfHeadEvaluation(IEnumerable<string> TDZNames, IExpression expr, IterationKind iterationKind)
+        protected CompletionOr<IEnumerator<Completion>> ForInOfHeadEvaluation(IEnumerable<string> TDZNames, IExpression expr, IterationKind iterationKind)
         {
             var oldEnv = Interpreter.Instance().RunningExecutionContext().LexicalEnvironment;
             if (TDZNames.Any())
@@ -144,11 +144,11 @@ namespace JSInterpreter.AST
             var exprRef = expr.Evaluate(Interpreter.Instance());
             Interpreter.Instance().RunningExecutionContext().LexicalEnvironment = oldEnv;
             var exprValue = exprRef.GetValue();
-            if (exprValue.IsAbrupt()) return (exprValue, null);
+            if (exprValue.IsAbrupt()) return exprValue.WithEmpty<IEnumerator<Completion>>();
             if (iterationKind == IterationKind.Enumerate)
             {
                 if (exprValue.value == UndefinedValue.Instance || exprValue.value == NullValue.Instance)
-                    return (new Completion(CompletionType.Break, null, null), null);
+                    return new Completion(CompletionType.Break, null, null).WithEmpty<IEnumerator<Completion>>();
                 var obj = exprValue.value.ToObject().value as Object;
                 return obj.EnumerateObjectProperties();
             }
@@ -616,8 +616,8 @@ namespace JSInterpreter.AST
         public override Completion LabelledEvaluate(Interpreter interpreter, List<string> labels)
         {
             var keyResult = ForInOfHeadEvaluation(Utils.EmptyList<string>(), inExpression, IterationKind.Enumerate);
-            if (keyResult.Item1.IsAbrupt()) return keyResult.Item1;
-            return ForInOfBodyEvaluation(leftHandSideExpression, doStatement, keyResult.Item2, IterationKind.Enumerate, LHSKind.Assignment, labels);
+            if (keyResult.IsAbrupt()) return keyResult;
+            return ForInOfBodyEvaluation(leftHandSideExpression, doStatement, keyResult.Other, IterationKind.Enumerate, LHSKind.Assignment, labels);
         }
     }
 
@@ -667,8 +667,8 @@ namespace JSInterpreter.AST
         public override Completion LabelledEvaluate(Interpreter interpreter, List<string> labels)
         {
             var keyResult = ForInOfHeadEvaluation(Utils.EmptyList<string>(), forInExpression, IterationKind.Enumerate);
-            if (keyResult.Item1.IsAbrupt()) return keyResult.Item1;
-            return ForInOfBodyEvaluation(forVar, doStatement, keyResult.Item2, IterationKind.Enumerate, LHSKind.VarBinding, labels);
+            if (keyResult.IsAbrupt()) return keyResult;
+            return ForInOfBodyEvaluation(forVar, doStatement, keyResult.Other, IterationKind.Enumerate, LHSKind.VarBinding, labels);
         }
     }
 
@@ -718,8 +718,8 @@ namespace JSInterpreter.AST
         public override Completion LabelledEvaluate(Interpreter interpreter, List<string> labels)
         {
             var keyResult = ForInOfHeadEvaluation(Utils.EmptyList<string>(), forInExpression, IterationKind.Enumerate);
-            if (keyResult.Item1.IsAbrupt()) return keyResult.Item1;
-            return ForInOfBodyEvaluation(forDeclaration, doStatement, keyResult.Item2, IterationKind.Enumerate, LHSKind.LexicalBinding, labels);
+            if (keyResult.IsAbrupt()) return keyResult;
+            return ForInOfBodyEvaluation(forDeclaration, doStatement, keyResult.Other, IterationKind.Enumerate, LHSKind.LexicalBinding, labels);
         }
     }
 
@@ -769,8 +769,8 @@ namespace JSInterpreter.AST
         public override Completion LabelledEvaluate(Interpreter interpreter, List<string> labels)
         {
             var keyResult = ForInOfHeadEvaluation(Utils.EmptyList<string>(), ofExpression, IterationKind.Iterate);
-            if (keyResult.Item1.IsAbrupt()) return keyResult.Item1;
-            return ForInOfBodyEvaluation(leftHandSideExpression, doStatement, keyResult.Item2, IterationKind.Iterate, LHSKind.Assignment, labels);
+            if (keyResult.IsAbrupt()) return keyResult;
+            return ForInOfBodyEvaluation(leftHandSideExpression, doStatement, keyResult.Other, IterationKind.Iterate, LHSKind.Assignment, labels);
         }
     }
 
@@ -820,8 +820,8 @@ namespace JSInterpreter.AST
         public override Completion LabelledEvaluate(Interpreter interpreter, List<string> labels)
         {
             var keyResult = ForInOfHeadEvaluation(Utils.EmptyList<string>(), forOfExpression, IterationKind.Iterate);
-            if (keyResult.Item1.IsAbrupt()) return keyResult.Item1;
-            return ForInOfBodyEvaluation(forVar, doStatement, keyResult.Item2, IterationKind.Iterate, LHSKind.VarBinding, labels);
+            if (keyResult.IsAbrupt()) return keyResult;
+            return ForInOfBodyEvaluation(forVar, doStatement, keyResult.Other, IterationKind.Iterate, LHSKind.VarBinding, labels);
         }
     }
 
@@ -871,8 +871,8 @@ namespace JSInterpreter.AST
         public override Completion LabelledEvaluate(Interpreter interpreter, List<string> labels)
         {
             var keyResult = ForInOfHeadEvaluation(Utils.EmptyList<string>(), forOfExpression, IterationKind.Iterate);
-            if (keyResult.Item1.IsAbrupt()) return keyResult.Item1;
-            return ForInOfBodyEvaluation(forDeclaration, doStatement, keyResult.Item2, IterationKind.Iterate, LHSKind.LexicalBinding, labels);
+            if (keyResult.IsAbrupt()) return keyResult;
+            return ForInOfBodyEvaluation(forDeclaration, doStatement, keyResult.Other, IterationKind.Iterate, LHSKind.LexicalBinding, labels);
         }
     }
 }

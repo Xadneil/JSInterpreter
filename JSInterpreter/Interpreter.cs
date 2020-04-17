@@ -135,7 +135,7 @@ namespace JSInterpreter
         {
             var comp = EnvironmentRecord.HasBinding(name);
             if (comp.IsAbrupt()) return comp;
-            if (comp.value == BooleanValue.True)
+            if (comp.Other == true)
                 return Completion.NormalCompletion(new ReferenceValue(EnvironmentRecord, name, strict));
             else
             {

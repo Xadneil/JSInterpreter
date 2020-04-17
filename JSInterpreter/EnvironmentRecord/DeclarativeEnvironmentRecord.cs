@@ -23,13 +23,14 @@ namespace JSInterpreter
             return Completion.NormalCompletion();
         }
 
-        public override Completion DeleteBinding(string name)
+        public override BooleanCompletion DeleteBinding(string name)
         {
             if (!bindings.ContainsKey(name))
                 throw new InvalidOperationException("Spec 8.1.1.1.7 step 2");
-            if (!bindings[name].canDelete.GetValueOrDefault(false)) return Completion.NormalCompletion(BooleanValue.False);
+            if (!bindings[name].canDelete.GetValueOrDefault(false))
+                return false;
             bindings.Remove(name);
-            return Completion.NormalCompletion(BooleanValue.True);
+            return true;
         }
 
         public override Completion GetBindingValue(string name, bool strict)
@@ -40,9 +41,9 @@ namespace JSInterpreter
             return Completion.NormalCompletion(bindings[name].Value);
         }
 
-        public override Completion HasBinding(string name)
+        public override BooleanCompletion HasBinding(string name)
         {
-            return Completion.NormalCompletion(bindings.ContainsKey(name) ? BooleanValue.True : BooleanValue.False);
+            return bindings.ContainsKey(name);
         }
 
         public override bool HasSuperBinding()

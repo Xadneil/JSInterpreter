@@ -54,10 +54,10 @@ namespace JSInterpreter.AST
             if (funcComp.IsAbrupt()) return funcComp;
             var func = funcComp.value as FunctionObject;
 
-            var (completion, argList) = arguments.ArgumentListEvaluation();
-            if (completion.IsAbrupt()) return completion;
+            var argList = arguments.ArgumentListEvaluation();
+            if (argList.IsAbrupt()) return argList;
 
-            var result = func.Construct(argList, newTarget);
+            var result = func.Construct(argList.Other, newTarget);
             if (result.IsAbrupt()) return result;
             var thisERBase = interpreter.GetThisEnvironment();
             if (!(thisERBase is FunctionEnvironmentRecord thisER))

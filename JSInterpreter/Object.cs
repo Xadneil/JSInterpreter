@@ -49,14 +49,14 @@ namespace JSInterpreter
             customInternalSlots[name] = value;
         }
 
-        public Completion HasOwnProperty(string name)
+        public BooleanCompletion HasOwnProperty(string name)
         {
             var descComp = GetOwnProperty(name);
-            if (descComp.IsAbrupt()) return descComp.completion;
-            var desc = descComp.propertyDescriptor;
+            if (descComp.IsAbrupt()) return descComp.WithEmptyBool();
+            var desc = descComp.Other;
             if (desc == null)
-                return Completion.NormalCompletion(BooleanValue.False);
-            return Completion.NormalCompletion(BooleanValue.True);
+                return false;
+            return true;
         }
 
         public bool IsExtensible { get; set; } = true;
@@ -93,129 +93,164 @@ namespace JSInterpreter
             return true;
         }
 
-        public virtual PropertyDescriptorCompletion GetOwnProperty(string P)
+        public virtual CompletionOr<PropertyDescriptor> GetOwnProperty(string P)
         {
             return OrdinaryGetOwnProperty(P);
         }
 
-        public PropertyDescriptorCompletion OrdinaryGetOwnProperty(string name)
+        public CompletionOr<PropertyDescriptor> OrdinaryGetOwnProperty(string name)
         {
             if (!propertyNames.TryGetValue(name, out int propertyIndex))
-                return PropertyDescriptorCompletion.NormalCompletion(UndefinedValue.Instance);
+                return Completion.NormalCompletion(UndefinedValue.Instance).WithEmpty<PropertyDescriptor>();
             properties.TryGetValue(propertyIndex, out PropertyDescriptor X);
-            PropertyDescriptor D;
+            var D = new PropertyDescriptor();
             if (X.IsDataDescriptor())
             {
-                D = new PropertyDescriptor(X.Value, X.writeable, X.enumerable, X.configurable);
+                D.Value = X.Value;
+                D.Writable = X.Writable;
             }
             else if (X.IsAccessorDescriptor())
             {
-                throw new NotImplementedException("Accessor properties not implemented.");
-            }
-            else
-            {
-                throw new NotImplementedException("Generic properties not implemented.");
+                D.Get = X.Get;
+                D.Set = X.Set;
             }
 
-            return PropertyDescriptorCompletion.NormalCompletion(D);
+            return Completion.NormalWith(D);
         }
 
-        public virtual Completion DefineOwnProperty(string name, PropertyDescriptor property)
+        public virtual BooleanCompletion DefineOwnProperty(string name, PropertyDescriptor property)
         {
             return OrdinaryDefineOwnProperty(name, property);
         }
 
-        public Completion OrdinaryDefineOwnProperty(string P, PropertyDescriptor Desc)
+        public BooleanCompletion OrdinaryDefineOwnProperty(string P, PropertyDescriptor Desc)
         {
             var currentComp = GetOwnProperty(P);
-            if (currentComp.IsAbrupt()) return currentComp.completion;
-            var current = currentComp.propertyDescriptor;
-            return Completion.NormalCompletion(ValidateAndApplyPropertyDescriptor(P, IsExtensible, Desc, current) ? BooleanValue.True : BooleanValue.False);
+            if (currentComp.IsAbrupt()) return currentComp.WithEmptyBool();
+            var current = currentComp.Other;
+            return ValidateAndApplyPropertyDescriptor(P, IsExtensible, Desc, current);
         }
 
-        private bool ValidateAndApplyPropertyDescriptor(string name, bool extensible, PropertyDescriptor property, PropertyDescriptor current)
+        private bool ValidateAndApplyPropertyDescriptor(string name, bool extensible, PropertyDescriptor Desc, PropertyDescriptor current)
         {
             if (current == null)
             {
                 if (!extensible)
                     return false;
-                if (property.IsDataDescriptor())
+
+                lastAddedIndex++;
+                propertyNames[name] = lastAddedIndex;
+                properties[lastAddedIndex] = Desc;
+
+                #region Set default property descriptor values if not specified
+                if (Desc.IsGenericDescriptor() || Desc.IsDataDescriptor())
                 {
-                    lastAddedIndex++;
-                    propertyNames[name] = lastAddedIndex;
-                    properties[lastAddedIndex] = PropertyDescriptor.FillDefaultValues(property);
+                    if (!Desc.Writable.HasValue)
+                        Desc.Writable = false;
                 }
-                else
-                {
-                    throw new NotImplementedException("Object.DefineOwnProperty: AssessorDescriptors not implemented");
-                }
+
+                if (!Desc.Enumerable.HasValue)
+                    Desc.Enumerable = false;
+                if (!Desc.Configurable.HasValue)
+                    Desc.Configurable = false;
+                #endregion
+
                 return true;
             }
-            if (!current.configurable.Value)
+
+            if (!Desc.Configurable.HasValue &&
+                !Desc.Enumerable.HasValue &&
+                Desc.Get == null &&
+                Desc.Set == null &&
+                Desc.Value == null &&
+                !Desc.Writable.HasValue)
+                return true;
+
+            if (!current.Configurable.Value)
             {
-                if (property.configurable.HasValue && property.configurable.Value)
+                if (Desc.Configurable.HasValue && Desc.Configurable.Value)
                     return false;
-                if (property.enumerable.HasValue && (property.enumerable.Value != current.enumerable.Value))
+                if (Desc.Enumerable.HasValue && (Desc.Enumerable.Value != current.Enumerable.Value))
                     return false;
             }
-            else if (current.IsDataDescriptor() != property.IsDataDescriptor())
+
+            var index = propertyNames[name];
+
+            if (Desc.IsGenericDescriptor())
             {
-                if (!current.configurable.Value)
-                    return false;
-                if (current.IsDataDescriptor())
-                {
-                    // convert from data to accessor
-                    throw new NotImplementedException("Object.DefineOwnProperty: AssessorDescriptors not implemented");
-                }
-                else
-                {
-                    // convert from accessor to data
-                    throw new NotImplementedException("Object.DefineOwnProperty: AssessorDescriptors not implemented");
-                }
+                return true;
             }
-            else if (current.IsDataDescriptor() && property.IsDataDescriptor())
+            else if (current.IsDataDescriptor() != Desc.IsDataDescriptor())
             {
-                if (!current.configurable.Value && !current.writeable.Value)
+                if (!current.Configurable.Value)
+                    return false;
+
+                // "convert" from data to accessor or accessor to data by resetting all descriptor properties.
+                // new properties will be added below.
+                properties[index] = new PropertyDescriptor()
                 {
-                    if (property.writeable.HasValue && property.writeable.Value)
+                    Configurable = current.Configurable,
+                    Enumerable = current.Enumerable
+                };
+            }
+            else if (current.IsDataDescriptor() && Desc.IsDataDescriptor())
+            {
+                if (!current.Configurable.Value && !current.Writable.Value)
+                {
+                    if (Desc.Writable.HasValue && Desc.Writable.Value)
                         return false;
-                    if (property.Value != null && property.Value != current.Value)
+                    if (Desc.Value != null && Desc.Value != current.Value)
                         return false;
                     return true;
                 }
             }
-            else if (current.IsAccessorDescriptor() && property.IsAccessorDescriptor())
+            else if (current.IsAccessorDescriptor() && Desc.IsAccessorDescriptor())
             {
-                throw new NotImplementedException("Object.DefineOwnProperty: AssessorDescriptors not implemented");
+                if (!current.Configurable.Value)
+                {
+                    if (Desc.Set != null && Desc.Set != current.Set) return false;
+                    if (Desc.Get != null && Desc.Get != current.Get) return false;
+                    return true;
+                }
             }
 
-            int propertyIndex = propertyNames[name];
-            properties[propertyIndex] = new PropertyDescriptor(properties[propertyIndex], property);
+            if (Desc.Configurable.HasValue)
+                properties[index].Configurable = Desc.Configurable;
+            if (Desc.Enumerable.HasValue)
+                properties[index].Enumerable = Desc.Enumerable;
+            if (Desc.Get != null)
+                properties[index].Get = Desc.Get;
+            if (Desc.Set != null)
+                properties[index].Set = Desc.Set;
+            if (Desc.Value != null)
+                properties[index].Value = Desc.Value;
+            if (Desc.Writable.HasValue)
+                properties[index].Writable = Desc.Writable;
 
             return true;
         }
 
-        public Completion DefineOwnPropertyOrThrow(string name, PropertyDescriptor property)
+        public BooleanCompletion DefinePropertyOrThrow(string name, PropertyDescriptor property)
         {
             var success = DefineOwnProperty(name, property);
             if (success.IsAbrupt()) return success;
-            if (success.value == BooleanValue.False) return Completion.ThrowTypeError();
+            if (success.Other == false) return Completion.ThrowTypeError().WithEmptyBool();
             return success;
         }
 
-        public Completion HasProperty(string name)
+        public BooleanCompletion HasProperty(string name)
         {
             var hasOwnComp = GetOwnProperty(name);
-            if (hasOwnComp.IsAbrupt()) return hasOwnComp.completion;
-            var hasOwn = hasOwnComp.completion.value;
+            if (hasOwnComp.IsAbrupt()) return hasOwnComp.WithEmptyBool();
+            IValue hasOwn = hasOwnComp.Other.Value;
             if (hasOwn != UndefinedValue.Instance)
-                return Completion.NormalCompletion(BooleanValue.True);
+                return true;
             var parentComp = GetPrototypeOf();
-            if (parentComp.IsAbrupt()) return parentComp;
+            if (parentComp.IsAbrupt()) return parentComp.WithEmptyBool();
             var parent = parentComp.value;
             if (parent != NullValue.Instance && parent is Object o)
                 return o.HasProperty(name);
-            return Completion.NormalCompletion(BooleanValue.False);
+            return false;
         }
 
         public Completion Get(string name)
@@ -226,8 +261,9 @@ namespace JSInterpreter
         internal Completion InternalGet(string name, IValue receiver)
         {
             var desc = GetOwnProperty(name);
-            if (desc.IsAbrupt()) return desc.completion;
-            if (desc.propertyDescriptor == null)
+            if (desc.IsAbrupt()) return desc;
+            var propertyDescriptor = desc.Other;
+            if (propertyDescriptor == null)
             {
                 var parentComp = GetPrototypeOf();
                 if (parentComp.IsAbrupt()) return parentComp;
@@ -236,34 +272,38 @@ namespace JSInterpreter
                     return Completion.NormalCompletion(UndefinedValue.Instance);
                 return ((Object)parent).InternalGet(name, receiver);
             }
-            if (desc.propertyDescriptor.IsDataDescriptor())
+            if (propertyDescriptor.IsDataDescriptor())
             {
-                return Completion.NormalCompletion(desc.propertyDescriptor.Value);
+                return Completion.NormalCompletion(propertyDescriptor.Value);
             }
-            throw new NotImplementedException("Object.Get: AccessorDescriptors not implemented");
+            if (!propertyDescriptor.IsAccessorDescriptor())
+                throw new InvalidOperationException("Spec 9.1.8.1 Step 5");
+            if (propertyDescriptor.Get == null)
+                return Completion.NormalCompletion(UndefinedValue.Instance);
+            return propertyDescriptor.Get.Call(receiver);
         }
 
         public Completion Set(string P, IValue V, bool Throw)
         {
             var success = InternalSet(P, V, this);
             if (success.IsAbrupt()) return success;
-            if (success.value == BooleanValue.False && Throw) return Completion.ThrowTypeError();
+            if (success.Other == false && Throw) return Completion.ThrowTypeError();
             return success;
         }
 
-        public Completion InternalSet(string name, IValue value, IValue receiver)
+        public BooleanCompletion InternalSet(string name, IValue value, IValue receiver)
         {
             var ownDesc = GetOwnProperty(name);
-            if (ownDesc.IsAbrupt()) return ownDesc.completion;
-            return OrdinarySetWithOwnDescriptor(name, value, receiver, ownDesc.propertyDescriptor);
+            if (ownDesc.IsAbrupt()) return ownDesc.WithEmptyBool();
+            return OrdinarySetWithOwnDescriptor(name, value, receiver, ownDesc.Other);
         }
 
-        private Completion OrdinarySetWithOwnDescriptor(string name, IValue value, IValue receiver, PropertyDescriptor ownDesc)
+        private BooleanCompletion OrdinarySetWithOwnDescriptor(string name, IValue value, IValue receiver, PropertyDescriptor ownDesc)
         {
             if (ownDesc == null)
             {
                 var parentComp = GetPrototypeOf();
-                if (parentComp.IsAbrupt()) return parentComp;
+                if (parentComp.IsAbrupt()) return parentComp.WithEmptyBool();
                 var parent = parentComp.value as Object;
                 if (parent != null)
                 {
@@ -276,19 +316,19 @@ namespace JSInterpreter
             }
             if (ownDesc.IsDataDescriptor())
             {
-                if (!ownDesc.writeable.Value)
-                    return Completion.NormalCompletion(BooleanValue.False);
+                if (!ownDesc.Writable.Value)
+                    return false;
                 if (!(receiver is Object @object))
-                    return Completion.NormalCompletion(BooleanValue.False);
+                    return false;
                 var existingDescriptorComp = @object.GetOwnProperty(name);
-                if (existingDescriptorComp.IsAbrupt()) return existingDescriptorComp.completion;
-                var existingDescriptor = existingDescriptorComp.propertyDescriptor;
+                if (existingDescriptorComp.IsAbrupt()) return existingDescriptorComp.WithEmptyBool();
+                var existingDescriptor = existingDescriptorComp.Other;
                 if (existingDescriptor != null)
                 {
                     if (!existingDescriptor.IsDataDescriptor())
-                        return Completion.NormalCompletion(BooleanValue.False);
-                    if (!existingDescriptor.writeable.Value)
-                        return Completion.NormalCompletion(BooleanValue.False);
+                        return false;
+                    if (!existingDescriptor.Writable.Value)
+                        return false;
                     return @object.DefineOwnProperty(name, new PropertyDescriptor(value, null, null, null));
                 }
                 else
@@ -296,23 +336,31 @@ namespace JSInterpreter
                     return Utils.CreateDataProperty(receiver, name, value);
                 }
             }
-            throw new NotImplementedException("Object.Set: AccessorDescriptors not implemented");
+
+            if (!ownDesc.IsAccessorDescriptor())
+                throw new InvalidOperationException("Spec 9.1.9.2 Step 4");
+            if (ownDesc.Set == null)
+                return false;
+            var setComp = ownDesc.Set.Call(receiver, new[] { value });
+            if (setComp.IsAbrupt()) return setComp.WithEmptyBool();
+
+            return true;
         }
 
-        public Completion Delete(string name)
+        public BooleanCompletion Delete(string name)
         {
             var descComp = GetOwnProperty(name);
-            if (descComp.IsAbrupt()) return descComp.completion;
-            var desc = descComp.propertyDescriptor;
+            if (descComp.IsAbrupt()) return descComp.WithEmptyBool();
+            var desc = descComp.Other;
             if (desc == null)
-                return Completion.NormalCompletion(BooleanValue.True);
-            if (desc.configurable.Value)
+                return true;
+            if (desc.Configurable.Value)
             {
                 propertyNames.Remove(name, out int propertyIndex);
                 properties.Remove(propertyIndex);
-                return Completion.NormalCompletion(BooleanValue.True);
+                return true;
             }
-            return Completion.NormalCompletion(BooleanValue.False);
+            return false;
         }
 
         public IReadOnlyList<string> OwnPropertyKeys()
@@ -337,7 +385,7 @@ namespace JSInterpreter
             {
                 var key = propertyNames.FirstOrDefault(p => p.Value == prop.Key).Key;
                 visited.Add(key);
-                if (prop.Value.enumerable.Value)
+                if (prop.Value.Enumerable.Value)
                     yield return Completion.NormalCompletion(new StringValue(key));
             }
             var protoComp = GetPrototypeOf();
@@ -362,9 +410,9 @@ namespace JSInterpreter
             }
         }
 
-        public (Completion, IEnumerator<Completion>) EnumerateObjectProperties()
+        public CompletionOr<IEnumerator<Completion>> EnumerateObjectProperties()
         {
-            return (Completion.NormalCompletion(), AllPropertyKeys().GetEnumerator());
+            return Completion.NormalWith(AllPropertyKeys().GetEnumerator());
         }
 
         public Completion GetMethod(string name)
@@ -379,22 +427,22 @@ namespace JSInterpreter
             return Completion.NormalCompletion(func);
         }
 
-        public (Completion, IEnumerator<Completion>) GetIterator()
+        public CompletionOr<IEnumerator<Completion>> GetIterator()
         {
             // assuming hint is sync
             var methodComp = GetMethod("@@iterator");
-            if (methodComp.IsAbrupt()) return (methodComp, null);
+            if (methodComp.IsAbrupt()) return methodComp.WithEmpty<IEnumerator<Completion>>();
             var method = methodComp.value as Callable;
             var iteratorComp = method.Call(this);
-            if (iteratorComp.IsAbrupt()) return (iteratorComp, null);
+            if (iteratorComp.IsAbrupt()) return iteratorComp.WithEmpty<IEnumerator<Completion>>();
             var iterator = iteratorComp.value;
             if (!(iterator is Object o))
-                return (Completion.ThrowTypeError(), null);
+                return Completion.ThrowTypeError().WithEmpty<IEnumerator<Completion>>();
             var nextMethodComp = o.Get("next");
-            if (nextMethodComp.IsAbrupt()) return (nextMethodComp, null);
+            if (nextMethodComp.IsAbrupt()) return nextMethodComp.WithEmpty<IEnumerator<Completion>>();
             if (!(nextMethodComp.value is Callable c))
-                return (Completion.ThrowTypeError(), null);
-            return (Completion.NormalCompletion(), new ObjectIteratorRecord(o, c));
+                return Completion.ThrowTypeError().WithEmpty<IEnumerator<Completion>>();
+            return Completion.NormalWith<IEnumerator<Completion>>(new ObjectIteratorRecord(o, c));
         }
     }
 }

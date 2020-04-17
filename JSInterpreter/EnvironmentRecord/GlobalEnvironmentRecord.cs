@@ -20,52 +20,52 @@ namespace JSInterpreter
 
         public override Completion CreateImmutableBinding(string name, bool strict)
         {
-            if (DeclarativeRecord.HasBinding(name).value == BooleanValue.True)
+            if (DeclarativeRecord.HasBinding(name).Other == true)
                 return Completion.ThrowTypeError();
             return DeclarativeRecord.CreateImmutableBinding(name, strict);
         }
 
         public override Completion CreateMutableBinding(string name, bool deletable)
         {
-            if (DeclarativeRecord.HasBinding(name).value == BooleanValue.True)
+            if (DeclarativeRecord.HasBinding(name).Other == true)
                 return Completion.ThrowTypeError();
             return DeclarativeRecord.CreateMutableBinding(name, deletable);
         }
 
-        public override Completion DeleteBinding(string name)
+        public override BooleanCompletion DeleteBinding(string name)
         {
-            if (DeclarativeRecord.HasBinding(name).value == BooleanValue.True)
+            if (DeclarativeRecord.HasBinding(name).Other == true)
                 return DeclarativeRecord.DeleteBinding(name);
             var globalObject = ObjectRecord.BindingObject;
             var existingPropComp = globalObject.HasOwnProperty(name);
             if (existingPropComp.IsAbrupt()) return existingPropComp;
-            var existingProp = (existingPropComp.value as BooleanValue).boolean;
+            var existingProp = existingPropComp.Other;
             if (existingProp)
             {
                 var statusComp = ObjectRecord.DeleteBinding(name);
-                if (statusComp.IsAbrupt()) return statusComp;
-                var status = statusComp.value as BooleanValue;
-                if (status.boolean)
+                if (statusComp.IsAbrupt()) return statusComp.WithEmptyBool();
+                var status = statusComp.Other;
+                if (status)
                 {
                     if (VarNames.Contains(name))
                         VarNames.Remove(name);
                 }
                 return statusComp;
             }
-            return Completion.NormalCompletion(BooleanValue.True);
+            return true;
         }
 
         public override Completion GetBindingValue(string name, bool strict)
         {
-            if (DeclarativeRecord.HasBinding(name).value == BooleanValue.True)
+            if (DeclarativeRecord.HasBinding(name).Other == true)
                 return DeclarativeRecord.GetBindingValue(name, strict);
             return ObjectRecord.GetBindingValue(name, strict);
         }
 
-        public override Completion HasBinding(string name)
+        public override BooleanCompletion HasBinding(string name)
         {
-            if (DeclarativeRecord.HasBinding(name).value == BooleanValue.True)
-                return Completion.NormalCompletion(BooleanValue.True);
+            if (DeclarativeRecord.HasBinding(name).Other == true)
+                return true;
             return ObjectRecord.HasBinding(name);
         }
 
@@ -86,16 +86,16 @@ namespace JSInterpreter
 
         public override Completion InitializeBinding(string name, IValue value)
         {
-            if (DeclarativeRecord.HasBinding(name).value == BooleanValue.True)
+            if (DeclarativeRecord.HasBinding(name).Other == true)
                 return DeclarativeRecord.InitializeBinding(name, value);
-            if (ObjectRecord.HasBinding(name).value != BooleanValue.True)
+            if (ObjectRecord.HasBinding(name).Other == false)
                 throw new InvalidOperationException("Spec 8.1.1.4.4 step 4");
             return ObjectRecord.InitializeBinding(name, value);
         }
 
         public override Completion SetMutableBinding(string name, IValue value, bool strict)
         {
-            if (DeclarativeRecord.HasBinding(name).value == BooleanValue.True)
+            if (DeclarativeRecord.HasBinding(name).Other == true)
                 return DeclarativeRecord.SetMutableBinding(name, value, strict);
             return ObjectRecord.SetMutableBinding(name, value, strict);
         }

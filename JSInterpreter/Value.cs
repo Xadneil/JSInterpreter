@@ -292,7 +292,7 @@ namespace JSInterpreter
                 var obj = @base as Object;
                 var success = obj.InternalSet(referencedName, W, GetThisValue());
                 if (success.IsAbrupt()) return success;
-                if (success.value == BooleanValue.False && strict)
+                if (success.Other == false && strict)
                     return Completion.ThrowTypeError();
                 return Completion.NormalCompletion();
             }

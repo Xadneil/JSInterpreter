@@ -55,7 +55,7 @@ namespace JSInterpreter
             }
             ExecutionContext calleeContext = PrepareForOrdinaryCall(newTarget);
             if (calleeContext != Interpreter.Instance().RunningExecutionContext())
-                throw new InvalidOperationException("Interpreter.PrepareForOrdinaryCall did not perform as expected.");
+                throw new InvalidOperationException("FunctionObject.PrepareForOrdinaryCall did not perform as expected.");
             if (ConstructorKind == ConstructorKind.Base)
                 OrdinaryCallBindThis(calleeContext, thisArgument);
             var constructorEnv = calleeContext.LexicalEnvironment;
@@ -84,7 +84,7 @@ namespace JSInterpreter
             var callerContext = Interpreter.Instance().RunningExecutionContext();
             var calleeContext = PrepareForOrdinaryCall(UndefinedValue.Instance);
             if (Interpreter.Instance().RunningExecutionContext() != calleeContext)
-                throw new InvalidOperationException("FunctionObject.Call: Interpreter.PrepareForOrdinaryCall did not perform as expected.");
+                throw new InvalidOperationException("FunctionObject.Call: FunctionObject.PrepareForOrdinaryCall did not perform as expected.");
             OrdinaryCallBindThis(calleeContext, @this);
             var result = OrdinaryCallEvaluateBody(arguments);
             Interpreter.Instance().PopExecutionStack(calleeContext);
@@ -189,7 +189,7 @@ namespace JSInterpreter
             }
             foreach (var paramName in parameterNames)
             {
-                var alreadyDeclared = envRec.HasBinding(paramName).value == BooleanValue.True;
+                var alreadyDeclared = envRec.HasBinding(paramName).Other == true;
                 if (!alreadyDeclared)
                 {
                     envRec.CreateMutableBinding(paramName, false);
@@ -295,7 +295,7 @@ namespace JSInterpreter
         {
             var obj = Utils.ObjectCreate(ObjectPrototype.Instance, new[] { "ParameterMap" });
             obj.SetCustomInternalSlot("ParameterMap", UndefinedValue.Instance);
-            obj.DefineOwnPropertyOrThrow("length", new PropertyDescriptor(new NumberValue(arguments.Count), true, false, true));
+            obj.DefinePropertyOrThrow("length", new PropertyDescriptor(new NumberValue(arguments.Count), true, false, true));
             for (int i = 0; i < arguments.Count; i++)
             {
                 Utils.CreateDataProperty(obj, i.ToString(), arguments[i]);
@@ -313,9 +313,9 @@ namespace JSInterpreter
             if (prototype == null)
             {
                 prototype = Utils.ObjectCreate(ObjectPrototype.Instance);
-                prototype.DefineOwnPropertyOrThrow("constructor", new PropertyDescriptor(this, writablePrototype, false, true));
+                prototype.DefinePropertyOrThrow("constructor", new PropertyDescriptor(this, writablePrototype, false, true));
             }
-            DefineOwnPropertyOrThrow("prototype", new PropertyDescriptor(prototype, writablePrototype, false, false));
+            DefinePropertyOrThrow("prototype", new PropertyDescriptor(prototype, writablePrototype, false, false));
         }
 
         public Completion MakeMethod(Object homeObject)
@@ -327,7 +327,7 @@ namespace JSInterpreter
         public bool SetFunctionName(string name, string prefix = null)
         {
             //TODO: allow symbol for prefix, use brackets on symbol description
-            return DefineOwnPropertyOrThrow("name", new PropertyDescriptor(new StringValue(name + (prefix ?? "")), false, false, true)).value == BooleanValue.True;
+            return DefinePropertyOrThrow("name", new PropertyDescriptor(new StringValue(name + (prefix ?? "")), false, false, true)).Other;
         }
 
         public static FunctionObject FunctionCreate(FunctionCreateKind kind, FormalParameters parameters, FunctionStatementList body, LexicalEnvironment scope, bool strict, IValue prototype = null)
@@ -362,7 +362,7 @@ namespace JSInterpreter
         public static FunctionObject FunctionInitialize(FunctionObject f, FunctionCreateKind kind, FormalParameters parameters, FunctionStatementList body, LexicalEnvironment scope)
         {
             var len = parameters.ExpectedArgumentCount();
-            f.DefineOwnPropertyOrThrow("length", new PropertyDescriptor(new NumberValue(len), false, false, true));
+            f.DefinePropertyOrThrow("length", new PropertyDescriptor(new NumberValue(len), false, false, true));
             f.Environment = scope;
             f.FormalParameters = parameters;
             f.Code = body;

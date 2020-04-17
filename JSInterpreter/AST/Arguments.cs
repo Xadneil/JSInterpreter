@@ -12,16 +12,16 @@ namespace JSInterpreter.AST
             this.argumentItems = argumentItems;
         }
 
-        public (Completion, List<IValue>) ArgumentListEvaluation()
+        public CompletionOr<List<IValue>> ArgumentListEvaluation()
         {
             var argListEnumerable = argumentItems.Select(a => Utils.EvaluateArgument(Interpreter.Instance(), a));
             var argList = new List<IValue>();
-            foreach (var (completion, args) in argListEnumerable)
+            foreach (var args in argListEnumerable)
             {
-                if (completion.IsAbrupt()) return (completion, null);
-                argList.AddRange(args);
+                if (args.IsAbrupt()) return args;
+                argList.AddRange(args.Other);
             }
-            return (Completion.NormalCompletion(), argList);
+            return Completion.NormalWith(argList);
         }
     }
 
