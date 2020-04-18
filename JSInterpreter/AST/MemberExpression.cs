@@ -30,8 +30,10 @@ namespace JSInterpreter.AST
             var propertyNameValue = propertyNameComp.value;
             var coercible = baseValue.RequireObjectCoercible();
             if (coercible.IsAbrupt()) return coercible;
+            var propertyKey = propertyNameValue.ToPropertyKey();
+            if (propertyKey.IsAbrupt()) return propertyKey;
             //TODO detect strict mode
-            return Completion.NormalCompletion(new ReferenceValue(baseValue, propertyNameValue.ToString(), strict: true));
+            return Completion.NormalCompletion(new ReferenceValue(baseValue, propertyKey.Other, strict: true));
         }
     }
 
@@ -97,9 +99,10 @@ namespace JSInterpreter.AST
             if (propertyNameComp.IsAbrupt()) return propertyNameComp;
             var propertyNameValue = propertyNameComp.value;
 
-            var propertyKey = propertyNameValue.ToString();
+            var propertyKey = propertyNameValue.ToPropertyKey();
+            if (propertyKey.IsAbrupt()) return propertyKey;
             //TODO detect strict mode
-            return SuperHelper.MakeSuperPropertyReference(actualThis, propertyKey, true);
+            return SuperHelper.MakeSuperPropertyReference(actualThis, propertyKey.Other, true);
         }
     }
 

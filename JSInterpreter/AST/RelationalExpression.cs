@@ -68,7 +68,9 @@ namespace JSInterpreter.AST
                 case RelationalOperator.In:
                     if (!(rightValue is Object o))
                         return Completion.ThrowTypeError();
-                    return o.HasProperty(leftValue.ToString());
+                    var propertyKey = leftValue.ToPropertyKey();
+                    if (propertyKey.IsAbrupt()) return propertyKey;
+                    return o.HasProperty(propertyKey.Other);
                 default:
                     throw new InvalidOperationException($"RelationalExpression.Evaluate: unknown RelationalOperator enum value {(int)relationalOperator}");
             }
@@ -101,8 +103,13 @@ namespace JSInterpreter.AST
             }
             else
             {
-                var nx = px.ToNumber();
-                var ny = py.ToNumber();
+                var nxComp = px.ToNumber();
+                if (nxComp.IsAbrupt()) return nxComp;
+                var nx = nxComp.value as NumberValue;
+                var nyComp = py.ToNumber();
+                if (nyComp.IsAbrupt()) return nyComp;
+                var ny = nyComp.value as NumberValue;
+
                 if (double.IsNaN(nx.number) || double.IsNaN(ny.number))
                     return Completion.NormalCompletion(UndefinedValue.Instance);
                 return Completion.NormalCompletion((nx.number < ny.number) ? BooleanValue.True : BooleanValue.False);

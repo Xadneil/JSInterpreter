@@ -38,21 +38,27 @@ namespace JSInterpreter.AST
             if (right.IsAbrupt()) return right;
             var rightValue = right.value;
 
-            return Completion.NormalCompletion(Calculate(leftValue, shiftOperator, rightValue));
+            return Calculate(leftValue, shiftOperator, rightValue);
         }
 
-        public static IValue Calculate(IValue leftValue, ShiftOperator shiftOperator, IValue rightValue)
+        public static Completion Calculate(IValue leftValue, ShiftOperator shiftOperator, IValue rightValue)
         {
-            var lnum = (int)leftValue.ToNumber().number;
-            var rnum = (uint)rightValue.ToNumber().number;
+            var lnumComp = leftValue.ToNumber();
+            if (lnumComp.IsAbrupt()) return lnumComp;
+            var rnumComp = rightValue.ToNumber();
+            if (rnumComp.IsAbrupt()) return rnumComp;
+
+            int lnum = (int)(lnumComp.value as NumberValue).number;
+            uint rnum = (uint)(rnumComp.value as NumberValue).number;
+
             var shiftCount = (int)(rnum & 0x1F);
-            return new NumberValue(shiftOperator switch
+            return Completion.NormalCompletion(new NumberValue(shiftOperator switch
             {
                 ShiftOperator.ShiftRight => lnum >> shiftCount,
                 ShiftOperator.ShiftRightUnsigned => ((uint)lnum >> shiftCount) & (0b1 << shiftCount),
                 ShiftOperator.ShiftLeft => lnum << shiftCount,
                 _ => throw new InvalidOperationException($"ShiftExpression.Evaluate: unknown ShiftOperator enum value {(int)shiftOperator}")
-            });
+            }));
         }
     }
 }

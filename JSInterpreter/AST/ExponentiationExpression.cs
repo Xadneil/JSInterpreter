@@ -29,14 +29,21 @@ namespace JSInterpreter.AST
             if (right.IsAbrupt()) return right;
             var rightValue = right.value;
 
-            return Completion.NormalCompletion(Calculate(leftValue, rightValue));
+            return Calculate(leftValue, rightValue);
         }
 
-        public static IValue Calculate(IValue leftValue, IValue rightValue)
+        public static Completion Calculate(IValue leftValue, IValue rightValue)
         {
-            var @base = leftValue.ToNumber();
-            var exponent = rightValue.ToNumber();
-            return new NumberValue(Math.Pow(@base.number, exponent.number));
+            var baseComp = leftValue.ToNumber();
+            if (baseComp.IsAbrupt()) return baseComp;
+            var exponentComp = rightValue.ToNumber();
+            if (exponentComp.IsAbrupt()) return exponentComp;
+
+
+            double @base = (baseComp.value as NumberValue).number;
+            double exponent = (exponentComp.value as NumberValue).number;
+
+            return Completion.NormalCompletion(new NumberValue(Math.Pow(@base, exponent)));
         }
     }
 }

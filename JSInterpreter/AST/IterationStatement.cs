@@ -172,7 +172,7 @@ namespace JSInterpreter.AST
                 if (nextResultComp.IsAbrupt()) return nextResultComp;
                 var nextResult = nextResultComp.value;
                 if (iteratorKind == IteratorKind.Async)
-                    throw new NotImplementedException();
+                    throw new NotImplementedException("async");
                 if (!(nextResult is Object nextResultObject))
                     return Completion.ThrowTypeError();
                 if (done)

@@ -25,21 +25,26 @@ namespace JSInterpreter.AST
             if (right.IsAbrupt()) return right;
             var rightValue = right.value;
 
-            return Completion.NormalCompletion(Calculate(leftValue, BitwiseOperator, rightValue));
+            return Calculate(leftValue, BitwiseOperator, rightValue);
         }
 
-        public static IValue Calculate(IValue leftValue, BitwiseOperator bitwiseOperator, IValue rightValue)
+        public static Completion Calculate(IValue leftValue, BitwiseOperator bitwiseOperator, IValue rightValue)
         {
-            var left = (int)leftValue.ToNumber().number;
-            var right = (int)rightValue.ToNumber().number;
+            var leftComp = leftValue.ToNumber();
+            if (leftComp.IsAbrupt()) return leftComp;
+            var rightComp = rightValue.ToNumber();
+            if (rightComp.IsAbrupt()) return rightComp;
 
-            return new NumberValue(bitwiseOperator switch
+            int left = (int)(leftComp.value as NumberValue).number;
+            int right = (int)(rightComp.value as NumberValue).number;
+
+            return Completion.NormalCompletion(new NumberValue(bitwiseOperator switch
             {
                 BitwiseOperator.And => left & right,
                 BitwiseOperator.Xor => left ^ right,
                 BitwiseOperator.Or => left | right,
                 _ => throw new InvalidOperationException($"BitwiseExpression.Evaluate: invalid BitwiseOperator enum value {(int)bitwiseOperator}")
-            });
+            }));
         }
 
         protected abstract BitwiseOperator BitwiseOperator { get; }

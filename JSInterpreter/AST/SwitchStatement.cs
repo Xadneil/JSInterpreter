@@ -143,7 +143,7 @@ namespace JSInterpreter.AST
                     {
                         var foundComp = CaseClauseIsSelected(C, input);
                         if (foundComp.IsAbrupt()) return foundComp;
-                        found = ((BooleanValue)foundComp.value).boolean;
+                        found = foundComp.Other;
                     }
                     if (found)
                     {
@@ -162,7 +162,7 @@ namespace JSInterpreter.AST
                 {
                     var foundComp = CaseClauseIsSelected(C, input);
                     if (foundComp.IsAbrupt()) return foundComp;
-                    found = ((BooleanValue)foundComp.value).boolean;
+                    found = foundComp.Other;
                 }
                 if (found)
                 {
@@ -180,7 +180,7 @@ namespace JSInterpreter.AST
                     {
                         var foundComp = CaseClauseIsSelected(C, input);
                         if (foundComp.IsAbrupt()) return foundComp;
-                        found = ((BooleanValue)foundComp.value).boolean;
+                        found = foundComp.Other;
                     }
                     if (foundInB)
                     {
@@ -205,11 +205,11 @@ namespace JSInterpreter.AST
             return Completion.NormalCompletion(V);
         }
 
-        private static Completion CaseClauseIsSelected(CaseClause c, IValue input)
+        private static BooleanCompletion CaseClauseIsSelected(CaseClause c, IValue input)
         {
             var selector = c.Evaluate(Interpreter.Instance()).GetValue();
-            if (selector.IsAbrupt()) return selector;
-            return Completion.NormalCompletion(EqualityExpression.StrictAbstractEquality(selector.value, input) ? BooleanValue.True : BooleanValue.False);
+            if (selector.IsAbrupt()) return selector.WithEmptyBool();
+            return EqualityExpression.StrictAbstractEquality(selector.value, input);
         }
     }
 

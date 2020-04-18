@@ -16,7 +16,7 @@ namespace JSInterpreter.AST
 
         public Completion Evaluate(Interpreter interpreter)
         {
-            throw new NotImplementedException();
+            throw new NotImplementedException("regular expressions");
         }
     }
 }

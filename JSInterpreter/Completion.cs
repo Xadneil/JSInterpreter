@@ -43,22 +43,22 @@ namespace JSInterpreter
 
         public static Completion ThrowTypeError()
         {
-
+            return new Completion(CompletionType.Throw, new NativeError(), null);
         }
 
         public static Completion ThrowTypeError(string message)
         {
-
+            return new Completion(CompletionType.Throw, new NativeError(message), null);
         }
 
         public static Completion ThrowReferenceError()
         {
-
+            return new Completion(CompletionType.Throw, new NativeError(), null);
         }
 
         public static Completion ThrowReferenceError(string message)
         {
-
+            return new Completion(CompletionType.Throw, new NativeError(message), null);
         }
 
         public bool IsAbrupt()

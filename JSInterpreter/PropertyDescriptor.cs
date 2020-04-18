@@ -60,7 +60,7 @@ namespace JSInterpreter
 
             var hasEnumerable = Obj.HasProperty("enumerable");
             if (hasEnumerable.IsAbrupt()) return hasEnumerable.WithEmpty<PropertyDescriptor>();
-            if ((hasEnumerable.value as BooleanValue).boolean)
+            if (hasEnumerable.Other)
             {
                 var enumerable = Obj.Get("enumerable");
                 if (enumerable.IsAbrupt()) return enumerable.WithEmpty<PropertyDescriptor>();
@@ -69,7 +69,7 @@ namespace JSInterpreter
 
             var hasConfigurable = Obj.HasProperty("configurable");
             if (hasConfigurable.IsAbrupt()) return hasConfigurable.WithEmpty<PropertyDescriptor>();
-            if ((hasConfigurable.value as BooleanValue).boolean)
+            if (hasConfigurable.Other)
             {
                 var configurable = Obj.Get("configurable");
                 if (configurable.IsAbrupt()) return configurable.WithEmpty<PropertyDescriptor>();
@@ -78,7 +78,7 @@ namespace JSInterpreter
 
             var hasValue = Obj.HasProperty("value");
             if (hasValue.IsAbrupt()) return hasValue.WithEmpty<PropertyDescriptor>();
-            if ((hasValue.value as BooleanValue).boolean)
+            if (hasValue.Other)
             {
                 var value = Obj.Get("value");
                 if (value.IsAbrupt()) return value.WithEmpty<PropertyDescriptor>();
@@ -87,7 +87,7 @@ namespace JSInterpreter
 
             var hasWritable = Obj.HasProperty("writable");
             if (hasWritable.IsAbrupt()) return hasWritable.WithEmpty<PropertyDescriptor>();
-            if ((hasWritable.value as BooleanValue).boolean)
+            if (hasWritable.Other)
             {
                 var writable = Obj.Get("writable");
                 if (writable.IsAbrupt()) return writable.WithEmpty<PropertyDescriptor>();
@@ -96,7 +96,7 @@ namespace JSInterpreter
 
             var hasGet = Obj.HasProperty("get");
             if (hasGet.IsAbrupt()) return hasGet.WithEmpty<PropertyDescriptor>();
-            if ((hasGet.value as BooleanValue).boolean)
+            if (hasGet.Other)
             {
                 var get = Obj.Get("get");
                 if (get.IsAbrupt()) return get.WithEmpty<PropertyDescriptor>();
@@ -110,7 +110,7 @@ namespace JSInterpreter
 
             var hasSet = Obj.HasProperty("set");
             if (hasSet.IsAbrupt()) return hasSet.WithEmpty<PropertyDescriptor>();
-            if ((hasSet.value as BooleanValue).boolean)
+            if (hasSet.Other)
             {
                 var set = Obj.Get("set");
                 if (set.IsAbrupt()) return set.WithEmpty<PropertyDescriptor>();

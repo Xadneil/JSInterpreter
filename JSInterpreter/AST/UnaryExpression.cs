@@ -32,11 +32,13 @@ namespace JSInterpreter.AST
 
         public Completion Evaluate(Interpreter interpreter)
         {
-            Completion comp;
+            Completion comp, comp2;
             switch (unaryOperator)
             {
                 case UnaryOperator.Delete:
-                    return EvaluateDelete(interpreter);
+                    var deleteComp = EvaluateDelete(interpreter);
+                    if (deleteComp.IsAbrupt()) return deleteComp;
+                    return Completion.NormalCompletion(deleteComp.Other ? BooleanValue.True : BooleanValue.False);
                 case UnaryOperator.Void:
                     unaryExpression.Evaluate(interpreter).GetValue();
                     return Completion.NormalCompletion(UndefinedValue.Instance);
@@ -45,15 +47,19 @@ namespace JSInterpreter.AST
                 case UnaryOperator.Plus:
                     comp = unaryExpression.Evaluate(interpreter).GetValue();
                     if (comp.IsAbrupt()) return comp;
-                    return Completion.NormalCompletion(comp.value.ToNumber());
+                    return comp.value.ToNumber();
                 case UnaryOperator.Negate:
                     comp = unaryExpression.Evaluate(interpreter).GetValue();
                     if (comp.IsAbrupt()) return comp;
-                    return Completion.NormalCompletion(new NumberValue(-comp.value.ToNumber().number));
+                    comp2 = comp.value.ToNumber();
+                    if (comp2.IsAbrupt()) return comp2;
+                    return Completion.NormalCompletion(new NumberValue(-(comp2.value as NumberValue).number));
                 case UnaryOperator.BitwiseNot:
                     comp = unaryExpression.Evaluate(interpreter).GetValue();
                     if (comp.IsAbrupt()) return comp;
-                    return Completion.NormalCompletion(new NumberValue(~(int)comp.value.ToNumber().number));
+                    comp2 = comp.value.ToNumber();
+                    if (comp2.IsAbrupt()) return comp2;
+                    return Completion.NormalCompletion(new NumberValue(~(int)(comp2.value as NumberValue).number));
                 case UnaryOperator.BooleanNot:
                     comp = unaryExpression.Evaluate(interpreter).GetValue();
                     if (comp.IsAbrupt()) return comp;
@@ -63,30 +69,30 @@ namespace JSInterpreter.AST
             }
         }
 
-        private Completion EvaluateDelete(Interpreter interpreter)
+        private BooleanCompletion EvaluateDelete(Interpreter interpreter)
         {
             var refComp = unaryExpression.Evaluate(interpreter);
-            if (refComp.IsAbrupt()) return refComp;
+            if (refComp.IsAbrupt()) return refComp.WithEmptyBool();
             var @ref = refComp.value;
             if (!(@ref is ReferenceValue reference))
-                return Completion.NormalCompletion(BooleanValue.True);
+                return true;
             if (reference.IsUnresolvableReference())
             {
                 if (reference.strict)
                     throw new InvalidOperationException("OperatorUnaryExpression.EvaluateDelete: cannot delete an unresolved member in strict mode");
-                return Completion.NormalCompletion(BooleanValue.True);
+                return true;
             }
             if (reference.IsPropertyReference())
             {
                 if (reference is SuperReferenceValue)
-                    return Completion.ThrowReferenceError("OperatorUnaryExpression.EvaluateDelete: cannot delete from super");
+                    return Completion.ThrowReferenceError("OperatorUnaryExpression.EvaluateDelete: cannot delete from super").WithEmptyBool();
                 var baseObj = ((IValue)reference.baseValue).ToObject().value as Object;
                 var deleteStatus = baseObj.Delete(reference.referencedName);
                 if (deleteStatus.IsAbrupt()) return deleteStatus;
-                var success = deleteStatus.value as BooleanValue;
-                if (success == BooleanValue.False && reference.strict)
-                    return Completion.ThrowTypeError("OperatorUnaryExpression.EvaluateDelete: delete failed in strict mode");
-                return Completion.NormalCompletion(success);
+                var success = deleteStatus.Other;
+                if (success == false && reference.strict)
+                    return Completion.ThrowTypeError("OperatorUnaryExpression.EvaluateDelete: delete failed in strict mode").WithEmptyBool();
+                return success;
             }
             if (!(reference.baseValue is EnvironmentRecord envRec))
                 throw new InvalidOperationException("OperatorUnaryExpression.EvaluateDelete: unrecognized IReferenceable");

@@ -85,7 +85,7 @@ namespace JSInterpreter.AST
             if (rvalComp.IsAbrupt()) return rvalComp;
             var rval = rvalComp.value;
 
-            IValue result = assignmentOperator switch
+            Completion result = assignmentOperator switch
             {
                 AssignmentOperator.Multiply => MultiplicativeExpression.Calculate(lval, MultiplicativeOperator.Multiply, rval),
                 AssignmentOperator.Divide => MultiplicativeExpression.Calculate(lval, MultiplicativeOperator.Divide, rval),
@@ -101,8 +101,11 @@ namespace JSInterpreter.AST
                 AssignmentOperator.Exponentiate => ExponentiationExpression.Calculate(lval, rval),
                 _ => throw new InvalidOperationException($"OperatorAssignmentExpression.Evaluate: invalid AssignmentOperator enum value {(int)assignmentOperator}")
             };
-            referenceValue.PutValue(result);
-            return Completion.NormalCompletion(result);
+
+            if (result.IsAbrupt()) return result;
+
+            referenceValue.PutValue(result.value);
+            return result;
         }
     }
 }

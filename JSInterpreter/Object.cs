@@ -28,15 +28,24 @@ namespace JSInterpreter
 
         public Completion ToObject() => Completion.NormalCompletion(this);
 
+        public Completion ToJsString()
+        {
+            var prim = ((IValue)this).ToPrimitive(IValue.PrimitiveHint.String);
+            if (prim.IsAbrupt()) return prim;
+            return prim.value.ToJsString();
+        }
+
         internal void AddCustomInternalSlots(IEnumerable<string> names)
         {
             foreach (var name in names)
                 customInternalSlots.Add(name, null);
         }
 
-        public virtual NumberValue ToNumber()
+        public virtual Completion ToNumber()
         {
-            throw new NotImplementedException();
+            var prim = ((IValue)this).ToPrimitive(IValue.PrimitiveHint.Number);
+            if (prim.IsAbrupt()) return prim;
+            return prim.value.ToNumber();
         }
 
         internal object GetCustomInternalSlot(string name)

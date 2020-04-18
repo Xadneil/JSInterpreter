@@ -7,7 +7,16 @@ namespace JSInterpreter
     interface IValue : IReferenceable
     {
         Completion ToObject();
-        NumberValue ToNumber();
+        Completion ToNumber();
+        Completion ToJsString();
+
+        public CompletionOr<string> ToPropertyKey()
+        {
+            var key = ToPrimitive(PrimitiveHint.String);
+            if (key.IsAbrupt()) return key.WithEmpty<string>();
+            return Completion.NormalWith((key.value.ToJsString().value as StringValue).@string);
+        }
+
         public BooleanValue ToBoolean()
         {
             return (this switch
@@ -90,14 +99,14 @@ namespace JSInterpreter
             return true;
         }
 
-        public override string ToString()
+        public Completion ToJsString()
         {
-            return number.ToString();
+            return Completion.NormalCompletion(new StringValue(number.ToString()));
         }
 
-        public NumberValue ToNumber()
+        public Completion ToNumber()
         {
-            return this;
+            return Completion.NormalCompletion(this);
         }
 
         public Completion ToObject()
@@ -113,6 +122,8 @@ namespace JSInterpreter
         public static BooleanValue False = new BooleanValue(false);
 
         private readonly Object wrapperObject;
+        private NumberValue cachedNumber;
+        private StringValue cachedString;
 
         private BooleanValue(bool boolean)
         {
@@ -132,14 +143,23 @@ namespace JSInterpreter
             //return wrapperObject;
         }
 
-        public override string ToString()
+        public Completion ToJsString()
         {
-            return boolean.ToString();
+            if (cachedString == null)
+            {
+                cachedString = new StringValue(boolean ? "true" : "false");
+            }
+            return Completion.NormalCompletion(cachedString);
         }
 
-        public NumberValue ToNumber()
+        public Completion ToNumber()
         {
-            return new NumberValue(boolean ? 1 : 0);
+            if (cachedNumber == null)
+            {
+                cachedNumber = new NumberValue(boolean ? 1 : 0);
+            }
+
+            return Completion.NormalCompletion(cachedNumber);
         }
     }
 
@@ -162,20 +182,26 @@ namespace JSInterpreter
             return Completion.NormalCompletion(new StringObject(this));
         }
 
-        public override string ToString()
+        public Completion ToJsString()
         {
-            return @string;
+            return Completion.NormalCompletion(this);
         }
 
-        public NumberValue ToNumber()
+        public Completion ToNumber()
         {
-            return new NumberValue(double.Parse(@string));
+            if (!double.TryParse(@string, out double result))
+                return Completion.NormalCompletion(new NumberValue(double.NaN));
+            return Completion.NormalCompletion(new NumberValue(result));
         }
     }
 
     class NullValue : IValue
     {
         public readonly static NullValue Instance = new NullValue();
+
+        private readonly NumberValue cachedNumber = new NumberValue(0);
+        private readonly StringValue cachedString = new StringValue("null");
+
         private NullValue() { }
 
         public bool IsPrimitive()
@@ -185,23 +211,27 @@ namespace JSInterpreter
 
         public Completion ToObject()
         {
-            return Completion.ThrowTypeError();
+            return Completion.ThrowTypeError("Cannot convert null into an object");
         }
 
-        public override string ToString()
+        public Completion ToJsString()
         {
-            return "null";
+            return Completion.NormalCompletion(cachedString);
         }
 
-        public NumberValue ToNumber()
+        public Completion ToNumber()
         {
-            return new NumberValue(0);
+            return Completion.NormalCompletion(cachedNumber);
         }
     }
 
     class UndefinedValue : IValue
     {
         public readonly static UndefinedValue Instance = new UndefinedValue();
+
+        private readonly NumberValue cachedNumber = new NumberValue(double.NaN);
+        private readonly StringValue cachedString = new StringValue("undefined");
+
         private UndefinedValue() { }
 
         public bool IsPrimitive()
@@ -211,17 +241,17 @@ namespace JSInterpreter
 
         public Completion ToObject()
         {
-            return Completion.ThrowTypeError();
+            return Completion.ThrowTypeError("Cannot convert undefined into an object");
         }
 
-        public override string ToString()
+        public Completion ToJsString()
         {
-            return "undefined";
+            return Completion.NormalCompletion(cachedString);
         }
 
-        public NumberValue ToNumber()
+        public Completion ToNumber()
         {
-            return new NumberValue(double.NaN);
+            return Completion.NormalCompletion(cachedNumber);
         }
     }
 
@@ -248,14 +278,19 @@ namespace JSInterpreter
             return false;
         }
 
-        public Completion ToObject()
+        public Completion ToJsString()
         {
-            throw new NotImplementedException();
+            throw new NotImplementedException("references are not real values, no JS string can be created.");
         }
 
-        public NumberValue ToNumber()
+        public Completion ToObject()
         {
-            throw new NotImplementedException();
+            throw new NotImplementedException("references are not real values, no object can be created.");
+        }
+
+        public Completion ToNumber()
+        {
+            throw new NotImplementedException("references are not real values, no number can be created.");
         }
 
         public bool HasPrimitiveBase()

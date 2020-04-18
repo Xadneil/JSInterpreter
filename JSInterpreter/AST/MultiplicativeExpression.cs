@@ -38,20 +38,26 @@ namespace JSInterpreter.AST
             if (right.IsAbrupt()) return right;
             var rightValue = right.value;
 
-            return Completion.NormalCompletion(Calculate(leftValue, multiplicativeOperator, rightValue));
+            return Calculate(leftValue, multiplicativeOperator, rightValue);
         }
 
-        public static IValue Calculate(IValue leftValue, MultiplicativeOperator multiplicativeOperator, IValue rightValue)
+        public static Completion Calculate(IValue leftValue, MultiplicativeOperator multiplicativeOperator, IValue rightValue)
         {
-            var lnum = leftValue.ToNumber().number;
-            var rnum = rightValue.ToNumber().number;
-            return new NumberValue(multiplicativeOperator switch
+            var lnumComp = leftValue.ToNumber();
+            if (lnumComp.IsAbrupt()) return lnumComp;
+            var rnumComp = rightValue.ToNumber();
+            if (rnumComp.IsAbrupt()) return rnumComp;
+
+            double lnum = (lnumComp.value as NumberValue).number;
+            double rnum = (rnumComp.value as NumberValue).number;
+
+            return Completion.NormalCompletion(new NumberValue(multiplicativeOperator switch
             {
                 MultiplicativeOperator.Multiply => lnum * rnum,
                 MultiplicativeOperator.Divide => lnum / rnum,
                 MultiplicativeOperator.Modulus => lnum % rnum,
                 _ => throw new InvalidOperationException($"MultiplicativeExpression.Evaluate: unknown MultiplicativeOperator enum value {(int)multiplicativeOperator}")
-            });
+            }));
         }
     }
 }

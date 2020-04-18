@@ -36,31 +36,49 @@ namespace JSInterpreter.AST
             var right = multiplicativeExpression.Evaluate(interpreter).GetValue();
             if (right.IsAbrupt()) return right;
             var rightValue = right.value;
-            //TODO handle dates
 
-            return Completion.NormalCompletion(Calculate(leftValue, additiveOperator, rightValue));
+            return Calculate(leftValue, additiveOperator, rightValue);
         }
 
-        public static IValue Calculate(IValue leftValue, AdditiveOperator additiveOperator, IValue rightValue)
+        public static Completion Calculate(IValue leftValue, AdditiveOperator additiveOperator, IValue rightValue)
         {
-            bool leftIsNumber, rightIsNumber;
-            NumberValue lnum, rnum;
-            try { lnum = leftValue.ToNumber(); leftIsNumber = true; } catch { leftIsNumber = false; lnum = null; }
-            try { rnum = rightValue.ToNumber(); rightIsNumber = true; } catch { rightIsNumber = false; rnum = null; }
-
-            if (!leftIsNumber || !rightIsNumber)
+            IValue leftForToNumber, rightForToNumber;
+            if (additiveOperator == AdditiveOperator.Add)
             {
-                if (additiveOperator == AdditiveOperator.Subtract)
-                    throw new InvalidOperationException("AdditiveExpression.Evaluate: cannot subtract values that cannot be converted to numbers");
-                return new StringValue(leftValue.ToString() + rightValue.ToString());
+                var lprim = leftValue.ToPrimitive();
+                if (lprim.IsAbrupt()) return lprim;
+                var rprim = rightValue.ToPrimitive();
+                if (rprim.IsAbrupt()) return rprim;
+
+                if (lprim.value is StringValue || rprim.value is StringValue)
+                {
+                    var lstr = lprim.value.ToJsString();
+                    if (lstr.IsAbrupt()) return lstr;
+                    var rstr = rprim.value.ToJsString();
+                    if (rstr.IsAbrupt()) return rstr;
+                    return Completion.NormalCompletion(new StringValue((lstr.value as StringValue).@string + (rstr.value as StringValue).@string));
+                }
+                leftForToNumber = lprim.value;
+                rightForToNumber = rprim.value;
+            }
+            else
+            {
+                leftForToNumber = leftValue;
+                rightForToNumber = rightValue;
             }
 
-            return new NumberValue(additiveOperator switch
+            var lnum = leftForToNumber.ToNumber();
+            if (lnum.IsAbrupt()) return lnum;
+            var rnum = rightForToNumber.ToNumber();
+            if (rnum.IsAbrupt()) return rnum;
+            if (additiveOperator == AdditiveOperator.Add)
             {
-                AdditiveOperator.Add => lnum.number + rnum.number,
-                AdditiveOperator.Subtract => lnum.number - rnum.number,
-                _ => throw new InvalidOperationException($"AdditiveExpression.Evaluate: unknown AdditiveOperator enum value {(int)additiveOperator}")
-            });
+                return Completion.NormalCompletion(new NumberValue((lnum.value as NumberValue).number + (rnum.value as NumberValue).number));
+            }
+            else
+            {
+                return Completion.NormalCompletion(new NumberValue((lnum.value as NumberValue).number - (rnum.value as NumberValue).number));
+            }
         }
     }
 }

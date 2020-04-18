@@ -64,7 +64,7 @@ namespace JSInterpreter
 
         public void Reset()
         {
-            throw new NotImplementedException();
+            throw new NotImplementedException("object iterator records cannot be reset.");
         }
     }
 }

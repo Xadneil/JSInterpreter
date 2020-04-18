@@ -32,8 +32,8 @@ namespace JSInterpreter
 
                 if (index >= oldLen && oldLenDesc.Writable.HasValue && oldLenDesc.Writable.Value)
                     return false;
-                var succeeded = OrdinaryDefineOwnProperty(P, Desc).value;
-                if (succeeded == BooleanValue.False)
+                var succeeded = OrdinaryDefineOwnProperty(P, Desc).Other;
+                if (succeeded == false)
                     return false;
                 if (index >= oldLen)
                 {
@@ -72,14 +72,14 @@ namespace JSInterpreter
                 newWritable = false;
                 newLenDesc.Writable = true;
             }
-            var succeeded = OrdinaryDefineOwnProperty("length", newLenDesc).value as BooleanValue;
-            if (succeeded == BooleanValue.False)
+            var succeeded = OrdinaryDefineOwnProperty("length", newLenDesc).Other;
+            if (succeeded == false)
                 return false;
             while (newLen < oldLen)
             {
                 oldLen--;
-                var deleteSucceeded = Delete(oldLen.ToString()).value as BooleanValue;
-                if (deleteSucceeded == BooleanValue.False)
+                var deleteSucceeded = Delete(oldLen.ToString()).Other;
+                if (deleteSucceeded == false)
                 {
                     newLenDesc.Value = new NumberValue(oldLen + 1);
                     if (!newWritable) newLenDesc.Writable = false;

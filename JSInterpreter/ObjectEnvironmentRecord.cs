@@ -32,7 +32,7 @@ namespace JSInterpreter
         {
             var valueComp = BindingObject.HasProperty(name);
             if (valueComp.IsAbrupt()) return valueComp;
-            var value = (valueComp.value as BooleanValue).boolean;
+            var value = valueComp.Other;
             if (!value)
             {
                 if (!strict)

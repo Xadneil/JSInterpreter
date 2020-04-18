@@ -41,7 +41,8 @@ namespace JSInterpreter.AST
         {
             foreach (var item in arrayLiteralItems)
             {
-                Completion valueComp, status;
+                Completion valueComp;
+                BooleanCompletion status;
                 IValue value;
                 switch (item)
                 {
@@ -50,7 +51,7 @@ namespace JSInterpreter.AST
                         if (valueComp.IsAbrupt()) return valueComp;
                         value = valueComp.value;
                         status = Utils.CreateDataProperty(array, nextIndex.ToString(), value);
-                        if (status.IsAbrupt() || !(status.value is BooleanValue bv) || bv == BooleanValue.False)
+                        if (status.IsAbrupt() || !status.Other)
                             throw new InvalidOperationException("Spec 12.2.5.2, Assignment, step 5");
                         nextIndex++;
                         break;
@@ -73,7 +74,7 @@ namespace JSInterpreter.AST
                             if (!next)
                                 break;
                             status = Utils.CreateDataProperty(array, nextIndex.ToString(), iterator.Current.value);
-                            if (status.IsAbrupt() || !(status.value is BooleanValue bv2) || bv2 == BooleanValue.False)
+                            if (status.IsAbrupt() || !status.Other)
                                 throw new InvalidOperationException("Spec 12.2.5.2, Spread, step 4e");
                             nextIndex++;
                         }

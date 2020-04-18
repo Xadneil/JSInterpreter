@@ -55,10 +55,10 @@ namespace JSInterpreter.AST
                 return StrictAbstractEquality(x, y);
             if ((x == NullValue.Instance && y == UndefinedValue.Instance) || (x == UndefinedValue.Instance && y == NullValue.Instance))
                 return true;
-            if (x is NumberValue && y is StringValue) return AbstractEquality(x, y.ToNumber());
-            if (x is StringValue && y is NumberValue) return AbstractEquality(x.ToNumber(), y);
-            if (x is BooleanValue) return AbstractEquality(x.ToNumber(), y);
-            if (y is BooleanValue) return AbstractEquality(x, y.ToNumber());
+            if (x is NumberValue && y is StringValue) return AbstractEquality(x, y.ToNumber().value);
+            if (x is StringValue && y is NumberValue) return AbstractEquality(x.ToNumber().value, y);
+            if (x is BooleanValue) return AbstractEquality(x.ToNumber().value, y);
+            if (y is BooleanValue) return AbstractEquality(x, y.ToNumber().value);
             if ((x is StringValue || x is NumberValue) && y is Object) return AbstractEquality(x, y.ToPrimitive().value);
             if (x is Object && (y is StringValue || y is NumberValue)) return AbstractEquality(x.ToPrimitive().value, y);
             return false;
