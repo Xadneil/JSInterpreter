@@ -6,7 +6,7 @@ namespace JSInterpreter.AST
 {
     class StatementList : Statement, IHasLexicallyScopedDeclarations
     {
-        private readonly IReadOnlyList<IStatementListItem> statements;
+        public readonly IReadOnlyList<IStatementListItem> statements;
 
         public StatementList(IReadOnlyList<IStatementListItem> statements)
         {
