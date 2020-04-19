@@ -828,10 +828,10 @@ namespace JSInterpreter.AST
     class ForOfLetConstIterationStatement : IterationStatement
     {
         public readonly ForDeclaration forDeclaration;
-        public readonly IExpression forOfExpression;
+        public readonly IAssignmentExpression forOfExpression;
         public readonly Statement doStatement;
 
-        public ForOfLetConstIterationStatement(ForDeclaration forDeclaration, IExpression forOfExpression, Statement doStatement)
+        public ForOfLetConstIterationStatement(ForDeclaration forDeclaration, IAssignmentExpression forOfExpression, Statement doStatement)
         {
             this.forDeclaration = forDeclaration;
             this.forOfExpression = forOfExpression;
