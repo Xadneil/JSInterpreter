@@ -114,6 +114,7 @@ namespace JSInterpreter.Lexer
                 two_char_tokens["%="] = TokenType.PercentEquals;
                 two_char_tokens["&="] = TokenType.AmpersandEquals;
                 two_char_tokens["|="] = TokenType.PipeEquals;
+                two_char_tokens["^="] = TokenType.CaretEquals;
                 two_char_tokens["&&"] = TokenType.DoubleAmpersand;
                 two_char_tokens["||"] = TokenType.DoublePipe;
                 two_char_tokens["??"] = TokenType.DoubleQuestionMark;

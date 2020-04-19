@@ -44,6 +44,7 @@ namespace JSInterpreter.Lexer
         BracketOpen,
         Break,
         Caret,
+        CaretEquals,
         Case,
         Catch,
         Class,
