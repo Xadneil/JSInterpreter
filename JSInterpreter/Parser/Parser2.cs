@@ -715,7 +715,128 @@ namespace JSInterpreter.Parser
 
         private IAssignmentExpression ParseAssignmentExpression()
         {
-#warning running into downside of Recursive Descent parsers: we need to distinguish between nonterminals (ConditionalExpression and (LeftHandSideExpression = AssignmentExpression) in this case) but we don't have backtracking or prediction.
+            if (MatchConditionalExpression())
+                return ParseConditionalExpression();
+            if (MatchLeftHandSideExpression())
+            {
+                ILeftHandSideExpression lhs = ParseLeftHandSideExpression();
+                if (Match(TokenType.Equals))
+                {
+                    Consume();
+                    var rhs = ParseAssignmentExpression();
+                    return new AssignmentExpression(lhs, rhs);
+                }
+                if (MatchAssignmentOperator())
+                {
+                    var op = ParseAssignmentOperator();
+                    var rhs = ParseAssignmentExpression();
+                    return new OperatorAssignmentExpression(lhs, op, rhs);
+                }
+            }
+            Expected("assignment expression");
+            return null;
         }
+
+        public bool MatchAssignmentExpression() => MatchConditionalExpression() || MatchLeftHandSideExpression();
+
+        private bool MatchAssignmentOperator()
+        {
+            return Match(TokenType.AsteriskEquals) ||
+                Match(TokenType.SlashEquals) ||
+                Match(TokenType.PercentEquals) ||
+                Match(TokenType.PlusEquals) ||
+                Match(TokenType.MinusEquals) ||
+                Match(TokenType.ShiftLeftEquals) ||
+                Match(TokenType.ShiftRightEquals) ||
+                Match(TokenType.UnsignedShiftRightEquals) ||
+                Match(TokenType.AmpersandEquals) ||
+                Match(TokenType.CaretEquals) ||
+                Match(TokenType.PipeEquals) ||
+                Match(TokenType.AsteriskAsteriskEquals);
+        }
+
+        private AssignmentOperator ParseAssignmentOperator()
+        {
+            var type = ParserState.CurentToken.Type;
+            switch (type)
+            {
+                case TokenType.AsteriskEquals:
+                    return AssignmentOperator.Multiply;
+                case TokenType.SlashEquals:
+                    return AssignmentOperator.Divide;
+                case TokenType.PercentEquals:
+                    return AssignmentOperator.Modulus;
+                case TokenType.PlusEquals:
+                    return AssignmentOperator.Plus;
+                case TokenType.MinusEquals:
+                    return AssignmentOperator.Minus;
+                case TokenType.ShiftLeftEquals:
+                    return AssignmentOperator.ShiftLeft;
+                case TokenType.ShiftRightEquals:
+                    return AssignmentOperator.ShiftRight;
+                case TokenType.UnsignedShiftRightEquals:
+                    return AssignmentOperator.ShiftRightUnsigned;
+                case TokenType.AmpersandEquals:
+                    return AssignmentOperator.BitwiseAnd;
+                case TokenType.CaretEquals:
+                    return AssignmentOperator.BitwiseXor;
+                case TokenType.PipeEquals:
+                    return AssignmentOperator.BitwiseOr;
+                case TokenType.AsteriskAsteriskEquals:
+                    return AssignmentOperator.Exponentiate;
+            }
+            Expected("an assignment operator, like +=");
+            return AssignmentOperator.Multiply;
+        }
+
+        private IConditionalExpression ParseConditionalExpression()
+        {
+            if (MatchLogicalOrExpression())
+            {
+                var expression = ParseLogicalOrExpression();
+                if (Match(TokenType.QuestionMark))
+                {
+                    Consume();
+                    var trueExpr = ParseAssignmentExpression();
+                    Consume(TokenType.Colon);
+                    var falseExpr = ParseAssignmentExpression();
+                    return new ConditionalExpression(expression, trueExpr, falseExpr);
+                }
+                return expression;
+            }
+            Expected("logical or expression");
+            return null;
+        }
+
+        private bool MatchConditionalExpression() => MatchLogicalOrExpression();
+
+        private ILogicalOrExpression ParseLogicalOrExpression()
+        {
+            var lhs = ParseLogicalAndExpression();
+            var tail = ParseLogicalOrTail();
+
+            if (tail == null)
+                return lhs;
+
+            var or = new LogicalOrExpression(lhs, tail.RHS);
+            if (tail.Tail != null)
+            {
+                tail = tail.Tail;
+                or = new LogicalOrExpression(or, tail.RHS);
+            }
+            return or;
+        }
+
+        private TailContainer<ILogicalAndExpression> ParseLogicalOrTail()
+        {
+            if (!Match(TokenType.DoublePipe))
+                return null;
+            Consume();
+            var rhs = ParseLogicalAndExpression();
+            var tail = ParseLogicalOrTail();
+            return new TailContainer<ILogicalAndExpression>(rhs, tail);
+        }
+
+        private bool MatchLogicalOrExpression() => MatchLogicalAndExpression();
     }
 }
