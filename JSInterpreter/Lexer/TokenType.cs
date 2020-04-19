@@ -53,6 +53,7 @@ namespace JSInterpreter.Lexer
         Continue,
         CurlyClose,
         CurlyOpen,
+        Debugger,
         Default,
         Delete,
         Do,
@@ -60,6 +61,7 @@ namespace JSInterpreter.Lexer
         DoubleAsterisk,
         DoublePipe,
         DoubleQuestionMark,
+        Ellipsis,
         Else,
         Eof,
         Equals,
@@ -88,6 +90,7 @@ namespace JSInterpreter.Lexer
         New,
         NullLiteral,
         NumericLiteral,
+        Of,
         ParenClose,
         ParenOpen,
         Percent,
@@ -122,6 +125,6 @@ namespace JSInterpreter.Lexer
         Var,
         Void,
         While,
-        Yield
+        Yield,
     }
 }

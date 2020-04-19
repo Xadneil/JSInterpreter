@@ -38,7 +38,7 @@ namespace JSInterpreter.Lexer
         private static readonly Dictionary<string, TokenType> two_char_tokens = new Dictionary<string, TokenType>();
         private static readonly Dictionary<char, TokenType> single_char_tokens = new Dictionary<char, TokenType>();
 
-        private string source;
+        private readonly string source;
         private int position;
         Token currentToken;
         char currentChar;
@@ -46,6 +46,8 @@ namespace JSInterpreter.Lexer
         int lineNumber = 1;
         int lineColumn = 1;
         bool logErrors = true;
+
+        public bool PassedNewLine { get; private set; }
 
         public Lexer(string source)
         {
@@ -61,6 +63,7 @@ namespace JSInterpreter.Lexer
                 keywords["class"] = TokenType.Class;
                 keywords["const"] = TokenType.Const;
                 keywords["continue"] = TokenType.Continue;
+                keywords["debugger"] = TokenType.Debugger;
                 keywords["default"] = TokenType.Default;
                 keywords["delete"] = TokenType.Delete;
                 keywords["do"] = TokenType.Do;
@@ -76,6 +79,7 @@ namespace JSInterpreter.Lexer
                 keywords["let"] = TokenType.Let;
                 keywords["new"] = TokenType.New;
                 keywords["null"] = TokenType.NullLiteral;
+                keywords["of"] = TokenType.Of;
                 keywords["return"] = TokenType.Return;
                 keywords["switch"] = TokenType.Switch;
                 keywords["this"] = TokenType.This;
@@ -91,6 +95,7 @@ namespace JSInterpreter.Lexer
 
             if (!three_char_tokens.Any())
             {
+                three_char_tokens["..."] = TokenType.Ellipsis;
                 three_char_tokens["==="] = TokenType.EqualsEqualsEquals;
                 three_char_tokens["!=="] = TokenType.ExclamationMarkEqualsEquals;
                 three_char_tokens["**="] = TokenType.AsteriskAsteriskEquals;
@@ -167,6 +172,7 @@ namespace JSInterpreter.Lexer
             {
                 lineNumber++;
                 lineColumn = 1;
+                PassedNewLine = true;
             }
             else
             {
@@ -261,6 +267,7 @@ namespace JSInterpreter.Lexer
 
         public Token Next()
         {
+            PassedNewLine = false;
             int trivia_start = position;
 
             // Consume whitespace and comments
@@ -500,6 +507,11 @@ namespace JSInterpreter.Lexer
             return (c >= '0' && c <= '9') ||
                (c >= 'a' && c <= 'f') ||
                (c >= 'A' && c <= 'F');
+        }
+
+        public bool HasErrors()
+        {
+            return hasErrors;
         }
     }
 }
