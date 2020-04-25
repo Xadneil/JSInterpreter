@@ -4,7 +4,7 @@ using System.Text;
 
 namespace JSInterpreter
 {
-    class NativeError : FunctionObject
+    public class NativeError : FunctionObject
     {
         public NativeError() { }
         public NativeError(string message)

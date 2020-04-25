@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace JSInterpreter
 {
-    class DeclarativeEnvironmentRecord : EnvironmentRecord
+    public class DeclarativeEnvironmentRecord : EnvironmentRecord
     {
         private readonly Dictionary<string, BindingRecord> bindings = new Dictionary<string, BindingRecord>();
 

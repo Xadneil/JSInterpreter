@@ -5,11 +5,11 @@ using System.Text;
 
 namespace JSInterpreter.AST
 {
-    interface IMemberExpression : INewExpression
+    public interface IMemberExpression : INewExpression
     {
     }
 
-    class IndexMemberExpression : IMemberExpression
+    public class IndexMemberExpression : IMemberExpression
     {
         public readonly IMemberExpression indexedMemberExpression;
         public readonly IExpression indexerExpression;
@@ -37,7 +37,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    class DotMemberExpression : IMemberExpression
+    public class DotMemberExpression : IMemberExpression
     {
         public readonly IMemberExpression dotMemberExpression;
         public readonly string dotIdentifierName;
@@ -60,7 +60,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    internal static class SuperHelper
+    public static class SuperHelper
     {
         public static Completion MakeSuperPropertyReference(IValue actualThis, string propertyKey, bool strict)
         {
@@ -76,7 +76,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    class SuperIndexMemberExpression : IMemberExpression
+    public class SuperIndexMemberExpression : IMemberExpression
     {
         public readonly IExpression superIndexerExpression;
 
@@ -106,7 +106,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    class SuperDotMemberExpression : IMemberExpression
+    public class SuperDotMemberExpression : IMemberExpression
     {
         public readonly string superDotIdentifierName;
 
@@ -130,7 +130,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    class NewMemberExpression : IMemberExpression
+    public class NewMemberExpression : IMemberExpression
     {
         public readonly IMemberExpression newMemberExpression;
         public readonly Arguments newArguments;
@@ -143,16 +143,7 @@ namespace JSInterpreter.AST
 
         public Completion Evaluate(Interpreter interpreter)
         {
-            var constructorComp = newMemberExpression.Evaluate(interpreter).GetValue();
-            if (constructorComp.IsAbrupt()) return constructorComp;
-            var constructor = constructorComp.value;
-
-            var argumentValues = newArguments.ArgumentListEvaluation();
-            if (argumentValues.IsAbrupt()) return argumentValues;
-
-            if (!(constructor is FunctionObject @object))
-                return Completion.ThrowTypeError("NewMemberExpression: Constructor is not an object.");
-            return @object.Construct(argumentValues.Other);
+            return newMemberExpression.EvaluateNew(interpreter, newArguments);
         }
     }
 }

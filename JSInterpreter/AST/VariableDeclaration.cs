@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace JSInterpreter.AST
 {
-    class VariableDeclaration
+    public class VariableDeclaration
     {
         public readonly string name;
         public readonly IAssignmentExpression assignmentExpression;
@@ -33,7 +33,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    class VariableDeclarationList : List<VariableDeclaration>
+    public class VariableDeclarationList : List<VariableDeclaration>
     {
         public IReadOnlyList<string> BoundNames()
         {

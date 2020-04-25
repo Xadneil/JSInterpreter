@@ -5,7 +5,7 @@ using System.Text;
 
 namespace JSInterpreter.AST
 {
-    abstract class Declaration : IStatementListItem
+    public abstract class Declaration : IStatementListItem
     {
         public IReadOnlyList<string> VarDeclaredNames()
         {
@@ -24,13 +24,13 @@ namespace JSInterpreter.AST
         public abstract Completion Evaluate(Interpreter interpreter);
     }
 
-    interface IDeclarationPart
+    public interface IDeclarationPart
     {
         IReadOnlyList<BoundName> BoundNames();
         bool IsConstantDeclaration();
     }
 
-    struct BoundName
+    public struct BoundName
     {
         public readonly string name;
 
@@ -40,13 +40,13 @@ namespace JSInterpreter.AST
         }
     }
 
-    abstract class HoistableDeclaration : Declaration, IDeclarationPart
+    public abstract class HoistableDeclaration : Declaration, IDeclarationPart
     {
         public abstract IReadOnlyList<BoundName> BoundNames();
         public abstract bool IsConstantDeclaration();
     }
 
-    class LexicalDeclaration : Declaration, IDeclarationPart
+    public class LexicalDeclaration : Declaration, IDeclarationPart
     {
         public readonly LexicalDeclarationType lexicalDeclarationType;
         public readonly IReadOnlyList<LexicalDeclarationItem> lexicalDeclarationItems;
@@ -98,13 +98,13 @@ namespace JSInterpreter.AST
         }
     }
 
-    enum LexicalDeclarationType
+    public enum LexicalDeclarationType
     {
         Let,
         Const
     }
 
-    class LexicalDeclarationItem
+    public class LexicalDeclarationItem
     {
         private readonly LexicalDeclarationType lexicalDeclarationType;
         public readonly string name;

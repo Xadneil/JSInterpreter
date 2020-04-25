@@ -6,7 +6,7 @@ using System.Text;
 
 namespace JSInterpreter
 {
-    class Object : IValue
+    public class Object : IValue
     {
         protected readonly SortedDictionary<int, PropertyDescriptor> properties;
         protected int lastAddedIndex = -1;

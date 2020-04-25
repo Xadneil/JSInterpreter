@@ -4,7 +4,7 @@ using System.Text;
 
 namespace JSInterpreter.AST
 {
-    enum RelationalOperator
+    public enum RelationalOperator
     {
         LessThan,
         GreaterThan,
@@ -14,11 +14,11 @@ namespace JSInterpreter.AST
         In
     }
 
-    interface IRelationalExpression : IEqualityExpression
+    public interface IRelationalExpression : IEqualityExpression
     {
     }
 
-    class RelationalExpression : IRelationalExpression
+    public class RelationalExpression : IRelationalExpression
     {
         public readonly RelationalOperator relationalOperator;
         public readonly IShiftExpression shiftExpression;

@@ -1,6 +1,6 @@
 ﻿namespace JSInterpreter
 {
-    abstract class EnvironmentRecord : IReferenceable
+    public abstract class EnvironmentRecord : IReferenceable
     {
         public abstract BooleanCompletion HasBinding(string name);
 

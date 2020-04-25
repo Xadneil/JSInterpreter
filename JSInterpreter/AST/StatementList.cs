@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace JSInterpreter.AST
 {
-    class StatementList : Statement, IHasLexicallyScopedDeclarations
+    public class StatementList : Statement, IHasLexicallyScopedDeclarations
     {
         public readonly IReadOnlyList<IStatementListItem> statements;
 
@@ -70,7 +70,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    class FunctionStatementList : StatementList
+    public class FunctionStatementList : StatementList
     {
         public FunctionStatementList(IReadOnlyList<IStatementListItem> statements) : base(statements) { }
 
@@ -91,7 +91,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    interface IStatementListItem : ISharedFunctions
+    public interface IStatementListItem : ISharedFunctions
     {
     }
 }

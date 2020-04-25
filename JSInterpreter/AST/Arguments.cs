@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace JSInterpreter.AST
 {
-    class Arguments
+    public class Arguments
     {
         public readonly IReadOnlyList<IArgumentItem> argumentItems;
 
@@ -25,7 +25,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    interface IArgumentItem
+    public interface IArgumentItem
     {
     }
 }

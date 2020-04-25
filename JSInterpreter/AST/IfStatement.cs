@@ -5,7 +5,7 @@ using System.Text;
 
 namespace JSInterpreter.AST
 {
-    class IfStatement : Statement
+    public class IfStatement : Statement
     {
         public readonly bool hasElse;
         public readonly IExpression conditionExpression;

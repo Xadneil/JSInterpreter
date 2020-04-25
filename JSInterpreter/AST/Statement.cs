@@ -5,7 +5,7 @@ using System.Text;
 
 namespace JSInterpreter.AST
 {
-    interface ISharedFunctions : IHasLexicallyScopedDeclarations, IHasEvaluate
+    public interface ISharedFunctions : IHasLexicallyScopedDeclarations, IHasEvaluate
     {
         IReadOnlyList<string> VarDeclaredNames();
         IReadOnlyList<string> TopLevelVarDeclaredNames();
@@ -14,7 +14,7 @@ namespace JSInterpreter.AST
         IReadOnlyList<IDeclarationPart> TopLevelLexicallyScopedDeclarations();
     }
 
-    abstract class Statement : IStatementListItem, ILabelledItem
+    public abstract class Statement : IStatementListItem, ILabelledItem
     {
         public abstract Completion Evaluate(Interpreter interpreter);
 
@@ -39,7 +39,7 @@ namespace JSInterpreter.AST
         public abstract IReadOnlyList<IScopedDeclaration> VarScopedDeclarations();
     }
 
-    class ExpressionStatement : Statement
+    public class ExpressionStatement : Statement
     {
         public readonly IExpression expression;
 
@@ -84,12 +84,12 @@ namespace JSInterpreter.AST
         }
     }
 
-    abstract class BreakableStatement : Statement
+    public abstract class BreakableStatement : Statement
     {
 
     }
 
-    class VariableStatement : Statement
+    public class VariableStatement : Statement
     {
         public readonly VariableDeclarationList variableDeclarations;
 
@@ -148,7 +148,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    class VariableStatementItem
+    public class VariableStatementItem
     {
         public readonly string name;
         public readonly IAssignmentExpression assignmentExpression;
@@ -160,7 +160,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    class ContinueStatement : Statement
+    public class ContinueStatement : Statement
     {
         public readonly bool hasLabel;
         public readonly string label;
@@ -214,7 +214,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    class BreakStatement : Statement
+    public class BreakStatement : Statement
     {
         public readonly bool hasLabel;
         public readonly string label;
@@ -268,7 +268,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    class ReturnStatement : Statement
+    public class ReturnStatement : Statement
     {
         public readonly IExpression expression;
 
@@ -319,12 +319,12 @@ namespace JSInterpreter.AST
         }
     }
 
-    interface ILabelledItem : ISharedFunctions
+    public interface ILabelledItem : ISharedFunctions
     {
         Completion LabelledEvaluate(Interpreter interpreter, List<string> labelSet);
     }
 
-    class LabelledStatement : Statement
+    public class LabelledStatement : Statement
     {
         public readonly Identifier identifier;
         public readonly ILabelledItem labelledItem;
@@ -382,7 +382,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    class ThrowStatement : Statement
+    public class ThrowStatement : Statement
     {
         public readonly IExpression expression;
 
@@ -429,7 +429,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    class EmptyStatement : Statement
+    public class EmptyStatement : Statement
     {
         public override Completion Evaluate(Interpreter interpreter)
         {
@@ -467,7 +467,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    class DebuggerStatement : Statement
+    public class DebuggerStatement : Statement
     {
         public override IReadOnlyList<IDeclarationPart> LexicallyScopedDeclarations()
         {

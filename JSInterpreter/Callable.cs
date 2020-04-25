@@ -4,7 +4,7 @@ using System.Text;
 
 namespace JSInterpreter
 {
-    abstract class Callable : Object
+    public abstract class Callable : Object
     {
         public abstract Completion InternalCall(IValue thisValue, IReadOnlyList<IValue> arguments);
 

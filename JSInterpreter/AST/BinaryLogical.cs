@@ -4,11 +4,11 @@ using System.Text;
 
 namespace JSInterpreter.AST
 {
-    interface ILogicalAndExpression : ILogicalOrExpression
+    public interface ILogicalAndExpression : ILogicalOrExpression
     {
     }
 
-    class LogicalAndExpression : ILogicalAndExpression
+    public class LogicalAndExpression : ILogicalAndExpression
     {
         public readonly IBitwiseOrExpression bitwiseOrExpression;
         public readonly ILogicalAndExpression logicalAndExpression;
@@ -30,11 +30,11 @@ namespace JSInterpreter.AST
         }
     }
 
-    interface ILogicalOrExpression : IConditionalExpression
+    public interface ILogicalOrExpression : IConditionalExpression
     {
     }
 
-    class LogicalOrExpression : ILogicalOrExpression
+    public class LogicalOrExpression : ILogicalOrExpression
     {
         public readonly ILogicalAndExpression logicalAndExpression;
         public readonly ILogicalOrExpression logicalOrExpression;

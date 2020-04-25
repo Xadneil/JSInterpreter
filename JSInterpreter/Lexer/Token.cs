@@ -30,21 +30,23 @@ using System.Text;
 
 namespace JSInterpreter.Lexer
 {
-    class Token
+    public class Token
     {
         public TokenType Type { get; private set; }
         public string Trivia { get; private set; }
         public string Value { get; private set; }
         public int LineNumber { get; private set; }
         public int LineColumn { get; private set; }
+        public bool PassedNewLine { get; private set; }
 
-        public Token(TokenType type, string trivia, string value, int lineNumber, int lineColumn)
+        public Token(TokenType type, string trivia, string value, int lineNumber, int lineColumn, bool passedNewLine)
         {
             Type = type;
             Trivia = trivia;
             Value = value;
             LineNumber = lineNumber;
             LineColumn = lineColumn;
+            PassedNewLine = passedNewLine;
         }
 
         public double DoubleValue()
@@ -56,7 +58,37 @@ namespace JSInterpreter.Lexer
                 if (Value[1] == 'x' || Value[1] == 'X')
                 {
                     // hexadecimal
-                    return Convert.ToInt32(Value.Substring(2), 16);
+                    string number = Value.Substring(2);
+                    if (number.Length < 16)
+                        return Convert.ToInt64(number, 16);
+                    else if (number.Length > 255)
+                    {
+                        return double.PositiveInfinity;
+                    }
+                    else
+                    {
+                        double value = 0;
+
+                        double modulo = 1;
+                        var literal = number.ToLowerInvariant();
+                        var length = literal.Length - 1;
+                        for (var i = length; i >= 0; i--)
+                        {
+                            var c = literal[i];
+
+                            if (c <= '9')
+                            {
+                                value += modulo * (c - '0');
+                            }
+                            else
+                            {
+                                value += modulo * (c - 'a' + 10);
+                            }
+
+                            modulo *= 16;
+                        }
+                        return value;
+                    }
                 }
                 else if (Value[1] == 'o' || Value[1] == 'O')
                 {

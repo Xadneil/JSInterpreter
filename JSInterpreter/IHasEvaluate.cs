@@ -5,7 +5,7 @@ using System.Text;
 
 namespace JSInterpreter
 {
-    interface IHasEvaluate
+    public interface IHasEvaluate
     {
         Completion Evaluate(Interpreter interpreter);
     }

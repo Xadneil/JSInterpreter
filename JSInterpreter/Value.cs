@@ -4,7 +4,7 @@ using System.Text;
 
 namespace JSInterpreter
 {
-    interface IValue : IReferenceable
+    public interface IValue : IReferenceable
     {
         Completion ToObject();
         Completion ToNumber();
@@ -31,7 +31,7 @@ namespace JSInterpreter
             }) ? BooleanValue.True : BooleanValue.False;
         }
 
-        enum PrimitiveHint
+        public enum PrimitiveHint
         {
             Default, String, Number
         }
@@ -85,7 +85,7 @@ namespace JSInterpreter
         }
     }
 
-    class NumberValue : IValue
+    public class NumberValue : IValue
     {
         public readonly double number;
 
@@ -115,7 +115,7 @@ namespace JSInterpreter
         }
     }
 
-    class BooleanValue : IValue
+    public class BooleanValue : IValue
     {
         public readonly bool boolean;
         public static BooleanValue True = new BooleanValue(true);
@@ -163,7 +163,7 @@ namespace JSInterpreter
         }
     }
 
-    class StringValue : IValue
+    public class StringValue : IValue
     {
         public readonly string @string;
 
@@ -195,7 +195,7 @@ namespace JSInterpreter
         }
     }
 
-    class NullValue : IValue
+    public class NullValue : IValue
     {
         public readonly static NullValue Instance = new NullValue();
 
@@ -225,7 +225,7 @@ namespace JSInterpreter
         }
     }
 
-    class UndefinedValue : IValue
+    public class UndefinedValue : IValue
     {
         public readonly static UndefinedValue Instance = new UndefinedValue();
 
@@ -255,12 +255,12 @@ namespace JSInterpreter
         }
     }
 
-    interface IReferenceable
+    public interface IReferenceable
     {
         bool IsPrimitive();
     }
 
-    class ReferenceValue : IValue
+    public class ReferenceValue : IValue
     {
         public readonly IReferenceable baseValue;
         public readonly string referencedName;
@@ -353,7 +353,7 @@ namespace JSInterpreter
         }
     }
 
-    class SuperReferenceValue : ReferenceValue
+    public class SuperReferenceValue : ReferenceValue
     {
         public readonly IValue thisValue;
 

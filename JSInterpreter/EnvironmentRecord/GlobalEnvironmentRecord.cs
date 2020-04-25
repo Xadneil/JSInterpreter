@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace JSInterpreter
 {
 
-    class GlobalEnvironmentRecord : EnvironmentRecord
+    public class GlobalEnvironmentRecord : EnvironmentRecord
     {
         public readonly ObjectEnvironmentRecord ObjectRecord;
         public readonly Object GlobalThisValue;

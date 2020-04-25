@@ -4,11 +4,11 @@ using System.Text;
 
 namespace JSInterpreter.AST
 {
-    interface IExponentiationExpression : IMultiplicativeExpression
+    public interface IExponentiationExpression : IMultiplicativeExpression
     {
     }
 
-    class ExponentiationExpression : IExponentiationExpression
+    public class ExponentiationExpression : IExponentiationExpression
     {
         public readonly IUpdateExpression updateExpression;
         public readonly IExponentiationExpression exponentiationExpression;

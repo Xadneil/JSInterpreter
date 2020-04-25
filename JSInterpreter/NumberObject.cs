@@ -4,7 +4,7 @@ using System.Text;
 
 namespace JSInterpreter
 {
-    class NumberObject : Object
+    public class NumberObject : Object
     {
         public readonly NumberValue value;
 

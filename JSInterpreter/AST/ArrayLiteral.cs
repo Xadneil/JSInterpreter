@@ -5,14 +5,9 @@ using System.Text;
 
 namespace JSInterpreter.AST
 {
-    class ArrayLiteral : IPrimaryExpression
+    public class ArrayLiteral : IPrimaryExpression
     {
         public readonly IReadOnlyList<IArrayLiteralItem> arrayLiteralItems;
-
-        public ArrayLiteral()
-        {
-            arrayLiteralItems = Utils.EmptyList<IArrayLiteralItem>();
-        }
 
         public ArrayLiteral(IReadOnlyList<IArrayLiteralItem> arrayLiteralItems)
         {
@@ -85,7 +80,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    interface IArrayLiteralItem
+    public interface IArrayLiteralItem
     {
     }
 }

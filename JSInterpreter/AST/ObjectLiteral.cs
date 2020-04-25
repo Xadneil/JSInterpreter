@@ -4,7 +4,7 @@ using System.Text;
 
 namespace JSInterpreter.AST
 {
-    class ObjectLiteral : IPrimaryExpression
+    public class ObjectLiteral : IPrimaryExpression
     {
         public readonly IReadOnlyList<IPropertyDefinition> propertyDefinitions;
 
@@ -59,11 +59,11 @@ namespace JSInterpreter.AST
         }
     }
 
-    interface IPropertyDefinition
+    public interface IPropertyDefinition
     {
     }
 
-    class PropertyDefinition : IPropertyDefinition
+    public class PropertyDefinition : IPropertyDefinition
     {
         public readonly string propertyName;
         public readonly IAssignmentExpression assignmentExpression;

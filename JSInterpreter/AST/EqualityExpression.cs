@@ -4,7 +4,7 @@ using System.Text;
 
 namespace JSInterpreter.AST
 {
-    enum EqualityOperator
+    public enum EqualityOperator
     {
         Equals,
         NotEquals,
@@ -12,11 +12,11 @@ namespace JSInterpreter.AST
         StrictNotEquals
     }
 
-    interface IEqualityExpression : IBitwiseAndExpression
+    public interface IEqualityExpression : IBitwiseAndExpression
     {
     }
 
-    class EqualityExpression : IEqualityExpression
+    public class EqualityExpression : IEqualityExpression
     {
         public readonly EqualityOperator equalityOperator;
         public readonly IRelationalExpression relationalExpression;

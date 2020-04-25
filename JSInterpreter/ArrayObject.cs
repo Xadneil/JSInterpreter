@@ -4,7 +4,7 @@ using System.Text;
 
 namespace JSInterpreter
 {
-    class ArrayObject : Object
+    public class ArrayObject : Object
     {
         public static ArrayObject ArrayCreate(double lengthInteger, Object proto = null)
         {

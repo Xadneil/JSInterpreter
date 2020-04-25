@@ -2,7 +2,7 @@
 
 namespace JSInterpreter
 {
-    class ObjectEnvironmentRecord : EnvironmentRecord
+    public class ObjectEnvironmentRecord : EnvironmentRecord
     {
         public readonly Object BindingObject;
         public readonly bool withEnvironment;

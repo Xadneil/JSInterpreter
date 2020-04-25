@@ -5,7 +5,7 @@ using System.Text;
 
 namespace JSInterpreter.AST
 {
-    class FunctionDeclaration : HoistableDeclaration, ILabelledItem, IScopedDeclaration
+    public class FunctionDeclaration : HoistableDeclaration, ILabelledItem, IScopedDeclaration
     {
         public readonly bool isAnonymous;
         public readonly Identifier identifier;
@@ -86,7 +86,7 @@ namespace JSInterpreter.AST
 
     }
 
-    class FunctionExpression : IPrimaryExpression
+    public class FunctionExpression : IPrimaryExpression
     {
         public readonly bool isAnonymous;
         public readonly Identifier identifier;
@@ -144,7 +144,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    class FormalParameters
+    public class FormalParameters
     {
         public readonly IReadOnlyList<FormalParameter> formalParameters;
         public bool hasRestParameter;
@@ -190,7 +190,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    class FormalParameter
+    public class FormalParameter
     {
         public readonly Identifier identifier;
         public readonly bool hasInitializer;

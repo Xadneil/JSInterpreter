@@ -4,17 +4,17 @@ using System.Text;
 
 namespace JSInterpreter.AST
 {
-    enum AdditiveOperator
+    public enum AdditiveOperator
     {
         Add,
         Subtract
     }
 
-    interface IAdditiveExpression : IShiftExpression
+    public interface IAdditiveExpression : IShiftExpression
     {
     }
 
-    class AdditiveExpression : IAdditiveExpression
+    public class AdditiveExpression : IAdditiveExpression
     {
         public readonly AdditiveOperator additiveOperator;
         public readonly IMultiplicativeExpression multiplicativeExpression;

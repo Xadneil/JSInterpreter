@@ -4,7 +4,7 @@ using System.Text;
 
 namespace JSInterpreter.AST
 {
-    class Identifier
+    public class Identifier
     {
         public readonly string name;
 
@@ -31,7 +31,7 @@ namespace JSInterpreter.AST
             return lhs.PutValue(value);
         }
     }
-    class IdentifierReference : IPrimaryExpression, IPropertyDefinition
+    public class IdentifierReference : IPrimaryExpression, IPropertyDefinition
     {
         public readonly Identifier identifier;
 

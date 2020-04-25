@@ -4,7 +4,7 @@ using System.Text;
 
 namespace JSInterpreter
 {
-    class StringObject : Object
+    public class StringObject : Object
     {
         public readonly StringValue value;
 

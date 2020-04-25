@@ -5,7 +5,7 @@ using System.Text;
 
 namespace JSInterpreter.AST
 {
-    class Block : Statement
+    public class Block : Statement
     {
         public readonly StatementList statementList;
 

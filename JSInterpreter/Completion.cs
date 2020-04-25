@@ -4,7 +4,7 @@ using System.Text;
 
 namespace JSInterpreter
 {
-    enum CompletionType
+    public enum CompletionType
     {
         Normal,
         Break,
@@ -13,7 +13,7 @@ namespace JSInterpreter
         Throw
     }
 
-    class Completion
+    public class Completion
     {
         public readonly CompletionType completionType;
         public readonly IValue value;
@@ -113,7 +113,7 @@ namespace JSInterpreter
         }
     }
 
-    class CompletionOr<T> : Completion
+    public class CompletionOr<T> : Completion
     {
         public readonly T Other;
 
@@ -127,7 +127,7 @@ namespace JSInterpreter
         }
     }
 
-    class BooleanCompletion : CompletionOr<bool>
+    public class BooleanCompletion : CompletionOr<bool>
     {
         public BooleanCompletion(CompletionType completionType, IValue value, string target) : base(completionType, value, target)
         {

@@ -5,7 +5,7 @@ using System.Text;
 
 namespace JSInterpreter
 {
-    class ObjectIteratorRecord : IEnumerator<Completion>
+    public class ObjectIteratorRecord : IEnumerator<Completion>
     {
         private readonly Object iterator;
         private readonly Callable nextMethod;

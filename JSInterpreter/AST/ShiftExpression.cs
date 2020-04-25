@@ -4,18 +4,18 @@ using System.Text;
 
 namespace JSInterpreter.AST
 {
-    enum ShiftOperator
+    public enum ShiftOperator
     {
         ShiftLeft,
         ShiftRight,
         ShiftRightUnsigned
     }
 
-    interface IShiftExpression : IRelationalExpression
+    public interface IShiftExpression : IRelationalExpression
     {
     }
 
-    class ShiftExpression : IShiftExpression
+    public class ShiftExpression : IShiftExpression
     {
         public readonly ShiftOperator shiftOperator;
         public readonly IAdditiveExpression additiveExpression;

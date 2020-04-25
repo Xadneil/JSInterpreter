@@ -5,7 +5,7 @@ using System.Text;
 
 namespace JSInterpreter.AST
 {
-    class SwitchStatement : BreakableStatement
+    public class SwitchStatement : BreakableStatement
     {
         public readonly IExpression switchExpression;
         public readonly CaseBlock caseBlock;
@@ -74,7 +74,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    class CaseBlock : IHasLexicallyScopedDeclarations
+    public class CaseBlock : IHasLexicallyScopedDeclarations
     {
         public readonly IReadOnlyList<CaseClause> firstCaseClauses;
         public readonly DefaultClause defaultClause;
@@ -213,7 +213,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    class CaseClause
+    public class CaseClause
     {
         public readonly IExpression matchExpression;
         public readonly StatementList statementList;
@@ -247,7 +247,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    class DefaultClause
+    public class DefaultClause
     {
         public readonly StatementList statementList;
 

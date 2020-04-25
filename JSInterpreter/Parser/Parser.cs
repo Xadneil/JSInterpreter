@@ -2,639 +2,73 @@
 using JSInterpreter.Lexer;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
+using System.Diagnostics;
 
 namespace JSInterpreter.Parser
 {
-    /*
-    enum Associativity
+    public class Parser
     {
-        Left,
-        Right
-    };
+        private readonly Tokens tokens;
+        private int tokenIndex = 0;
+        private bool success;
+        private ParseFailureException exception;
 
-    class Parser
-    {
-        private static readonly Dictionary<TokenType, int> operatorPrecedence = new Dictionary<TokenType, int>();
-
-        private ParserState ParserState;
-        private ParserState? SavedState;
-
-        public Parser(Lexer.Lexer lexer)
+        public Parser(string source)
         {
-            ParserState = new ParserState(lexer);
-            if (!operatorPrecedence.Any())
+            tokens = Lexer.Lexer.Lex(source);
+        }
+
+        private Parser Parse(Action what)
+        {
+            int pos = tokenIndex;
+            try
             {
-                operatorPrecedence[TokenType.Period] = 20;
-                operatorPrecedence[TokenType.BracketOpen] = 20;
-                operatorPrecedence[TokenType.ParenOpen] = 20;
-                operatorPrecedence[TokenType.QuestionMarkPeriod] = 20;
-
-                operatorPrecedence[TokenType.New] = 19;
-
-                operatorPrecedence[TokenType.PlusPlus] = 18;
-                operatorPrecedence[TokenType.MinusMinus] = 18;
-
-                operatorPrecedence[TokenType.ExclamationMark] = 17;
-                operatorPrecedence[TokenType.Tilde] = 17;
-                operatorPrecedence[TokenType.Typeof] = 17;
-                operatorPrecedence[TokenType.Void] = 17;
-                operatorPrecedence[TokenType.Delete] = 17;
-                operatorPrecedence[TokenType.Await] = 17;
-
-                operatorPrecedence[TokenType.DoubleAsterisk] = 16;
-
-                operatorPrecedence[TokenType.Asterisk] = 15;
-                operatorPrecedence[TokenType.Slash] = 15;
-                operatorPrecedence[TokenType.Percent] = 15;
-
-                operatorPrecedence[TokenType.Plus] = 14;
-                operatorPrecedence[TokenType.Minus] = 14;
-
-                operatorPrecedence[TokenType.ShiftLeft] = 13;
-                operatorPrecedence[TokenType.ShiftRight] = 13;
-                operatorPrecedence[TokenType.UnsignedShiftRight] = 13;
-
-                operatorPrecedence[TokenType.LessThan] = 12;
-                operatorPrecedence[TokenType.LessThanEquals] = 12;
-                operatorPrecedence[TokenType.GreaterThan] = 12;
-                operatorPrecedence[TokenType.GreaterThanEquals] = 12;
-                operatorPrecedence[TokenType.In] = 12;
-                operatorPrecedence[TokenType.Instanceof] = 12;
-
-                operatorPrecedence[TokenType.EqualsEquals] = 11;
-                operatorPrecedence[TokenType.ExclamationMarkEquals] = 11;
-                operatorPrecedence[TokenType.EqualsEqualsEquals] = 11;
-                operatorPrecedence[TokenType.ExclamationMarkEqualsEquals] = 11;
-
-                operatorPrecedence[TokenType.Ampersand] = 10;
-
-                operatorPrecedence[TokenType.Caret] = 9;
-
-                operatorPrecedence[TokenType.Pipe] = 8;
-
-                operatorPrecedence[TokenType.DoubleQuestionMark] = 7;
-
-                operatorPrecedence[TokenType.DoubleAmpersand] = 6;
-
-                operatorPrecedence[TokenType.DoublePipe] = 5;
-
-                operatorPrecedence[TokenType.QuestionMark] = 4;
-
-                operatorPrecedence[TokenType.Equals] = 3;
-                operatorPrecedence[TokenType.PlusEquals] = 3;
-                operatorPrecedence[TokenType.MinusEquals] = 3;
-                operatorPrecedence[TokenType.AsteriskAsteriskEquals] = 3;
-                operatorPrecedence[TokenType.AsteriskEquals] = 3;
-                operatorPrecedence[TokenType.SlashEquals] = 3;
-                operatorPrecedence[TokenType.PercentEquals] = 3;
-                operatorPrecedence[TokenType.ShiftLeftEquals] = 3;
-                operatorPrecedence[TokenType.ShiftRightEquals] = 3;
-                operatorPrecedence[TokenType.UnsignedShiftRightEquals] = 3;
-                operatorPrecedence[TokenType.PipeEquals] = 3;
-
-                operatorPrecedence[TokenType.Yield] = 2;
-
-                operatorPrecedence[TokenType.Comma] = 1;
+                what();
+                success = true;
             }
-        }
-
-        public bool HasErrors() => ParserState.HasErrors || ParserState.Lexer.HasErrors();
-
-        public int OperatorPrecedence(TokenType type)
-        {
-            if (!operatorPrecedence.TryGetValue(type, out int precedence))
+            catch (ParseFailureException e)
             {
-                throw new InvalidOperationException($"Internal Error: No precedence for operator {type}");
+                tokenIndex = pos;
+                success = false;
+                exception = e;
             }
-            return precedence;
+            return this;
         }
 
-        public Associativity OperatorAssociativity(TokenType type)
+        private Parser Or(Action what)
         {
-            switch (type)
+            if (!success)
             {
-                case TokenType.Period:
-                case TokenType.BracketOpen:
-                case TokenType.ParenOpen:
-                case TokenType.QuestionMarkPeriod:
-                case TokenType.Asterisk:
-                case TokenType.Slash:
-                case TokenType.Percent:
-                case TokenType.Plus:
-                case TokenType.Minus:
-                case TokenType.ShiftLeft:
-                case TokenType.ShiftRight:
-                case TokenType.UnsignedShiftRight:
-                case TokenType.LessThan:
-                case TokenType.LessThanEquals:
-                case TokenType.GreaterThan:
-                case TokenType.GreaterThanEquals:
-                case TokenType.In:
-                case TokenType.Instanceof:
-                case TokenType.EqualsEquals:
-                case TokenType.ExclamationMarkEquals:
-                case TokenType.EqualsEqualsEquals:
-                case TokenType.ExclamationMarkEqualsEquals:
-                case TokenType.Typeof:
-                case TokenType.Void:
-                case TokenType.Ampersand:
-                case TokenType.Caret:
-                case TokenType.Pipe:
-                case TokenType.DoubleQuestionMark:
-                case TokenType.DoubleAmpersand:
-                case TokenType.DoublePipe:
-                case TokenType.Comma:
-                    return Associativity.Left;
-                default:
-                    return Associativity.Right;
+                return Parse(what);
             }
+            return this;
         }
 
-        public Script ParseScript()
+        private Parser OrThrow(string message)
         {
-            var statements = new List<IStatementListItem>();
-            while (!Done())
+            if (!success)
             {
-                if (Match(TokenType.Semicolon))
-                    Consume();
-                else if (MatchStatement())
-                    statements.Add(ParseStatement());
-                else
-                {
-                    Expected("statement");
-                    Consume();
-                }
+                Expected(message);
             }
-
-            return new Script(new StatementList(statements));
-        }
-
-        private IStatementListItem ParseStatement()
-        {
-            switch (ParserState.CurentToken.Type)
-            {
-                case TokenType.Function:
-                    return ParseFunctionDeclaration();
-                case TokenType.CurlyOpen:
-                    return ParseBlock();
-                case TokenType.Return:
-                    return ParseReturnStatement();
-                case TokenType.Var:
-                    return ParseVarDeclaration();
-                case TokenType.Let:
-                case TokenType.Const:
-                    return ParseLexicalDeclaration();
-                case TokenType.For:
-                    return ParseForStatement();
-                case TokenType.If:
-                    return ParseIfStatement();
-                case TokenType.Throw:
-                    return ParseThrowStatement();
-                case TokenType.Try:
-                    return ParseTryStatement();
-                case TokenType.Break:
-                    return ParseBreakStatement();
-                case TokenType.Continue:
-                    return ParseContinueStatement();
-                case TokenType.Switch:
-                    return ParseSwitchStatement();
-                case TokenType.Do:
-                    return ParseDoWhileStatement();
-                default:
-                    if (MatchExpression())
-                    {
-                        IExpression expr = ParseExpression(minPrecedence: 0);
-                        ConsumeOrInsertSemicolon();
-                        return new ExpressionStatement(expr);
-                    }
-                    ParserState.HasErrors = true;
-                    Expected("statement (missing switch case)");
-                    Consume();
-                    return new EmptyStatement();
-            }
-        }
-
-        private IExpression ParsePrimaryExpression()
-        {
-            if (MatchUnaryPrefixedExpression())
-                return ParseUnaryPrefixedExpression();
-            switch (ParserState.CurentToken.Type)
-            {
-                case TokenType.ParenOpen:
-                    {
-                        Consume(TokenType.ParenOpen);
-                        if (Match(TokenType.ParenClose) || Match(TokenType.Identifier))
-                        {
-                            var arrow_function_result = try_parse_arrow_function_expression(true);
-                            if (!arrow_function_result.is_null())
-                            {
-                                return arrow_function_result.release_nonnull();
-                            }
-                        }
-                        var expression = ParseExpression(0);
-                        Consume(TokenType.ParenClose);
-                        return expression;
-                    }
-                case TokenType.This:
-                    Consume();
-                    return new ThisExpression();
-                case TokenType.Identifier:
-                    {
-                        var arrow_function_result = try_parse_arrow_function_expression(false);
-                        if (!arrow_function_result.is_null())
-                        {
-                            return arrow_function_result.release_nonnull();
-                        }
-                        return new IdentifierReference(new Identifier(Consume().Value));
-                    }
-                case TokenType.NumericLiteral:
-                    return new Literal(Consume().DoubleValue());
-                case TokenType.BoolLiteral:
-                    return new Literal(Consume().BoolValue());
-                case TokenType.StringLiteral:
-                    return new Literal(Consume().StringValue());
-                case TokenType.NullLiteral:
-                    Consume();
-                    return Literal.NullLiteral;
-                case TokenType.CurlyOpen:
-                    return ParseObjectExpression();
-                case TokenType.Function:
-                    return ParseFunctionExpression();
-                case TokenType.BracketOpen:
-                    return ParseArrayExpression();
-                case TokenType.New:
-                    return ParseNewExpression();
-                default:
-                    ParserState.HasErrors = true;
-                    Expected("primary expression (missing switch case)");
-                    Consume();
-                    //TODO error node
-                    return Literal.NullLiteral;
-            }
-        }
-
-        private IExpression ParseUnaryPrefixedExpression()
-        {
-            var precedence = OperatorPrecedence(ParserState.CurentToken.Type);
-            var associativity = OperatorAssociativity(ParserState.CurentToken.Type);
-            switch (ParserState.CurentToken.Type)
-            {
-                case TokenType.PlusPlus:
-                    Consume();
-                    return new PrefixUpdateExpression(ParseExpression(precedence, associativity), UpdateOperation.Increment);
-                case TokenType.MinusMinus:
-                    Consume();
-                    return new PrefixUpdateExpression(ParseExpression(precedence, associativity), UpdateOperation.Decrement);
-                case TokenType.ExclamationMark:
-                    Consume();
-                    return new OperatorUnaryExpression(UnaryOperator.BooleanNot, ParseExpression(precedence, associativity));
-                case TokenType.Tilde:
-                    Consume();
-                    return new OperatorUnaryExpression(UnaryOperator.BitwiseNot, ParseExpression(precedence, associativity));
-                case TokenType.Plus:
-                    Consume();
-                    return new OperatorUnaryExpression(UnaryOperator.Plus, ParseExpression(precedence, associativity));
-                case TokenType.Minus:
-                    Consume();
-                    return new OperatorUnaryExpression(UnaryOperator.Negate, ParseExpression(precedence, associativity));
-                case TokenType.Typeof:
-                    Consume();
-                    return new OperatorUnaryExpression(UnaryOperator.Typeof, ParseExpression(precedence, associativity));
-                case TokenType.Void:
-                    Consume();
-                    return new OperatorUnaryExpression(UnaryOperator.Void, ParseExpression(precedence, associativity));
-                default:
-                    ParserState.HasErrors = true;
-                    Expected("primary expression (missing switch case)");
-                    Consume();
-                    //TODO error node
-                    return Literal.NullLiteral;
-            }
-        }
-
-        private IExpression ParseObjectExpression()
-        {
-            List<IPropertyDefinition> properties = new List<IPropertyDefinition>();
-            Consume(TokenType.CurlyOpen);
-
-            while (!Done() && !Match(TokenType.CurlyClose))
-            {
-                string property_name;
-                if (Match(TokenType.Identifier))
-                {
-                    property_name = Consume(TokenType.Identifier).Value;
-                }
-                else if (Match(TokenType.StringLiteral))
-                {
-                    property_name = Consume(TokenType.StringLiteral).StringValue();
-                }
-                else if (Match(TokenType.NumericLiteral))
-                {
-                    property_name = Consume(TokenType.NumericLiteral).Value;
-                }
-                else
-                {
-                    ParserState.HasErrors = true;
-                    var current_token = ParserState.CurentToken;
-                    Console.WriteLine($"Syntax Error: Unexpected token {current_token.Type} as member in object initialization. Expected a numeric literal, string literal or identifier (line: {current_token.LineNumber}, column: {current_token.LineColumn}))");
-                    Consume();
-                    continue;
-                }
-
-                if (Match(TokenType.Colon))
-                {
-                    Consume(TokenType.Colon);
-                    properties.Add(new PropertyDefinition(property_name, ParseExpression(0)));
-                }
-                else
-                {
-                    properties.Add(new IdentifierReference(new Identifier(property_name)));
-                }
-
-                if (!Match(TokenType.Comma))
-                    break;
-
-                Consume(TokenType.Comma);
-            }
-
-            Consume(TokenType.CurlyClose);
-            return new ObjectLiteral(properties);
-        }
-
-        private IExpression ParseArrayExpression()
-        {
-            Consume(TokenType.BracketOpen);
-
-            var elements = new List<IArrayLiteralItem>();
-            while (MatchExpression() || Match(TokenType.Comma))
-            {
-                IArrayLiteralItem expression;
-                if (MatchExpression())
-                {
-                    expression = ParseExpression(0);
-                    if (Match(TokenType.Comma))
-                        Consume();
-                }
-                else
-                {
-                    int i = 0;
-                    while (Match(TokenType.Comma))
-                    {
-                        i++;
-                        Consume();
-                    }
-                    expression = new Elision(i);
-                }
-                elements.Add(expression);
-            }
-
-            Consume(TokenType.BracketClose);
-            return new ArrayLiteral(elements);
-        }
-
-        private IExpression ParseExpression(int minPrecedence, Associativity associativity = Associativity.Left)
-        {
-            IExpression expression = ParsePrimaryExpression();
-            while (MatchSecondaryExpression())
-            {
-                int newPrecedence = OperatorPrecedence(ParserState.CurentToken.Type);
-                if (newPrecedence < minPrecedence)
-                    break;
-                if (newPrecedence == minPrecedence && associativity == Associativity.Left)
-                    break;
-
-                Associativity newAssociativity = OperatorAssociativity(ParserState.CurentToken.Type);
-                expression = ParseSecondaryExpression(expression, newPrecedence, newAssociativity);
-            }
-            return expression;
-        }
-
-        private IExpression ParseSecondaryExpression(ILeftHandSideExpression lhs, int min_precedence, Associativity associativity)
-        {
-            switch (ParserState.CurentToken.Type)
-            {
-                case TokenType.Plus:
-                    Consume();
-                    return new AdditiveExpression(lhs, AdditiveOperator.Add, ParseExpression(min_precedence, associativity));
-                case TokenType.PlusEquals:
-                    Consume();
-                    return new OperatorAssignmentExpression(lhs, AssignmentOperator.Plus, ParseExpression(min_precedence, associativity));
-                case TokenType.Minus:
-                    Consume();
-                    return new AdditiveExpression(lhs, AdditiveOperator.Subtract, ParseExpression(min_precedence, associativity));
-                case TokenType.MinusEquals:
-                    Consume();
-                    return new OperatorAssignmentExpression(lhs, AssignmentOperator.Minus, ParseExpression(min_precedence, associativity));
-                case TokenType.Asterisk:
-                    Consume();
-                    return new MultiplicativeExpression(lhs, MultiplicativeOperator.Multiply, ParseExpression(min_precedence, associativity));
-                case TokenType.AsteriskEquals:
-                    Consume();
-                    return new OperatorAssignmentExpression(lhs, AssignmentOperator.Multiply, ParseExpression(min_precedence, associativity));
-                case TokenType.Slash:
-                    Consume();
-                    return new MultiplicativeExpression(lhs, MultiplicativeOperator.Divide, ParseExpression(min_precedence, associativity));
-                case TokenType.SlashEquals:
-                    Consume();
-                    return new OperatorAssignmentExpression(lhs, AssignmentOperator.Divide, ParseExpression(min_precedence, associativity));
-                case TokenType.Percent:
-                    Consume();
-                    return new MultiplicativeExpression(lhs, MultiplicativeOperator.Modulus, ParseExpression(min_precedence, associativity));
-                case TokenType.DoubleAsterisk:
-                    Consume();
-                    return new ExponentiationExpression(lhs, ParseExpression(min_precedence, associativity));
-                case TokenType.GreaterThan:
-                    Consume();
-                    return new RelationalExpression(lhs, RelationalOperator.GreaterThan, ParseExpression(min_precedence, associativity));
-                case TokenType.GreaterThanEquals:
-                    Consume();
-                    return new RelationalExpression(lhs, RelationalOperator.GreaterThanOrEqual, ParseExpression(min_precedence, associativity));
-                case TokenType.LessThan:
-                    Consume();
-                    return new RelationalExpression(lhs, RelationalOperator.LessThan, ParseExpression(min_precedence, associativity));
-                case TokenType.LessThanEquals:
-                    Consume();
-                    return new RelationalExpression(lhs, RelationalOperator.LessThanOrEqual, ParseExpression(min_precedence, associativity));
-                case TokenType.EqualsEqualsEquals:
-                    Consume();
-                    return new EqualityExpression(lhs, EqualityOperator.StrictEquals, ParseExpression(min_precedence, associativity));
-                case TokenType.ExclamationMarkEqualsEquals:
-                    Consume();
-                    return new EqualityExpression(lhs, EqualityOperator.StrictNotEquals, ParseExpression(min_precedence, associativity));
-                case TokenType.EqualsEquals:
-                    Consume();
-                    return new EqualityExpression(lhs, EqualityOperator.Equals, ParseExpression(min_precedence, associativity));
-                case TokenType.ExclamationMarkEquals:
-                    Consume();
-                    return new EqualityExpression(lhs, EqualityOperator.NotEquals, ParseExpression(min_precedence, associativity));
-                case TokenType.Instanceof:
-                    Consume();
-                    return new RelationalExpression(lhs, RelationalOperator.Instanceof, ParseExpression(min_precedence, associativity));
-                case TokenType.In:
-                    Consume();
-                    return new RelationalExpression(lhs, RelationalOperator.In, ParseExpression(min_precedence, associativity));
-                case TokenType.Ampersand:
-                    Consume();
-                    return new BitwiseAndExpression(lhs, ParseExpression(min_precedence, associativity));
-                case TokenType.Pipe:
-                    Consume();
-                    return new BitwiseOrExpression(lhs, ParseExpression(min_precedence, associativity));
-                case TokenType.Caret:
-                    Consume();
-                    return new BitwiseXorExpression(lhs, ParseExpression(min_precedence, associativity));
-                case TokenType.ParenOpen:
-                    return ParseCallExpression(lhs);
-                case TokenType.Equals:
-                    Consume();
-                    return new AssignmentExpression(lhs, ParseExpression(min_precedence, associativity));
-                case TokenType.Period:
-                    Consume();
-                    return new DotMemberExpression(lhs, ParseExpression(min_precedence, associativity));
-                case TokenType.BracketOpen:
-                    {
-                        Consume(TokenType.BracketOpen);
-                        var expression = new IndexMemberExpression(lhs, ParseExpression(0));
-                        Consume(TokenType.BracketClose);
-                        return expression;
-                    }
-                case TokenType.PlusPlus:
-                    Consume();
-                    return new PostfixUpdateExpression(lhs, UpdateOperation.Increment);
-                case TokenType.MinusMinus:
-                    Consume();
-                    return new PostfixUpdateExpression(lhs, UpdateOperation.Decrement);
-                case TokenType.DoubleAmpersand:
-                    Consume();
-                    return new LogicalAndExpression(lhs, ParseExpression(min_precedence, associativity));
-                case TokenType.DoublePipe:
-                    Consume();
-                    return new LogicalOrExpression(lhs, ParseExpression(min_precedence, associativity));
-                case TokenType.QuestionMark:
-                    return ParseConditionalExpression(lhs);
-                default:
-                    ParserState.HasErrors = true;
-                    Expected("secondary expression (missing switch case)");
-                    Consume();
-                    //TODO error node
-                    return Literal.NullLiteral;
-            }
-        }
-
-        public ICallExpression ParseCallExpression(ICallExpression lhs)
-        {
-            Consume(TokenType.ParenOpen);
-            var arguments = new List<IArgumentItem>();
-
-            while (MatchExpression())
-            {
-                arguments.Add(ParseExpression(0));
-                if (!Match(TokenType.Comma))
-                    break;
-                Consume();
-            }
-
-            Consume(TokenType.ParenClose);
-
-            return new RecursiveCallExpression(lhs, new Arguments(arguments));
-        }
-
-        private bool MatchStatement()
-        {
-            var type = ParserState.CurentToken.Type;
-            return MatchExpression()
-                || type == TokenType.Function
-                || type == TokenType.Return
-                || type == TokenType.Let
-                || type == TokenType.Class
-                || type == TokenType.Delete
-                || type == TokenType.Do
-                || type == TokenType.If
-                || type == TokenType.Throw
-                || type == TokenType.Try
-                || type == TokenType.While
-                || type == TokenType.For
-                || type == TokenType.Const
-                || type == TokenType.CurlyOpen
-                || type == TokenType.Switch
-                || type == TokenType.Break
-                || type == TokenType.Continue
-                || type == TokenType.Var;
-        }
-
-        private bool MatchExpression()
-        {
-            var type = ParserState.CurentToken.Type;
-            return type == TokenType.BoolLiteral
-                || type == TokenType.NumericLiteral
-                || type == TokenType.StringLiteral
-                || type == TokenType.NullLiteral
-                || type == TokenType.Identifier
-                || type == TokenType.New
-                || type == TokenType.CurlyOpen
-                || type == TokenType.BracketOpen
-                || type == TokenType.ParenOpen
-                || type == TokenType.Function
-                || type == TokenType.This
-                || MatchUnaryPrefixedExpression();
-        }
-
-        private bool MatchUnaryPrefixedExpression()
-        {
-            var type = ParserState.CurentToken.Type;
-            return type == TokenType.PlusPlus
-                || type == TokenType.MinusMinus
-                || type == TokenType.ExclamationMark
-                || type == TokenType.Tilde
-                || type == TokenType.Plus
-                || type == TokenType.Minus
-                || type == TokenType.Typeof
-                || type == TokenType.Void;
-        }
-
-        private bool MatchSecondaryExpression()
-        {
-            var type = ParserState.CurentToken.Type;
-            return type == TokenType.Plus
-                || type == TokenType.PlusEquals
-                || type == TokenType.Minus
-                || type == TokenType.MinusEquals
-                || type == TokenType.Asterisk
-                || type == TokenType.AsteriskEquals
-                || type == TokenType.Slash
-                || type == TokenType.SlashEquals
-                || type == TokenType.Percent
-                || type == TokenType.DoubleAsterisk
-                || type == TokenType.Equals
-                || type == TokenType.EqualsEqualsEquals
-                || type == TokenType.ExclamationMarkEqualsEquals
-                || type == TokenType.EqualsEquals
-                || type == TokenType.ExclamationMarkEquals
-                || type == TokenType.GreaterThan
-                || type == TokenType.GreaterThanEquals
-                || type == TokenType.LessThan
-                || type == TokenType.LessThanEquals
-                || type == TokenType.ParenOpen
-                || type == TokenType.Period
-                || type == TokenType.BracketOpen
-                || type == TokenType.PlusPlus
-                || type == TokenType.MinusMinus
-                || type == TokenType.Instanceof
-                || type == TokenType.QuestionMark
-                || type == TokenType.Ampersand
-                || type == TokenType.Pipe
-                || type == TokenType.Caret
-                || type == TokenType.DoubleAmpersand
-                || type == TokenType.DoublePipe
-                || type == TokenType.DoubleQuestionMark;
+            return this;
         }
 
         private Token Consume()
         {
-            var oldToken = ParserState.CurentToken;
-            ParserState.CurentToken = ParserState.Lexer.Next();
-            return oldToken;
+            var oldIndex = tokenIndex;
+            tokenIndex++;
+            return tokens[oldIndex];
+        }
+
+        private Token CurrentToken
+        {
+            get
+            {
+                if (tokenIndex >= tokens.Count)
+                    return new Token(TokenType.Eof, "", "", 0, 0, false);
+                return tokens[tokenIndex];
+            }
         }
 
         private void ConsumeOrInsertSemicolon()
@@ -645,9 +79,11 @@ namespace JSInterpreter.Parser
                 Consume();
                 return;
             }
+            if (tokenIndex >= tokens.Count)
+                return;
             // Insert semicolon if...
             // ...token is preceeded by one or more newlines
-            if (ParserState.CurentToken.Trivia.Contains('\n'))
+            if (tokens[tokenIndex].Trivia.Contains('\n'))
                 return;
             // ...token is a closing curly brace
             if (Match(TokenType.CurlyClose))
@@ -662,23 +98,1626 @@ namespace JSInterpreter.Parser
 
         private Token Consume(TokenType expectedType)
         {
-            if (ParserState.CurentToken.Type != expectedType)
+            if (CurrentToken.Type != expectedType)
             {
                 Expected(expectedType.ToString());
             }
             return Consume();
         }
 
-        private bool Match(TokenType type) => ParserState.CurentToken.Type == type;
-
-        private bool Done() => Match(TokenType.Eof);
+        private bool Match(TokenType type) => CurrentToken.Type == type;
 
         private void Expected(string what)
         {
-            ParserState.HasErrors = true;
-            var currentToken = ParserState.CurentToken;
-            Console.WriteLine($"Syntax Error: Unexpected token {currentToken}. Expected {what} (line: {currentToken.LineNumber}, column: {currentToken.LineColumn})");
+            var currentToken = CurrentToken;
+            throw new ParseFailureException($"Syntax Error: Unexpected token {currentToken.Type}. Expected {what} (line: {currentToken.LineNumber}, column: {currentToken.LineColumn})");
+        }
+
+        public Script ParseScript()
+        {
+            if (tokens.Count == 0)
+            {
+                return new Script(new StatementList(Utils.EmptyList<IStatementListItem>()));
+            }
+            var statementList = ParseStatementList();
+            if (CurrentToken.Type != TokenType.Eof && exception != null)
+                throw exception;
+            return new Script(statementList);
+        }
+
+        private IStatementListItem ParseStatementListItem()
+        {
+            IStatementListItem item = null;
+            Parse(() =>
+            {
+                item = ParseDeclaration();
+            }).Or(() =>
+            {
+                item = ParseStatement();
+            }).OrThrow("Statement List Item");
+            return item;
+        }
+
+        private Statement ParseStatement()
+        {
+            switch (CurrentToken.Type)
+            {
+                case TokenType.BracketOpen:
+                    return ParseBlock();
+                case TokenType.Var:
+                    return ParseVariableStatement();
+                case TokenType.Semicolon:
+                    Consume();
+                    return new EmptyStatement();
+                case TokenType.If:
+                    return ParseIfStatement();
+                case TokenType.For:
+                case TokenType.While:
+                case TokenType.Do:
+                case TokenType.Switch:
+                    return ParseBreakableStatement();
+                case TokenType.Continue:
+                    return ParseContinueStatement();
+                case TokenType.Break:
+                    return ParseBreakStatement();
+                case TokenType.Return:
+                    return ParseReturnStatement();
+                case TokenType.Throw:
+                    return ParseThrowStatement();
+                case TokenType.Try:
+                    return ParseTryStatement();
+                case TokenType.Debugger:
+                    Consume();
+                    return new DebuggerStatement();
+                default:
+                    Statement statement = null;
+                    Parse(() =>
+                    {
+                        statement = ParseLabelledStatement();
+                    }).Or(() =>
+                    {
+                        IExpression expr = ParseExpression();
+                        ConsumeOrInsertSemicolon();
+                        statement = new ExpressionStatement(expr);
+                    }).OrThrow("Catch-all Expression Statement");
+                    return statement;
+            }
+        }
+
+        private Block ParseBlock()
+        {
+            Consume(TokenType.CurlyOpen);
+            var statementList = ParseStatementList();
+            Consume(TokenType.CurlyClose);
+
+            return new Block(statementList);
+        }
+
+        private StatementList ParseStatementList()
+        {
+            var statementItems = new List<IStatementListItem>();
+            while (true)
+            {
+                IStatementListItem item = null;
+                var parser = Parse(() =>
+                {
+                    item = ParseStatementListItem();
+                });
+                if (item == null)
+                    break;
+                statementItems.Add(item);
+            }
+            return new StatementList(statementItems);
+        }
+
+        private VariableStatement ParseVariableStatement()
+        {
+            Consume(TokenType.Var);
+            VariableDeclarationList variableDeclarationList = ParseVariableDeclarationList();
+            if (Match(TokenType.Semicolon))
+                Consume();
+            return new VariableStatement(variableDeclarationList);
+        }
+
+        private VariableDeclarationList ParseVariableDeclarationList()
+        {
+            var list = new VariableDeclarationList();
+
+            while (true)
+            {
+                var variableName = ParseBindingIdentifier();
+                IAssignmentExpression initializer = null;
+                if (Match(TokenType.Equals))
+                    initializer = ParseInitializer();
+                list.Add(new VariableDeclaration(variableName, initializer));
+
+                if (!Match(TokenType.Comma))
+                    break;
+                Consume(TokenType.Comma);
+            }
+
+            return list;
+        }
+
+        private VariableDeclarationList ParseVariableDeclarationListWithInitialIdentifier(string firstIdentifier)
+        {
+            var list = new VariableDeclarationList();
+
+            bool first = true;
+            while (true)
+            {
+                string variableName;
+                if (first)
+                {
+                    variableName = firstIdentifier;
+                    first = false;
+                }
+                else
+                    variableName = ParseBindingIdentifier();
+                IAssignmentExpression initializer = null;
+                if (Match(TokenType.Equals))
+                    initializer = ParseInitializer();
+                list.Add(new VariableDeclaration(variableName, initializer));
+
+                if (!Match(TokenType.Comma))
+                    break;
+                Consume(TokenType.Comma);
+            }
+
+            return list;
+        }
+
+
+        private string ParseBindingIdentifier()
+        {
+            if (Match(TokenType.Identifier))
+                return Consume().Value;
+            else if (Match(TokenType.Yield))
+                return "yield";
+            else if (Match(TokenType.Await))
+                return "await";
+            Expected("Binding Identifier");
+            return null;
+        }
+
+        private bool MatchBindingIdentifier() => Match(TokenType.Identifier) || Match(TokenType.Yield) || Match(TokenType.Await);
+
+        private IAssignmentExpression ParseInitializer()
+        {
+            Consume(TokenType.Equals);
+            return ParseAssignmentExpression();
+        }
+
+        private IfStatement ParseIfStatement()
+        {
+            Consume(TokenType.If);
+            Consume(TokenType.ParenOpen);
+            var test = ParseExpression();
+            Consume(TokenType.ParenClose);
+            var trueStatement = ParseStatement();
+            if (Match(TokenType.Else))
+            {
+                Consume();
+                var falseStatement = ParseStatement();
+                return new IfStatement(test, trueStatement, falseStatement);
+            }
+            return new IfStatement(test, trueStatement);
+        }
+
+        private BreakableStatement ParseBreakableStatement()
+        {
+            if (Match(TokenType.Switch))
+                return ParseSwitchStatement();
+
+            IterationStatement iterationStatement = null;
+            Parse(() =>
+            {
+                iterationStatement = ParseIterationStatement();
+            }).OrThrow("Iteration or Switch statement");
+            return iterationStatement;
+        }
+
+        private IterationStatement ParseIterationStatement()
+        {
+            if (Match(TokenType.Do))
+            {
+                Consume();
+                Statement statement = ParseStatement();
+                Consume(TokenType.While);
+                Consume(TokenType.ParenOpen);
+                IExpression test = ParseExpression();
+                Consume(TokenType.ParenClose);
+                if (Match(TokenType.Semicolon))
+                    Consume();
+                return new DoWhileIterationStatement(statement, test);
+            }
+            if (Match(TokenType.While))
+            {
+                Consume();
+                Consume(TokenType.ParenOpen);
+                IExpression test = ParseExpression();
+                Consume(TokenType.ParenClose);
+                Statement statement = ParseStatement();
+                return new WhileIterationStatement(test, statement);
+            }
+            if (!Match(TokenType.For))
+                Expected("For");
+            Consume();
+            //TODO await
+            Consume(TokenType.ParenOpen);
+
+            ForExpressionIterationStatement forExpressionIterationStatement = null;
+            Parse(() =>
+            {
+                IExpression start = null;
+                if (!Match(TokenType.Semicolon))
+                    start = ParseExpression();
+                Consume(TokenType.Semicolon);
+                IExpression test = null;
+                if (!Match(TokenType.Semicolon))
+                    test = ParseExpression();
+                Consume(TokenType.Semicolon);
+                IExpression update = null;
+                if (!Match(TokenType.ParenClose))
+                    update = ParseExpression();
+                Consume(TokenType.ParenClose);
+                var statement = ParseStatement();
+                forExpressionIterationStatement = new ForExpressionIterationStatement(start, test, update, statement);
+            });
+            if (forExpressionIterationStatement != null) return forExpressionIterationStatement;
+            if (Match(TokenType.Var))
+            {
+                Consume();
+
+                var firstIdentifier = ParseBindingIdentifier();
+                if (Match(TokenType.In))
+                {
+                    Consume();
+                    var expression = ParseExpression();
+                    Consume(TokenType.ParenClose);
+                    var statement = ParseStatement();
+                    return new ForInVarIterationStatement(new ForBinding(firstIdentifier), expression, statement);
+                }
+                if (Match(TokenType.Of))
+                {
+                    Consume();
+                    IAssignmentExpression expression = ParseAssignmentExpression();
+                    Consume(TokenType.ParenClose);
+                    var statement = ParseStatement();
+                    return new ForOfVarIterationStatement(new ForBinding(firstIdentifier), expression, statement);
+                }
+                if (Match(TokenType.Equals))
+                {
+                    Consume();
+                    var variableDeclarationList = ParseVariableDeclarationListWithInitialIdentifier(firstIdentifier);
+                    Consume(TokenType.Semicolon);
+                    IExpression test = null;
+                    if (!Match(TokenType.Semicolon))
+                        test = ParseExpression();
+                    Consume(TokenType.Semicolon);
+                    IExpression update = null;
+                    if (!Match(TokenType.ParenClose))
+                        update = ParseExpression();
+                    Consume(TokenType.ParenClose);
+                    var statement = ParseStatement();
+                    return new ForVarIterationStatement(variableDeclarationList, test, update, statement);
+                }
+                Expected("=, in, or of");
+                return null;
+            }
+            if (Match(TokenType.Let) || Match(TokenType.Const))
+            {
+                var isConst = Match(TokenType.Const);
+                Consume();
+                var forBinding = Consume(TokenType.Identifier).Value;
+                if (Match(TokenType.In))
+                {
+                    Consume();
+                    var expression = ParseExpression();
+                    Consume(TokenType.ParenClose);
+                    var statement = ParseStatement();
+                    return new ForInLetConstIterationStatement(new ForDeclaration(isConst, forBinding), expression, statement);
+                }
+                if (Match(TokenType.Of))
+                {
+                    Consume();
+                    IAssignmentExpression expression = ParseAssignmentExpression();
+                    Consume(TokenType.ParenClose);
+                    var statement = ParseStatement();
+                    return new ForOfLetConstIterationStatement(new ForDeclaration(isConst, forBinding), expression, statement);
+                }
+                Expected("in or of");
+                return null;
+            }
+            ILeftHandSideExpression lhs = null;
+            Parse(() =>
+            {
+                lhs = ParseLeftHandSideExpression();
+            }).OrThrow("For LeftHandSide");
+
+            if (Match(TokenType.In))
+            {
+                Consume();
+                var expression = ParseExpression();
+                Consume(TokenType.ParenClose);
+                var statement = ParseStatement();
+                return new ForInLHSIterationStatement(lhs, expression, statement);
+            }
+            if (Match(TokenType.Of))
+            {
+                Consume();
+                IAssignmentExpression expression = ParseAssignmentExpression();
+                Consume(TokenType.ParenClose);
+                var statement = ParseStatement();
+                return new ForOfLHSIterationStatement(lhs, expression, statement);
+            }
+            Expected("in or of");
+            return null;
+        }
+
+        private SwitchStatement ParseSwitchStatement()
+        {
+            Consume(TokenType.Switch);
+            Consume(TokenType.ParenOpen);
+            var expression = ParseExpression();
+            Consume(TokenType.ParenClose);
+            Consume(TokenType.CurlyOpen);
+
+            if (Match(TokenType.CurlyClose))
+            {
+                Consume();
+                return new SwitchStatement(expression, new CaseBlock(Utils.EmptyList<CaseClause>()));
+            }
+
+            bool foundDefault = false;
+            var firstCases = new List<CaseClause>();
+            DefaultClause defaultClause = null;
+            var secondCases = new List<CaseClause>();
+            while (true)
+            {
+                if (Match(TokenType.CurlyClose))
+                    break;
+                if (Match(TokenType.Default))
+                {
+                    foundDefault = true;
+                    Consume(TokenType.Default);
+                    Consume(TokenType.Colon);
+                    var defaultStatements = ParseStatementList();
+                    defaultClause = new DefaultClause(defaultStatements);
+                    continue;
+                }
+                Consume(TokenType.Case);
+                var matchExpression = ParseExpression();
+                Consume(TokenType.Colon);
+                var statements = ParseStatementList();
+                var clause = new CaseClause(matchExpression, statements);
+                if (foundDefault)
+                    secondCases.Add(clause);
+                else
+                    firstCases.Add(clause);
+            }
+
+            Consume(TokenType.CurlyClose);
+            return new SwitchStatement(expression, new CaseBlock(firstCases, defaultClause, secondCases));
+        }
+
+        private ContinueStatement ParseContinueStatement()
+        {
+            Consume(TokenType.Continue);
+            string label = null;
+            if (!CurrentToken.PassedNewLine && MatchBindingIdentifier())
+                label = ParseBindingIdentifier();
+            if (Match(TokenType.Semicolon))
+                Consume();
+            if (label == null)
+                return new ContinueStatement();
+            return new ContinueStatement(label);
+        }
+
+        private BreakStatement ParseBreakStatement()
+        {
+            Consume(TokenType.Break);
+            string label = null;
+            if (!CurrentToken.PassedNewLine && MatchBindingIdentifier())
+                label = ParseBindingIdentifier();
+            if (Match(TokenType.Semicolon))
+                Consume();
+            if (label == null)
+                return new BreakStatement();
+            return new BreakStatement(label);
+        }
+
+        private ReturnStatement ParseReturnStatement()
+        {
+            Consume(TokenType.Return);
+            IExpression expression = null;
+            if (!CurrentToken.PassedNewLine)
+                Parse(() =>
+                {
+                    expression = ParseExpression();
+                });
+            if (Match(TokenType.Semicolon))
+                Consume();
+            if (expression == null)
+                return new ReturnStatement();
+            return new ReturnStatement(expression);
+        }
+
+        private LabelledStatement ParseLabelledStatement()
+        {
+            var label = ParseBindingIdentifier();
+            Consume(TokenType.Colon);
+            if (Match(TokenType.Function))
+                return new LabelledStatement(new Identifier(label), ParseFunctionDeclaration());
+            return new LabelledStatement(new Identifier(label), ParseStatement());
+        }
+
+        private ThrowStatement ParseThrowStatement()
+        {
+            Consume(TokenType.Throw);
+            if (CurrentToken.PassedNewLine)
+                Expected("an expression to throw");
+            var expression = ParseExpression();
+            if (Match(TokenType.Semicolon))
+                Consume(TokenType.Semicolon);
+            return new ThrowStatement(expression);
+        }
+
+        private TryStatement ParseTryStatement()
+        {
+            Consume(TokenType.Try);
+            var tryBlock = ParseBlock();
+
+            (string catchParameter, Block catchBlock)? catchClause = null;
+            Block finallyBlock = null;
+            bool hasRequiredContent = false;
+            if (Match(TokenType.Catch))
+            {
+                catchClause = ParseCatch();
+                hasRequiredContent = true;
+            }
+            if (Match(TokenType.Finally))
+            {
+                Consume(TokenType.Finally);
+                finallyBlock = ParseBlock();
+                hasRequiredContent = true;
+            }
+            if (!hasRequiredContent)
+                Expected("catch or finally clause");
+
+            if (catchClause.HasValue && finallyBlock == null)
+            {
+                if (catchClause.Value.catchParameter != null)
+                    return TryStatement.TryCatch(tryBlock, new Identifier(catchClause.Value.catchParameter), catchClause.Value.catchBlock);
+                else
+                    return TryStatement.TryCatch(tryBlock, catchClause.Value.catchBlock);
+            }
+            else if (!catchClause.HasValue && finallyBlock != null)
+                return TryStatement.TryFinally(tryBlock, finallyBlock);
+            else
+            {
+                if (catchClause.Value.catchParameter != null)
+                    return TryStatement.TryCatchFinally(tryBlock, new Identifier(catchClause.Value.catchParameter), catchClause.Value.catchBlock, finallyBlock);
+                else
+                    return TryStatement.TryCatchFinally(tryBlock, catchClause.Value.catchBlock, finallyBlock);
+            }
+        }
+
+        private (string, Block) ParseCatch()
+        {
+            Consume();
+            string catchParameter = null;
+            if (Match(TokenType.ParenOpen))
+            {
+                Consume();
+                catchParameter = ParseBindingIdentifier();
+                Consume(TokenType.ParenClose);
+            }
+            var block = ParseBlock();
+            return (catchParameter, block);
+        }
+
+        private Declaration ParseDeclaration()
+        {
+            Declaration declaration = null;
+            Parse(() =>
+            {
+                declaration = ParseHoistableDeclaration();
+            }).Or(() =>
+            {
+                //TODO class
+                declaration = ParseLexicalDeclaration();
+            }).OrThrow("declaration");
+            return declaration;
+        }
+
+        private HoistableDeclaration ParseHoistableDeclaration()
+        {
+            HoistableDeclaration declaration = null;
+            Parse(() =>
+            {
+                declaration = ParseFunctionDeclaration();
+            }).OrThrow("function declaration");
+            //todo generator and async
+            return declaration;
+        }
+
+        private FunctionDeclaration ParseFunctionDeclaration()
+        {
+            Consume(TokenType.Function);
+            string functionName = null;
+            if (MatchBindingIdentifier())
+                functionName = ParseBindingIdentifier();
+            Consume(TokenType.ParenOpen);
+            FormalParameters parameters;
+            if (Match(TokenType.ParenClose))
+                parameters = new FormalParameters();
+            else
+                parameters = ParseFormalParameters();
+            Consume(TokenType.ParenClose);
+            Consume(TokenType.CurlyOpen);
+            var statements = new FunctionStatementList(ParseStatementList().statements);
+            Consume(TokenType.CurlyClose);
+
+            if (functionName != null)
+                return new FunctionDeclaration(new Identifier(functionName), parameters, statements);
+            return new FunctionDeclaration(parameters, statements);
+        }
+
+        private FormalParameters ParseFormalParameters()
+        {
+            string restParameter = null;
+            var list = new List<FormalParameter>();
+            while (true)
+            {
+                if (Match(TokenType.Ellipsis))
+                {
+                    Consume();
+                    restParameter = ParseBindingIdentifier();
+                    continue;
+                }
+                if (!MatchBindingIdentifier())
+                {
+                    Expected("a parameter");
+                    return null;
+                }
+
+                if (restParameter != null)
+                {
+                    Expected("no more parameters after the rest parameter");
+                    return null;
+                }
+
+                var name = ParseBindingIdentifier();
+                if (Match(TokenType.Equals))
+                {
+                    var initializer = ParseInitializer();
+                    list.Add(new FormalParameter(new Identifier(name), initializer));
+                }
+                else
+                    list.Add(new FormalParameter(new Identifier(name)));
+
+                if (!Match(TokenType.Comma))
+                    break;
+                Consume(TokenType.Comma);
+            }
+            if (restParameter != null)
+            {
+                return new FormalParameters(list, new Identifier(restParameter));
+            }
+            return new FormalParameters(list);
+        }
+
+        private LexicalDeclaration ParseLexicalDeclaration()
+        {
+            LexicalDeclarationType lexicalDeclarationType;
+            if (Match(TokenType.Let))
+                lexicalDeclarationType = LexicalDeclarationType.Let;
+            else if (Match(TokenType.Const))
+                lexicalDeclarationType = LexicalDeclarationType.Const;
+            else
+            {
+                Expected("let or const");
+                return null;
+            }
+            Consume();
+
+            var list = new List<LexicalDeclarationItem>();
+
+            while (true)
+            {
+                var variableName = ParseBindingIdentifier();
+                IAssignmentExpression initializer = null;
+                if (Match(TokenType.Equals))
+                    initializer = ParseInitializer();
+                else if (lexicalDeclarationType == LexicalDeclarationType.Const)
+                {
+                    Expected("an initializer for a const declaration");
+                    return null;
+                }
+                list.Add(new LexicalDeclarationItem(lexicalDeclarationType, variableName, initializer));
+
+                if (!Match(TokenType.Comma))
+                    break;
+                Consume(TokenType.Comma);
+            }
+
+            return new LexicalDeclaration(lexicalDeclarationType, list);
+        }
+
+        private IExpression ParseExpression()
+        {
+            IAssignmentExpression expression = ParseAssignmentExpression();
+            if (!Match(TokenType.Comma))
+                return expression;
+            var list = new List<IAssignmentExpression>() { expression };
+            do
+            {
+                Consume(TokenType.Comma);
+                list.Add(ParseAssignmentExpression());
+            } while (Match(TokenType.Comma));
+
+            return new CommaExpression(list);
+        }
+
+        private IAssignmentExpression ParseAssignmentExpression()
+        {
+            IAssignmentExpression expression = null;
+            Parse(() =>
+            {
+                expression = ParseConditionalExpression();
+            }).Or(() =>
+            {
+                ILeftHandSideExpression lhs = ParseLeftHandSideExpression();
+                if (Match(TokenType.Equals))
+                {
+                    Consume();
+                    var rhs = ParseAssignmentExpression();
+                    expression = new AssignmentExpression(lhs, rhs);
+                    return;
+                }
+                if (MatchAssignmentOperator())
+                {
+                    var op = ParseAssignmentOperator();
+                    var rhs = ParseAssignmentExpression();
+                    expression = new OperatorAssignmentExpression(lhs, op, rhs);
+                    return;
+                }
+                throw new ParseFailureException();
+            }).OrThrow("assignment expression");
+            return expression;
+        }
+
+        private bool MatchAssignmentOperator()
+        {
+            return Match(TokenType.AsteriskEquals) ||
+                Match(TokenType.SlashEquals) ||
+                Match(TokenType.PercentEquals) ||
+                Match(TokenType.PlusEquals) ||
+                Match(TokenType.MinusEquals) ||
+                Match(TokenType.ShiftLeftEquals) ||
+                Match(TokenType.ShiftRightEquals) ||
+                Match(TokenType.UnsignedShiftRightEquals) ||
+                Match(TokenType.AmpersandEquals) ||
+                Match(TokenType.CaretEquals) ||
+                Match(TokenType.PipeEquals) ||
+                Match(TokenType.AsteriskAsteriskEquals);
+        }
+
+        private AssignmentOperator ParseAssignmentOperator()
+        {
+            var type = Consume().Type;
+            switch (type)
+            {
+                case TokenType.AsteriskEquals:
+                    return AssignmentOperator.Multiply;
+                case TokenType.SlashEquals:
+                    return AssignmentOperator.Divide;
+                case TokenType.PercentEquals:
+                    return AssignmentOperator.Modulus;
+                case TokenType.PlusEquals:
+                    return AssignmentOperator.Plus;
+                case TokenType.MinusEquals:
+                    return AssignmentOperator.Minus;
+                case TokenType.ShiftLeftEquals:
+                    return AssignmentOperator.ShiftLeft;
+                case TokenType.ShiftRightEquals:
+                    return AssignmentOperator.ShiftRight;
+                case TokenType.UnsignedShiftRightEquals:
+                    return AssignmentOperator.ShiftRightUnsigned;
+                case TokenType.AmpersandEquals:
+                    return AssignmentOperator.BitwiseAnd;
+                case TokenType.CaretEquals:
+                    return AssignmentOperator.BitwiseXor;
+                case TokenType.PipeEquals:
+                    return AssignmentOperator.BitwiseOr;
+                case TokenType.AsteriskAsteriskEquals:
+                    return AssignmentOperator.Exponentiate;
+            }
+            Expected("an assignment operator, like +=");
+            return AssignmentOperator.Multiply;
+        }
+
+        private IConditionalExpression ParseConditionalExpression()
+        {
+            IConditionalExpression conditionalExpression = null;
+            Parse(() =>
+            {
+                var expression = ParseLogicalOrExpression();
+                if (Match(TokenType.QuestionMark))
+                {
+                    Consume();
+                    var trueExpr = ParseAssignmentExpression();
+                    Consume(TokenType.Colon);
+                    var falseExpr = ParseAssignmentExpression();
+                    conditionalExpression = new ConditionalExpression(expression, trueExpr, falseExpr);
+                    return;
+                }
+                conditionalExpression = expression;
+            }).OrThrow("conditional expression");
+            return conditionalExpression;
+        }
+
+        private ILogicalOrExpression ParseLogicalOrExpression()
+        {
+            var lhs = ParseLogicalAndExpression();
+            var tail = ParseLogicalOrTail();
+
+            if (tail == null)
+                return lhs;
+
+            var or = new LogicalOrExpression(lhs, tail.RHS);
+            while (tail.Tail != null)
+            {
+                tail = tail.Tail;
+                or = new LogicalOrExpression(or, tail.RHS);
+            }
+            return or;
+        }
+
+        private TailContainer<ILogicalAndExpression> ParseLogicalOrTail()
+        {
+            if (!Match(TokenType.DoublePipe))
+                return null;
+            Consume();
+            var rhs = ParseLogicalAndExpression();
+            var tail = ParseLogicalOrTail();
+            return new TailContainer<ILogicalAndExpression>(rhs, tail);
+        }
+
+        private ILogicalAndExpression ParseLogicalAndExpression()
+        {
+            var lhs = ParseBitwiseOrExpression();
+            var tail = ParseLogicalAndTail();
+
+            if (tail == null)
+                return lhs;
+
+            var and = new LogicalAndExpression(lhs, tail.RHS);
+            while (tail.Tail != null)
+            {
+                tail = tail.Tail;
+                and = new LogicalAndExpression(and, tail.RHS);
+            }
+            return and;
+        }
+
+        private TailContainer<IBitwiseOrExpression> ParseLogicalAndTail()
+        {
+            if (!Match(TokenType.DoubleAmpersand))
+                return null;
+            Consume();
+            var rhs = ParseBitwiseOrExpression();
+            var tail = ParseLogicalAndTail();
+            return new TailContainer<IBitwiseOrExpression>(rhs, tail);
+        }
+
+        private IBitwiseOrExpression ParseBitwiseOrExpression()
+        {
+            var lhs = ParseBitwiseXorExpression();
+            var tail = ParseBitwiseOrTail();
+
+            if (tail == null)
+                return lhs;
+
+            var bitwiseOr = new BitwiseOrExpression(lhs, tail.RHS);
+            while (tail.Tail != null)
+            {
+                tail = tail.Tail;
+                bitwiseOr = new BitwiseOrExpression(bitwiseOr, tail.RHS);
+            }
+            return bitwiseOr;
+        }
+
+        private TailContainer<IBitwiseXorExpression> ParseBitwiseOrTail()
+        {
+            if (!Match(TokenType.Pipe))
+                return null;
+            Consume();
+            var rhs = ParseBitwiseXorExpression();
+            var tail = ParseBitwiseOrTail();
+            return new TailContainer<IBitwiseXorExpression>(rhs, tail);
+        }
+
+        private IBitwiseXorExpression ParseBitwiseXorExpression()
+        {
+            var lhs = ParseBitwiseAndExpression();
+            var tail = ParseBitwiseXorTail();
+
+            if (tail == null)
+                return lhs;
+
+            var bitwiseXor = new BitwiseXorExpression(lhs, tail.RHS);
+            while (tail.Tail != null)
+            {
+                tail = tail.Tail;
+                bitwiseXor = new BitwiseXorExpression(bitwiseXor, tail.RHS);
+            }
+            return bitwiseXor;
+        }
+
+        private TailContainer<IBitwiseAndExpression> ParseBitwiseXorTail()
+        {
+            if (!Match(TokenType.Caret))
+                return null;
+            Consume();
+            var rhs = ParseBitwiseAndExpression();
+            var tail = ParseBitwiseXorTail();
+            return new TailContainer<IBitwiseAndExpression>(rhs, tail);
+        }
+
+        private IBitwiseAndExpression ParseBitwiseAndExpression()
+        {
+            var lhs = ParseEqualityExpression();
+            var tail = ParseBitwiseAndTail();
+
+            if (tail == null)
+                return lhs;
+
+            var bitwiseAnd = new BitwiseAndExpression(lhs, tail.RHS);
+            while (tail.Tail != null)
+            {
+                tail = tail.Tail;
+                bitwiseAnd = new BitwiseAndExpression(bitwiseAnd, tail.RHS);
+            }
+            return bitwiseAnd;
+        }
+
+        private TailContainer<IEqualityExpression> ParseBitwiseAndTail()
+        {
+            if (!Match(TokenType.Ampersand))
+                return null;
+            Consume();
+            var rhs = ParseEqualityExpression();
+            var tail = ParseBitwiseAndTail();
+            return new TailContainer<IEqualityExpression>(rhs, tail);
+        }
+
+        private IEqualityExpression ParseEqualityExpression()
+        {
+            var lhs = ParseRelationalExpression();
+            var tail = ParseEqualityTail();
+
+            if (tail == null)
+                return lhs;
+
+            var expression = new EqualityExpression(lhs, tail.Op, tail.RHS);
+            while (tail.Tail != null)
+            {
+                tail = tail.Tail;
+                expression = new EqualityExpression(expression, tail.Op, tail.RHS);
+            }
+            return expression;
+        }
+
+        private TailOperatorContainer<IRelationalExpression, EqualityOperator> ParseEqualityTail()
+        {
+            if (!MatchEqualityOperator())
+                return null;
+            var op = ParseEqualityOperator();
+            var rhs = ParseRelationalExpression();
+            var tail = ParseEqualityTail();
+            return new TailOperatorContainer<IRelationalExpression, EqualityOperator>(rhs, op, tail);
+        }
+
+        private EqualityOperator ParseEqualityOperator()
+        {
+            var type = Consume().Type;
+            switch (type)
+            {
+                case TokenType.EqualsEquals:
+                    return EqualityOperator.Equals;
+                case TokenType.ExclamationMarkEquals:
+                    return EqualityOperator.NotEquals;
+                case TokenType.EqualsEqualsEquals:
+                    return EqualityOperator.StrictEquals;
+                case TokenType.ExclamationMarkEqualsEquals:
+                    return EqualityOperator.StrictNotEquals;
+            }
+            Expected("equality operator like ==");
+            return EqualityOperator.Equals;
+        }
+
+        private bool MatchEqualityOperator()
+        {
+            return Match(TokenType.EqualsEquals) ||
+                Match(TokenType.ExclamationMarkEquals) ||
+                Match(TokenType.EqualsEqualsEquals) ||
+                Match(TokenType.ExclamationMarkEqualsEquals);
+        }
+
+        private IRelationalExpression ParseRelationalExpression()
+        {
+            var lhs = ParseShiftExpression();
+            var tail = ParseRelationalTail();
+
+            if (tail == null)
+                return lhs;
+
+            var expression = new RelationalExpression(lhs, tail.Op, tail.RHS);
+            while (tail.Tail != null)
+            {
+                tail = tail.Tail;
+                expression = new RelationalExpression(expression, tail.Op, tail.RHS);
+            }
+            return expression;
+        }
+
+        private TailOperatorContainer<IShiftExpression, RelationalOperator> ParseRelationalTail()
+        {
+            if (!MatchRelationalOperator())
+                return null;
+            var op = ParseRelationalOperator();
+            var rhs = ParseShiftExpression();
+            var tail = ParseRelationalTail();
+            return new TailOperatorContainer<IShiftExpression, RelationalOperator>(rhs, op, tail);
+        }
+
+        private RelationalOperator ParseRelationalOperator()
+        {
+            var type = Consume().Type;
+            switch (type)
+            {
+                case TokenType.LessThan:
+                    return RelationalOperator.LessThan;
+                case TokenType.GreaterThan:
+                    return RelationalOperator.GreaterThan;
+                case TokenType.LessThanEquals:
+                    return RelationalOperator.LessThanOrEqual;
+                case TokenType.GreaterThanEquals:
+                    return RelationalOperator.GreaterThanOrEqual;
+                case TokenType.Instanceof:
+                    return RelationalOperator.Instanceof;
+                case TokenType.In:
+                    return RelationalOperator.In;
+            }
+            Expected("relational operator like <");
+            return RelationalOperator.LessThan;
+        }
+
+        private bool MatchRelationalOperator()
+        {
+            return Match(TokenType.LessThan) ||
+                Match(TokenType.GreaterThan) ||
+                Match(TokenType.LessThanEquals) ||
+                Match(TokenType.GreaterThanEquals) ||
+                Match(TokenType.Instanceof) ||
+                Match(TokenType.In);
+        }
+
+        private IShiftExpression ParseShiftExpression()
+        {
+            var lhs = ParseAdditiveExpression();
+            var tail = ParseShiftTail();
+
+            if (tail == null)
+                return lhs;
+
+            var expression = new ShiftExpression(lhs, tail.Op, tail.RHS);
+            while (tail.Tail != null)
+            {
+                tail = tail.Tail;
+                expression = new ShiftExpression(expression, tail.Op, tail.RHS);
+            }
+            return expression;
+        }
+
+        private TailOperatorContainer<IAdditiveExpression, ShiftOperator> ParseShiftTail()
+        {
+            if (!MatchShiftOperator())
+                return null;
+            var op = ParseShiftOperator();
+            var rhs = ParseAdditiveExpression();
+            var tail = ParseShiftTail();
+            return new TailOperatorContainer<IAdditiveExpression, ShiftOperator>(rhs, op, tail);
+        }
+
+        private ShiftOperator ParseShiftOperator()
+        {
+            var type = Consume().Type;
+            switch (type)
+            {
+                case TokenType.ShiftLeft:
+                    return ShiftOperator.ShiftLeft;
+                case TokenType.ShiftRight:
+                    return ShiftOperator.ShiftRight;
+                case TokenType.UnsignedShiftRight:
+                    return ShiftOperator.ShiftRightUnsigned;
+            }
+            Expected("shift operator like <<");
+            return ShiftOperator.ShiftLeft;
+        }
+
+        private bool MatchShiftOperator()
+        {
+            return Match(TokenType.ShiftLeft) ||
+                Match(TokenType.ShiftRight) ||
+                Match(TokenType.UnsignedShiftRight);
+        }
+
+        private IAdditiveExpression ParseAdditiveExpression()
+        {
+            var lhs = ParseMultiplicativeExpression();
+            var tail = ParseAdditiveTail();
+
+            if (tail == null)
+                return lhs;
+
+            var expression = new AdditiveExpression(lhs, tail.Op, tail.RHS);
+            while (tail.Tail != null)
+            {
+                tail = tail.Tail;
+                expression = new AdditiveExpression(expression, tail.Op, tail.RHS);
+            }
+            return expression;
+        }
+
+        private TailOperatorContainer<IMultiplicativeExpression, AdditiveOperator> ParseAdditiveTail()
+        {
+            if (!MatchAdditiveOperator())
+                return null;
+            var op = ParseAdditiveOperator();
+            var rhs = ParseMultiplicativeExpression();
+            var tail = ParseAdditiveTail();
+            return new TailOperatorContainer<IMultiplicativeExpression, AdditiveOperator>(rhs, op, tail);
+        }
+
+        private AdditiveOperator ParseAdditiveOperator()
+        {
+            var type = Consume().Type;
+            switch (type)
+            {
+                case TokenType.Plus:
+                    return AdditiveOperator.Add;
+                case TokenType.Minus:
+                    return AdditiveOperator.Subtract;
+            }
+            Expected("additive operator like +");
+            return AdditiveOperator.Add;
+        }
+
+        private bool MatchAdditiveOperator()
+        {
+            return Match(TokenType.Plus) || Match(TokenType.Minus);
+        }
+
+        private IMultiplicativeExpression ParseMultiplicativeExpression()
+        {
+            var lhs = ParseExponentiationExpression();
+            var tail = ParseMultiplicativeTail();
+
+            if (tail == null)
+                return lhs;
+
+            var expression = new MultiplicativeExpression(lhs, tail.Op, tail.RHS);
+            while (tail.Tail != null)
+            {
+                tail = tail.Tail;
+                expression = new MultiplicativeExpression(expression, tail.Op, tail.RHS);
+            }
+            return expression;
+        }
+
+        private TailOperatorContainer<IExponentiationExpression, MultiplicativeOperator> ParseMultiplicativeTail()
+        {
+            if (!MatchMultiplicativeOperator())
+                return null;
+            var op = ParseMultiplicativeOperator();
+            var rhs = ParseExponentiationExpression();
+            var tail = ParseMultiplicativeTail();
+            return new TailOperatorContainer<IExponentiationExpression, MultiplicativeOperator>(rhs, op, tail);
+        }
+
+        private MultiplicativeOperator ParseMultiplicativeOperator()
+        {
+            var type = Consume().Type;
+            switch (type)
+            {
+                case TokenType.Asterisk:
+                    return MultiplicativeOperator.Multiply;
+                case TokenType.Slash:
+                    return MultiplicativeOperator.Divide;
+                case TokenType.Percent:
+                    return MultiplicativeOperator.Modulus;
+            }
+            Expected("multiplicative operator like *");
+            return MultiplicativeOperator.Multiply;
+        }
+
+        private bool MatchMultiplicativeOperator()
+        {
+            return Match(TokenType.Asterisk) ||
+                Match(TokenType.Slash) ||
+                Match(TokenType.Percent);
+        }
+
+        private IExponentiationExpression ParseExponentiationExpression()
+        {
+            IExponentiationExpression expression = null;
+            Parse(() =>
+            {
+                IUpdateExpression lhs = ParseUpdateExpression();
+                Consume(TokenType.DoubleAsterisk);
+                var rhs = ParseExponentiationExpression();
+                expression = new ExponentiationExpression(lhs, rhs);
+
+            }).Or(() =>
+            {
+                expression = ParseUnaryExpression();
+            }).OrThrow("Update or Unary expression");
+            return expression;
+        }
+
+        private IUnaryExpression ParseUnaryExpression()
+        {
+            if (!MatchUnaryOperator())
+            {
+                return ParseUpdateExpression();
+            }
+            var op = ParseUnaryOperator();
+            var expression = ParseUnaryExpression();
+            return new OperatorUnaryExpression(op, expression);
+        }
+
+        private UnaryOperator ParseUnaryOperator()
+        {
+            var type = Consume().Type;
+            switch (type)
+            {
+                case TokenType.Delete:
+                    return UnaryOperator.Delete;
+                case TokenType.Void:
+                    return UnaryOperator.Void;
+                case TokenType.Typeof:
+                    return UnaryOperator.Typeof;
+                case TokenType.Plus:
+                    return UnaryOperator.Plus;
+                case TokenType.Minus:
+                    return UnaryOperator.Negate;
+                case TokenType.Tilde:
+                    return UnaryOperator.BitwiseNot;
+                case TokenType.ExclamationMark:
+                    return UnaryOperator.LogicalNot;
+            }
+            Expected("unary opertor like +, -, or delete");
+            return UnaryOperator.Delete;
+        }
+
+        private bool MatchUnaryOperator()
+        {
+            return
+                Match(TokenType.Delete) ||
+                Match(TokenType.Void) ||
+                Match(TokenType.Typeof) ||
+                Match(TokenType.Plus) ||
+                Match(TokenType.Minus) ||
+                Match(TokenType.Tilde) ||
+                Match(TokenType.ExclamationMark);
+        }
+
+        private IUpdateExpression ParseUpdateExpression()
+        {
+            if (MatchUpdateOperator())
+            {
+                var op = ParseUpdateOperator();
+                var expression = ParseUnaryExpression();
+                return new PrefixUpdateExpression(expression, op);
+            }
+            IUpdateExpression updateExpression = null;
+            Parse(() =>
+            {
+                var lhs = ParseLeftHandSideExpression();
+                if (MatchUpdateOperator() && !CurrentToken.PassedNewLine)
+                {
+                    var op = ParseUpdateOperator();
+                    updateExpression = new PostfixUpdateExpression(lhs, op);
+                    return;
+                }
+                updateExpression = lhs;
+            }).OrThrow("update expression");
+            return updateExpression;
+        }
+
+        private UpdateOperator ParseUpdateOperator()
+        {
+            var type = Consume().Type;
+            switch (type)
+            {
+                case TokenType.PlusPlus:
+                    return UpdateOperator.Increment;
+                case TokenType.MinusMinus:
+                    return UpdateOperator.Decrement;
+                default:
+                    Expected("++ or --");
+                    return UpdateOperator.Increment;
+            }
+        }
+
+        private bool MatchUpdateOperator()
+        {
+            return Match(TokenType.PlusPlus) || Match(TokenType.MinusEquals);
+        }
+
+        private ILeftHandSideExpression ParseLeftHandSideExpression()
+        {
+            ILeftHandSideExpression lhs = null;
+            Parse(() =>
+            {
+                lhs = ParseNewExpression();
+            }).Or(() =>
+            {
+                lhs = ParseCallExpression();
+            }).OrThrow("left hand side expression");
+            return lhs;
+        }
+
+        private INewExpression ParseNewExpression()
+        {
+            if (Match(TokenType.New))
+            {
+                Consume();
+                var expression = ParseNewExpression();
+                return new NewExpression(expression);
+            }
+            return ParseMemberExpression();
+        }
+
+        private ICallExpression ParseCallExpression()
+        {
+            ICallExpression lhs = null;
+            Parse(() =>
+            {
+                lhs = ParseCoveredCallExpression();
+            }).Or(() =>
+            {
+                lhs = ParseSuperCallExpression();
+            }).OrThrow("call expression");
+            var tail = ParseCallExpressionTail();
+            if (tail == null)
+                return lhs;
+
+            do
+            {
+                if (tail.Arguments != null)
+                    lhs = new RecursiveCallExpression(lhs, tail.Arguments);
+                else if (tail.IdentifierName != null)
+                    lhs = new DotCallExpression(lhs, tail.IdentifierName);
+                else if (tail.Expression != null)
+                    lhs = new IndexCallExpression(lhs, tail.Expression);
+                else
+                {
+                    Expected("call expression tail component");
+                    return null;
+                }
+
+                tail = tail.Tail;
+            } while (tail != null);
+
+            return lhs;
+        }
+
+        private CallExpressionTail ParseCallExpressionTail()
+        {
+            if (Match(TokenType.BracketOpen))
+            {
+                Consume();
+                var expression = ParseExpression();
+                Consume(TokenType.BracketClose);
+                return new CallExpressionTail(expression, ParseCallExpressionTail());
+            }
+            else if (Match(TokenType.Period))
+            {
+                Consume();
+                var identifierName = Consume().Value;
+                return new CallExpressionTail(identifierName, ParseCallExpressionTail());
+            }
+            Arguments arguments = null;
+            Parse(() =>
+            {
+                arguments = ParseArguments();
+            });
+            if (arguments != null)
+            {
+                return new CallExpressionTail(arguments, ParseCallExpressionTail());
+            }
+            return null;
+        }
+
+        private SuperCall ParseSuperCallExpression()
+        {
+            Consume(TokenType.Super);
+            return new SuperCall(ParseArguments());
+        }
+
+        private MemberCallExpression ParseCoveredCallExpression()
+        {
+            var memberExpression = ParseMemberExpression();
+            var arguments = ParseArguments();
+            return new MemberCallExpression(memberExpression, arguments);
+        }
+
+        private Arguments ParseArguments()
+        {
+            Consume(TokenType.ParenOpen);
+            if (Match(TokenType.ParenClose))
+            {
+                Consume();
+                return new Arguments(Utils.EmptyList<IArgumentItem>());
+            }
+            var arguments = new List<IArgumentItem>();
+            while (true)
+            {
+                var item = ParseArgumentItem();
+                arguments.Add(item);
+                if (Match(TokenType.Comma))
+                    Consume();
+                if (Match(TokenType.ParenClose))
+                {
+                    Consume();
+                    break;
+                }
+            }
+            return new Arguments(arguments);
+        }
+
+        private IArgumentItem ParseArgumentItem()
+        {
+            if (Match(TokenType.Ellipsis))
+            {
+                Consume();
+                return new SpreadElement(ParseAssignmentExpression());
+            }
+            return ParseAssignmentExpression();
+        }
+
+        private IMemberExpression ParseMemberExpression()
+        {
+            if (Match(TokenType.New))
+            {
+                Consume();
+                return new NewMemberExpression(ParseMemberExpression(), ParseArguments());
+            }
+            if (Match(TokenType.Super))
+            {
+                return ParseSuperProperty();
+            }
+            IMemberExpression lhs = ParsePrimaryExpression();
+            var tail = ParseMemberExpressionTail();
+            if (tail == null)
+                return lhs;
+
+            do
+            {
+                if (tail.IdentifierName != null)
+                    lhs = new DotMemberExpression(lhs, tail.IdentifierName);
+                else if (tail.Expression != null)
+                    lhs = new IndexMemberExpression(lhs, tail.Expression);
+                else
+                {
+                    Expected("member expression tail component");
+                    return null;
+                }
+
+                tail = tail.Tail;
+            } while (tail != null);
+
+            return lhs;
+        }
+
+        private MemberExpressionTail ParseMemberExpressionTail()
+        {
+            if (!Match(TokenType.BracketOpen) && !Match(TokenType.Period))
+                return null;
+            if (Match(TokenType.BracketOpen))
+            {
+                Consume();
+                return new MemberExpressionTail(ParseExpression(), ParseMemberExpressionTail());
+            }
+            if (Match(TokenType.Period))
+            {
+                Consume();
+                return new MemberExpressionTail(Consume().Value, ParseMemberExpressionTail());
+            }
+            Expected("member expression tail");
+            return null;
+        }
+
+        private IMemberExpression ParseSuperProperty()
+        {
+            Consume(TokenType.Super);
+            if (Match(TokenType.BracketOpen))
+            {
+                Consume();
+                return new SuperIndexMemberExpression(ParseExpression());
+            }
+            if (Match(TokenType.Period))
+            {
+                Consume();
+                return new SuperDotMemberExpression(Consume().Value);
+            }
+            Expected("super property");
+            return null;
+        }
+
+        private IPrimaryExpression ParsePrimaryExpression()
+        {
+            if (Match(TokenType.This))
+            {
+                Consume();
+                return ThisExpression.Instance;
+            }
+            if (Match(TokenType.Identifier))
+                return new IdentifierReference(new Identifier(Consume().Value));
+            if (Match(TokenType.BoolLiteral))
+                return new Literal(Consume().BoolValue());
+            if (Match(TokenType.NullLiteral))
+            {
+                Consume();
+                return Literal.NullLiteral;
+            }
+            if (Match(TokenType.NumericLiteral))
+                return new Literal(Consume().DoubleValue());
+            if (Match(TokenType.Slash) || Match(TokenType.SlashEquals))
+                return ParseRegularExpressionLiteral();
+            if (Match(TokenType.StringLiteral))
+                return new Literal(Consume().StringValue());
+            if (Match(TokenType.BracketOpen))
+                return ParseArrayLiteral();
+            if (Match(TokenType.CurlyOpen))
+                return ParseObjectLiteral();
+            if (Match(TokenType.Function))
+                return ParseFunctionExpression();
+            if (Match(TokenType.ParenOpen))
+                return ParseParenthesizedExpression();
+
+            Expected("primary expression");
+            return null;
+        }
+
+        private RegularExpressionLiteral ParseRegularExpressionLiteral()
+        {
+            var startType = CurrentToken.Type;
+            Consume();
+            var body = new StringBuilder();
+            if (startType == TokenType.SlashEquals)
+                body.Append('=');
+            while (CurrentToken.Type != TokenType.Slash)
+            {
+                body.Append(Consume().Value);
+            }
+            Consume(TokenType.Slash);
+            var flags = Consume(TokenType.Identifier).Value;
+            return new RegularExpressionLiteral(body.ToString(), flags);
+        }
+
+        private ArrayLiteral ParseArrayLiteral()
+        {
+            Consume(TokenType.BracketOpen);
+            var items = new List<IArrayLiteralItem>();
+            while (true)
+            {
+                if (Match(TokenType.BracketClose))
+                    break;
+                int width = 0;
+                while (Match(TokenType.Comma))
+                {
+                    Consume();
+                    width++;
+                }
+                if (width > 0)
+                    items.Add(new Elision(width));
+                if (Match(TokenType.Ellipsis))
+                {
+                    Consume();
+                    items.Add(new SpreadElement(ParseAssignmentExpression()));
+                    if (Match(TokenType.Comma))
+                        Consume();
+                    continue;
+                }
+                items.Add(ParseAssignmentExpression());
+                if (Match(TokenType.Comma))
+                    Consume();
+            }
+            Consume(TokenType.BracketClose);
+            return new ArrayLiteral(items);
+        }
+
+        private ObjectLiteral ParseObjectLiteral()
+        {
+            Consume(TokenType.CurlyOpen);
+            if (Match(TokenType.CurlyClose))
+            {
+                Consume();
+                return new ObjectLiteral(Utils.EmptyList<IPropertyDefinition>());
+            }
+            var definitions = new List<IPropertyDefinition>();
+            while (true)
+            {
+                if (Match(TokenType.CurlyClose))
+                    break;
+
+                if (Match(TokenType.Ellipsis))
+                {
+                    Consume();
+                    definitions.Add(new SpreadElement(ParseAssignmentExpression()));
+                    if (Match(TokenType.Comma))
+                        Consume();
+                    continue;
+                }
+
+                IPropertyDefinition propertyDefinition = null;
+                Parse(() =>
+                {
+                    var propertyName = Consume().Value;
+                    Consume(TokenType.Colon);
+                    propertyDefinition = new PropertyDefinition(propertyName, ParseAssignmentExpression());
+                }).Or(() =>
+                {
+                    var identifier = Consume().Value;
+                    var initializer = ParseInitializer();
+                    propertyDefinition = new PropertyDefinition(identifier, initializer);
+                }).Or(() =>
+                {
+                    propertyDefinition = new IdentifierReference(new Identifier(Consume().Value));
+                }).OrThrow("object literal property definition");
+                definitions.Add(propertyDefinition);
+
+                if (Match(TokenType.Comma))
+                    Consume();
+            }
+            Consume(TokenType.CurlyClose);
+
+            return new ObjectLiteral(definitions);
+        }
+
+        private FunctionExpression ParseFunctionExpression()
+        {
+            Consume(TokenType.Function);
+            string functionName = null;
+            if (MatchBindingIdentifier())
+                functionName = ParseBindingIdentifier();
+            Consume(TokenType.ParenOpen);
+            FormalParameters parameters;
+            if (Match(TokenType.ParenClose))
+                parameters = new FormalParameters();
+            else
+                parameters = ParseFormalParameters();
+            Consume(TokenType.ParenClose);
+            Consume(TokenType.CurlyOpen);
+            var statements = new FunctionStatementList(ParseStatementList().statements);
+            Consume(TokenType.CurlyClose);
+
+            if (functionName != null)
+                return new FunctionExpression(new Identifier(functionName), parameters, statements);
+            return new FunctionExpression(parameters, statements);
+        }
+
+        private ParenthesizedExpression ParseParenthesizedExpression()
+        {
+            Consume(TokenType.ParenOpen);
+            var expression = ParseExpression();
+            Consume(TokenType.ParenClose);
+            return new ParenthesizedExpression(expression);
         }
     }
-    */
 }

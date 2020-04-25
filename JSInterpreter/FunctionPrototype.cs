@@ -4,7 +4,7 @@ using System.Text;
 
 namespace JSInterpreter
 {
-    class FunctionPrototype : Object
+    public class FunctionPrototype : Object
     {
         public static FunctionPrototype Instance = new FunctionPrototype();
 

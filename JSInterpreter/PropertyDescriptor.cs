@@ -2,7 +2,7 @@
 
 namespace JSInterpreter
 {
-    class PropertyDescriptor
+    public class PropertyDescriptor
     {
         public IValue Value;
         public bool? Writable;

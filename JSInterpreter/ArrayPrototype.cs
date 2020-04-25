@@ -4,7 +4,7 @@ using System.Text;
 
 namespace JSInterpreter
 {
-    class ArrayPrototype : Object
+    public class ArrayPrototype : Object
     {
         private static ArrayPrototype instance;
         public static ArrayPrototype Instance

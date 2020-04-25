@@ -6,23 +6,23 @@ using System.Text;
 
 namespace JSInterpreter
 {
-    enum FunctionKind
+    public enum FunctionKind
     {
         Normal,
         NonConstructor,
         ClassConstructor
     }
-    enum ConstructorKind
+    public enum ConstructorKind
     {
         Base
     }
-    enum ThisMode
+    public enum ThisMode
     {
         Lexical,
         Strict,
         Global
     }
-    class FunctionObject : Constructor
+    public class FunctionObject : Constructor
     {
         public LexicalEnvironment Environment { get; private set; }
         public FormalParameters FormalParameters { get; private set; }
@@ -33,15 +33,6 @@ namespace JSInterpreter
         public ThisMode ThisMode { get; private set; }
         public bool Strict { get; private set; }
         public IValue HomeObject { get; internal set; }
-
-        public Completion Construct(IReadOnlyList<IValue> arguments = null, Object newTarget = null)
-        {
-            if (newTarget == null)
-                newTarget = this;
-            if (arguments == null)
-                arguments = Utils.EmptyList<IValue>();
-            return InternalConstruct(arguments, newTarget);
-        }
 
         public override Completion InternalConstruct(IReadOnlyList<IValue> arguments, Object newTarget)
         {

@@ -5,11 +5,11 @@ using System.Text;
 
 namespace JSInterpreter.AST
 {
-    interface ICallExpression : ILeftHandSideExpression
+    public interface ICallExpression : ILeftHandSideExpression
     {
     }
 
-    class MemberCallExpression : ICallExpression
+    public class MemberCallExpression : ICallExpression
     {
         public readonly IMemberExpression memberExpression;
         public readonly Arguments arguments;
@@ -36,7 +36,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    class SuperCall : ICallExpression
+    public class SuperCall : ICallExpression
     {
         public readonly Arguments arguments;
 
@@ -78,7 +78,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    class RecursiveCallExpression : ICallExpression
+    public class RecursiveCallExpression : ICallExpression
     {
         public readonly ICallExpression callExpression;
         public readonly Arguments arguments;
@@ -100,7 +100,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    class IndexCallExpression : ICallExpression
+    public class IndexCallExpression : ICallExpression
     {
         public readonly ICallExpression callExpression;
         public readonly IExpression indexerExpression;
@@ -128,7 +128,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    class DotCallExpression : ICallExpression
+    public class DotCallExpression : ICallExpression
     {
         public readonly ICallExpression callExpression;
         public readonly string dotIdentifierName;

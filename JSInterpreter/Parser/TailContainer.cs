@@ -1,6 +1,6 @@
 ﻿namespace JSInterpreter.Parser
 {
-    class TailContainer<T>
+    public class TailContainer<T>
     {
         public T RHS;
         public TailContainer<T> Tail;

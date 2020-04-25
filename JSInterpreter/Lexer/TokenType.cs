@@ -30,7 +30,7 @@ using System.Text;
 
 namespace JSInterpreter.Lexer
 {
-    enum TokenType
+    public enum TokenType
     {
         Ampersand,
         AmpersandEquals,
@@ -114,6 +114,7 @@ namespace JSInterpreter.Lexer
         Slash,
         SlashEquals,
         StringLiteral,
+        Super,
         Switch,
         This,
         Throw,

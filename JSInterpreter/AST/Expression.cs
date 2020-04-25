@@ -4,10 +4,10 @@ using System.Text;
 
 namespace JSInterpreter.AST
 {
-    interface IExpression : IHasEvaluate
+    public interface IExpression : IHasEvaluate
     {
     }
-    class CommaExpression : IExpression
+    public class CommaExpression : IExpression
     {
         public readonly IReadOnlyList<IAssignmentExpression> assignmentExpressions;
 

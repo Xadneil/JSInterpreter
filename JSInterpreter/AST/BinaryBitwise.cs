@@ -4,16 +4,16 @@ using System.Text;
 
 namespace JSInterpreter.AST
 {
-    interface IBitwiseAndExpression : IBitwiseXorExpression
+    public interface IBitwiseAndExpression : IBitwiseXorExpression
     {
     }
 
-    enum BitwiseOperator
+    public enum BitwiseOperator
     {
         And, Xor, Or
     }
 
-    abstract class BitwiseExpression
+    public abstract class BitwiseExpression
     {
         public Completion Evaluate(Interpreter interpreter)
         {
@@ -52,7 +52,7 @@ namespace JSInterpreter.AST
         protected abstract IExpression Right { get; }
     }
 
-    class BitwiseAndExpression : BitwiseExpression, IBitwiseAndExpression
+    public class BitwiseAndExpression : BitwiseExpression, IBitwiseAndExpression
     {
         public readonly IEqualityExpression equalityExpression;
         public readonly IBitwiseAndExpression bitwiseAndExpression;
@@ -70,11 +70,11 @@ namespace JSInterpreter.AST
         protected override IExpression Right => equalityExpression;
     }
 
-    interface IBitwiseXorExpression : IBitwiseOrExpression
+    public interface IBitwiseXorExpression : IBitwiseOrExpression
     {
     }
 
-    class BitwiseXorExpression : BitwiseExpression, IBitwiseXorExpression
+    public class BitwiseXorExpression : BitwiseExpression, IBitwiseXorExpression
     {
         public readonly IBitwiseAndExpression bitwiseAndExpression;
         public readonly IBitwiseXorExpression bitwiseXorExpression;
@@ -92,11 +92,11 @@ namespace JSInterpreter.AST
         protected override IExpression Right => bitwiseAndExpression;
     }
 
-    interface IBitwiseOrExpression : ILogicalAndExpression
+    public interface IBitwiseOrExpression : ILogicalAndExpression
     {
     }
 
-    class BitwiseOrExpression : BitwiseExpression, IBitwiseOrExpression
+    public class BitwiseOrExpression : BitwiseExpression, IBitwiseOrExpression
     {
         public readonly IBitwiseXorExpression bitwiseXorExpression;
         public readonly IBitwiseOrExpression bitwiseOrExpression;

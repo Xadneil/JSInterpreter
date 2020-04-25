@@ -4,18 +4,18 @@ using System.Text;
 
 namespace JSInterpreter.AST
 {
-    enum MultiplicativeOperator
+    public enum MultiplicativeOperator
     {
         Multiply,
         Divide,
         Modulus
     }
 
-    interface IMultiplicativeExpression : IAdditiveExpression
+    public interface IMultiplicativeExpression : IAdditiveExpression
     {
     }
 
-    class MultiplicativeExpression : IMultiplicativeExpression
+    public class MultiplicativeExpression : IMultiplicativeExpression
     {
         public readonly MultiplicativeOperator multiplicativeOperator;
         public readonly IExponentiationExpression exponentiationExpression;

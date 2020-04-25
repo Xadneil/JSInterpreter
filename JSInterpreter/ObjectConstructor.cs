@@ -4,7 +4,7 @@ using System.Text;
 
 namespace JSInterpreter
 {
-    class ObjectConstructor : FunctionObject
+    public class ObjectConstructor : FunctionObject
     {
     }
 }

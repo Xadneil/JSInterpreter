@@ -4,7 +4,7 @@ using System.Text;
 
 namespace JSInterpreter.AST
 {
-    class RegularExpressionLiteral : IPrimaryExpression
+    public class RegularExpressionLiteral : IPrimaryExpression
     {
         public readonly string body, flags;
 

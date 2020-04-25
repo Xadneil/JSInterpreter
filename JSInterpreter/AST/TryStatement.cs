@@ -5,14 +5,14 @@ using System.Text;
 
 namespace JSInterpreter.AST
 {
-    enum TryStatementType
+    public enum TryStatementType
     {
         TryCatch,
         TryFinally,
         TryCatchFinally
     }
 
-    class TryStatement : Statement
+    public class TryStatement : Statement
     {
         public readonly TryStatementType tryStatementType;
         public readonly Block tryBlock;

@@ -31,7 +31,7 @@ using System.Text;
 
 namespace JSInterpreter.Lexer
 {
-    class Lexer
+    public class Lexer
     {
         private static readonly Dictionary<string, TokenType> keywords = new Dictionary<string, TokenType>();
         private static readonly Dictionary<string, TokenType> three_char_tokens = new Dictionary<string, TokenType>();
@@ -40,19 +40,32 @@ namespace JSInterpreter.Lexer
 
         private readonly string source;
         private int position;
-        Token currentToken;
-        char currentChar;
-        bool hasErrors;
-        int lineNumber = 1;
-        int lineColumn = 1;
-        bool logErrors = true;
+        private Token currentToken;
+        private char currentChar;
+        private bool hasErrors;
+        private int lineNumber = 1;
+        private int lineColumn = 1;
+        private bool logErrors = true;
+        private bool PassedNewLine;
 
-        public bool PassedNewLine { get; private set; }
+        public static Tokens Lex(string source)
+        {
+            var lexer = new Lexer(source);
 
-        public Lexer(string source)
+            var tokens = new Tokens();
+            var token = lexer.Next();
+            do
+            {
+                tokens.Add(token);
+                token = lexer.Next();
+            } while (token.Type != TokenType.Eof);
+            return tokens;
+        }
+
+        private Lexer(string source)
         {
             this.source = source;
-            currentToken = new Token(TokenType.Eof, null, null, 0, 0);
+            currentToken = new Token(TokenType.Eof, null, null, 0, 0, false);
 
             if (!keywords.Any())
             {
@@ -81,6 +94,7 @@ namespace JSInterpreter.Lexer
                 keywords["null"] = TokenType.NullLiteral;
                 keywords["of"] = TokenType.Of;
                 keywords["return"] = TokenType.Return;
+                keywords["super"] = TokenType.Super;
                 keywords["switch"] = TokenType.Switch;
                 keywords["this"] = TokenType.This;
                 keywords["throw"] = TokenType.Throw;
@@ -160,7 +174,7 @@ namespace JSInterpreter.Lexer
             Consume();
         }
 
-        public void Consume()
+        private void Consume()
         {
             if (position >= source.Length)
             {
@@ -183,7 +197,7 @@ namespace JSInterpreter.Lexer
             currentChar = source[position++];
         }
 
-        public void ConsumeExponent()
+        private void ConsumeExponent()
         {
             Consume();
             if (currentChar == '-' || currentChar == '+')
@@ -194,7 +208,7 @@ namespace JSInterpreter.Lexer
             }
         }
 
-        public bool Match(char a, char b)
+        private bool Match(char a, char b)
         {
             if (position >= source.Length)
                 return false;
@@ -203,7 +217,7 @@ namespace JSInterpreter.Lexer
                 && source[position] == b;
         }
 
-        public bool Match(char a, char b, char c)
+        private bool Match(char a, char b, char c)
         {
             if (position + 1 >= source.Length)
                 return false;
@@ -213,7 +227,7 @@ namespace JSInterpreter.Lexer
                 && source[position + 1] == c;
         }
 
-        public bool Match(char a, char b, char c, char d)
+        private bool Match(char a, char b, char c, char d)
         {
             if (position + 2 >= source.Length)
                 return false;
@@ -224,49 +238,49 @@ namespace JSInterpreter.Lexer
                 && source[position + 2] == d;
         }
 
-        public bool IsEOF()
+        private bool IsEOF()
         {
             return currentChar == '\0';
         }
 
-        public bool IsIdentifierStart()
+        private bool IsIdentifierStart()
         {
             return char.IsLetter(currentChar) || currentChar == '_' || currentChar == '$';
         }
 
-        public bool IsIdentifierMiddle()
+        private bool IsIdentifierMiddle()
         {
             return IsIdentifierStart() || char.IsDigit(currentChar);
         }
 
-        public bool IsLineCommentStart()
+        private bool IsLineCommentStart()
         {
             return Match('/', '/');
         }
 
-        public bool IsBlockCommentStart()
+        private bool IsBlockCommentStart()
         {
             return Match('/', '*');
         }
 
-        public bool IsBlockCommentEnd()
+        private bool IsBlockCommentEnd()
         {
             return Match('*', '/');
         }
 
-        public bool IsNumericLiteralStart()
+        private bool IsNumericLiteralStart()
         {
             return char.IsDigit(currentChar) || (currentChar == '.' && position < source.Length && char.IsDigit(source[position]));
         }
 
-        public void SyntaxError(string msg)
+        private void SyntaxError(string msg)
         {
             hasErrors = true;
             if (logErrors)
                 Console.WriteLine($"Syntax Error: {msg} (line: {lineNumber}, column: {lineColumn})");
         }
 
-        public Token Next()
+        private Token Next()
         {
             PassedNewLine = false;
             int trivia_start = position;
@@ -498,7 +512,8 @@ namespace JSInterpreter.Lexer
                 source.Substring(trivia_start - 1, value_start - trivia_start),
                 source.Substring(value_start - 1, position - value_start),
                 lineNumber,
-                lineColumn - position + value_start);
+                lineColumn - position + value_start,
+                PassedNewLine);
 
             return currentToken;
         }
@@ -510,7 +525,7 @@ namespace JSInterpreter.Lexer
                (c >= 'A' && c <= 'F');
         }
 
-        public bool HasErrors()
+        private bool HasErrors()
         {
             return hasErrors;
         }

@@ -5,7 +5,7 @@ using System.Text;
 
 namespace JSInterpreter
 {
-    interface IHasLexicallyScopedDeclarations
+    public interface IHasLexicallyScopedDeclarations
     {
         IReadOnlyList<IDeclarationPart> LexicallyScopedDeclarations();
     }

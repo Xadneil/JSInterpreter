@@ -1,6 +1,6 @@
 ﻿namespace JSInterpreter
 {
-    class GlobalObject : Object
+    public class GlobalObject : Object
     {
 
     }

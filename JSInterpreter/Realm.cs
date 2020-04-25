@@ -4,7 +4,7 @@ using System.Text;
 
 namespace JSInterpreter
 {
-    class Realm
+    public class Realm
     {
         public static Realm CreateRealm()
         {
@@ -35,7 +35,7 @@ namespace JSInterpreter
         public Intrinsics Intrinsics;
     }
 
-    class Intrinsics
+    public class Intrinsics
     {
         public Object ObjectPrototype;
         public FunctionObject FunctionPrototype;

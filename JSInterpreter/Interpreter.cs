@@ -5,7 +5,7 @@ using System.Text;
 
 namespace JSInterpreter
 {
-    class Interpreter
+    public class Interpreter
     {
         private static Interpreter interpreter;
         public static Interpreter Instance()
@@ -98,14 +98,14 @@ namespace JSInterpreter
         }
     }
 
-    class ExecutionContext
+    public class ExecutionContext
     {
         public LexicalEnvironment LexicalEnvironment;
         public LexicalEnvironment VariableEnvironment;
         public Realm Realm;
     }
 
-    class LexicalEnvironment
+    public class LexicalEnvironment
     {
         public EnvironmentRecord EnvironmentRecord { get; set; }
         public LexicalEnvironment Outer { get; private set; }

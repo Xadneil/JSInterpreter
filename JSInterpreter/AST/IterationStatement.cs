@@ -5,29 +5,29 @@ using System.Text;
 
 namespace JSInterpreter.AST
 {
-    enum IterationKind
+    public enum IterationKind
     {
         Enumerate,
         Iterate
     }
 
-    enum IteratorKind
+    public enum IteratorKind
     {
         Sync, Async
     }
 
-    enum LHSKind
+    public enum LHSKind
     {
         Assignment,
         VarBinding,
         LexicalBinding
     }
 
-    interface IForInOfInitializer : IHasEvaluate
+    public interface IForInOfInitializer : IHasEvaluate
     {
     }
 
-    class ForDeclaration : IForInOfInitializer
+    public class ForDeclaration : IForInOfInitializer
     {
         public bool isConst;
         public string name;
@@ -58,7 +58,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    abstract class IterationStatement : BreakableStatement
+    public abstract class IterationStatement : BreakableStatement
     {
         public override Completion Evaluate(Interpreter interpreter)
         {
@@ -254,7 +254,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    class ForBinding : IForInOfInitializer, IScopedDeclaration
+    public class ForBinding : IForInOfInitializer, IScopedDeclaration
     {
         public readonly string name;
 
@@ -269,7 +269,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    class DoWhileIterationStatement : IterationStatement
+    public class DoWhileIterationStatement : IterationStatement
     {
         public readonly Statement doStatement;
         public readonly IExpression whileExpression;
@@ -328,7 +328,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    class WhileIterationStatement : IterationStatement
+    public class WhileIterationStatement : IterationStatement
     {
         public readonly IExpression whileExpression;
         public readonly Statement doStatement;
@@ -388,7 +388,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    class ForExpressionIterationStatement : IterationStatement
+    public class ForExpressionIterationStatement : IterationStatement
     {
         public readonly Statement doStatement;
         public readonly IExpression forExpression;
@@ -444,7 +444,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    class ForVarIterationStatement : IterationStatement
+    public class ForVarIterationStatement : IterationStatement
     {
         public readonly Statement doStatement;
         public readonly VariableDeclarationList variableDeclarations;
@@ -497,7 +497,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    class ForLexicalIterationStatement : IterationStatement
+    public class ForLexicalIterationStatement : IterationStatement
     {
         public readonly Statement doStatement;
         public readonly LexicalDeclaration lexicalDeclaration;
@@ -570,7 +570,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    class ForInLHSIterationStatement : IterationStatement
+    public class ForInLHSIterationStatement : IterationStatement
     {
         public readonly ILeftHandSideExpression leftHandSideExpression;
         public readonly IExpression inExpression;
@@ -621,7 +621,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    class ForInVarIterationStatement : IterationStatement
+    public class ForInVarIterationStatement : IterationStatement
     {
         public readonly ForBinding forVar;
         public readonly IExpression forInExpression;
@@ -672,7 +672,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    class ForInLetConstIterationStatement : IterationStatement
+    public class ForInLetConstIterationStatement : IterationStatement
     {
         public readonly ForDeclaration forDeclaration;
         public readonly IExpression forInExpression;
@@ -723,7 +723,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    class ForOfLHSIterationStatement : IterationStatement
+    public class ForOfLHSIterationStatement : IterationStatement
     {
         public readonly ILeftHandSideExpression leftHandSideExpression;
         public readonly IAssignmentExpression ofExpression;
@@ -774,7 +774,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    class ForOfVarIterationStatement : IterationStatement
+    public class ForOfVarIterationStatement : IterationStatement
     {
         public readonly ForBinding forVar;
         public readonly IAssignmentExpression forOfExpression;
@@ -825,7 +825,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    class ForOfLetConstIterationStatement : IterationStatement
+    public class ForOfLetConstIterationStatement : IterationStatement
     {
         public readonly ForDeclaration forDeclaration;
         public readonly IAssignmentExpression forOfExpression;

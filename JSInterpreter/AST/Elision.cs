@@ -1,6 +1,6 @@
 ﻿namespace JSInterpreter.AST
 {
-    class Elision : IArrayLiteralItem
+    public class Elision : IArrayLiteralItem
     {
         public readonly int width;
 

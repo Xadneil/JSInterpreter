@@ -4,10 +4,10 @@ using System.Text;
 
 namespace JSInterpreter.AST
 {
-    interface IConditionalExpression : IAssignmentExpression
+    public interface IConditionalExpression : IAssignmentExpression
     {
     }
-    class ConditionalExpression : IConditionalExpression
+    public class ConditionalExpression : IConditionalExpression
     {
         public readonly ILogicalOrExpression logicalOrExpression;
         public readonly IAssignmentExpression ifTrueAssignmentExpression;

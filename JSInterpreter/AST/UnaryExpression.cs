@@ -4,7 +4,7 @@ using System.Text;
 
 namespace JSInterpreter.AST
 {
-    enum UnaryOperator
+    public enum UnaryOperator
     {
         Delete,
         Void,
@@ -12,14 +12,14 @@ namespace JSInterpreter.AST
         Plus,
         Negate,
         BitwiseNot,
-        BooleanNot
+        LogicalNot
     }
 
-    interface IUnaryExpression : IExponentiationExpression
+    public interface IUnaryExpression : IExponentiationExpression
     {
     }
 
-    class OperatorUnaryExpression : IUnaryExpression
+    public class OperatorUnaryExpression : IUnaryExpression
     {
         public readonly UnaryOperator unaryOperator;
         public readonly IUnaryExpression unaryExpression;
@@ -60,7 +60,7 @@ namespace JSInterpreter.AST
                     comp2 = comp.value.ToNumber();
                     if (comp2.IsAbrupt()) return comp2;
                     return Completion.NormalCompletion(new NumberValue(~(int)(comp2.value as NumberValue).number));
-                case UnaryOperator.BooleanNot:
+                case UnaryOperator.LogicalNot:
                     comp = unaryExpression.Evaluate(interpreter).GetValue();
                     if (comp.IsAbrupt()) return comp;
                     return Completion.NormalCompletion(comp.value.ToBoolean().boolean ? BooleanValue.False : BooleanValue.True);

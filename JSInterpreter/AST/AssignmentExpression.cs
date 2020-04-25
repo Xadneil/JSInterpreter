@@ -4,7 +4,7 @@ using System.Text;
 
 namespace JSInterpreter.AST
 {
-    enum AssignmentOperator
+    public enum AssignmentOperator
     {
         Multiply,
         Divide,
@@ -20,11 +20,11 @@ namespace JSInterpreter.AST
         Exponentiate
     }
 
-    interface IAssignmentExpression : IExpression, IArrayLiteralItem, IPropertyDefinition, IArgumentItem
+    public interface IAssignmentExpression : IExpression, IArrayLiteralItem, IPropertyDefinition, IArgumentItem
     {
     }
 
-    class AssignmentExpression : IAssignmentExpression
+    public class AssignmentExpression : IAssignmentExpression
     {
         public readonly ILeftHandSideExpression leftHandSideExpression;
         public readonly IAssignmentExpression assignmentExpression;
@@ -58,7 +58,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    class OperatorAssignmentExpression : IAssignmentExpression
+    public class OperatorAssignmentExpression : IAssignmentExpression
     {
         public readonly ILeftHandSideExpression leftHandSideExpression;
         public readonly AssignmentOperator assignmentOperator;

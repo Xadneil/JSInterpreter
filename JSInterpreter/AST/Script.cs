@@ -4,7 +4,7 @@ using System.Text;
 
 namespace JSInterpreter.AST
 {
-    class Script : Statement
+    public class Script : Statement
     {
         public readonly StatementList scriptBody;
 

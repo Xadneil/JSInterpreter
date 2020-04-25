@@ -4,14 +4,14 @@ using System.Text;
 
 namespace JSInterpreter.AST
 {
-    enum LiteralType
+    public enum LiteralType
     {
         Null,
         Boolean,
         Number,
         String
     }
-    class Literal : IPrimaryExpression
+    public class Literal : IPrimaryExpression
     {
         public readonly LiteralType literalType;
         public readonly double number;

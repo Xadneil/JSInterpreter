@@ -2,14 +2,14 @@
 
 namespace JSInterpreter
 {
-    enum ThisBindingStatus
+    public enum ThisBindingStatus
     {
         Lexical,
         Initialized,
         Uninitialized
     }
 
-    class FunctionEnvironmentRecord : DeclarativeEnvironmentRecord
+    public class FunctionEnvironmentRecord : DeclarativeEnvironmentRecord
     {
         public IValue ThisValue { get; private set; }
         public ThisBindingStatus ThisBindingStatus { get; private set; }

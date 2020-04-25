@@ -1,6 +1,6 @@
 ﻿namespace JSInterpreter
 {
-    interface IScopedDeclaration
+    public interface IScopedDeclaration
     {
     }
 }

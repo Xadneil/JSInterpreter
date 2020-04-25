@@ -1,6 +1,6 @@
 ﻿namespace JSInterpreter
 {
-    class BindingRecord
+    public class BindingRecord
     {
         public readonly bool mutable;
         public readonly bool? canDelete;

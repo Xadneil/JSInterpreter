@@ -4,22 +4,22 @@ using System.Text;
 
 namespace JSInterpreter.AST
 {
-    enum UpdateOperation
+    public enum UpdateOperator
     {
         Increment,
         Decrement
     }
 
-    interface IUpdateExpression : IUnaryExpression
+    public interface IUpdateExpression : IUnaryExpression
     {
     }
 
-    class PostfixUpdateExpression : IUpdateExpression
+    public class PostfixUpdateExpression : IUpdateExpression
     {
         public readonly ILeftHandSideExpression leftHandSideExpression;
-        public readonly UpdateOperation updateOperation;
+        public readonly UpdateOperator updateOperation;
 
-        public PostfixUpdateExpression(ILeftHandSideExpression leftHandSideExpression, UpdateOperation updateOperation)
+        public PostfixUpdateExpression(ILeftHandSideExpression leftHandSideExpression, UpdateOperator updateOperation)
         {
             this.leftHandSideExpression = leftHandSideExpression;
             this.updateOperation = updateOperation;
@@ -38,7 +38,7 @@ namespace JSInterpreter.AST
                 throw new InvalidOperationException("PostfixUpdateExpression.Evaluate: leftHandSideExpression did not return a reference");
 
             NumberValue newValue;
-            if (updateOperation == UpdateOperation.Decrement)
+            if (updateOperation == UpdateOperator.Decrement)
                 newValue = new NumberValue(oldValue.number - 1);
             else
                 newValue = new NumberValue(oldValue.number + 1);
@@ -50,12 +50,12 @@ namespace JSInterpreter.AST
         }
     }
 
-    class PrefixUpdateExpression : IUpdateExpression
+    public class PrefixUpdateExpression : IUpdateExpression
     {
         public readonly IUnaryExpression unaryExpression;
-        public readonly UpdateOperation updateOperation;
+        public readonly UpdateOperator updateOperation;
 
-        public PrefixUpdateExpression(IUnaryExpression unaryExpression, UpdateOperation updateOperation)
+        public PrefixUpdateExpression(IUnaryExpression unaryExpression, UpdateOperator updateOperation)
         {
             this.unaryExpression = unaryExpression;
             this.updateOperation = updateOperation;
@@ -74,7 +74,7 @@ namespace JSInterpreter.AST
                 throw new InvalidOperationException("PrefixUpdateExpression.Evaluate: unaryExpression did not return a reference");
 
             NumberValue newValue;
-            if (updateOperation == UpdateOperation.Decrement)
+            if (updateOperation == UpdateOperator.Decrement)
                 newValue = new NumberValue(oldValue.number - 1);
             else
                 newValue = new NumberValue(oldValue.number + 1);

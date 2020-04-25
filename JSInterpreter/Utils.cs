@@ -6,7 +6,7 @@ using System.Text;
 
 namespace JSInterpreter
 {
-    static class Utils
+    static public class Utils
     {
         public static IReadOnlyList<T> EmptyList<T>()
         {
@@ -186,7 +186,7 @@ namespace JSInterpreter
         }
     }
 
-    internal class EmptyListClass<T>
+    public class EmptyListClass<T>
     {
         public static readonly IReadOnlyList<T> Instance = new List<T>(0);
     }
