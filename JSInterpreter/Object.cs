@@ -78,7 +78,12 @@ namespace JSInterpreter
 
         public Completion GetPrototypeOf() => Completion.NormalCompletion((IValue)prototype ?? NullValue.Instance);
 
-        public bool SetPrototypeOf(IValue value)
+        public virtual BooleanCompletion SetPrototypeOf(IValue value)
+        {
+            return OrdinarySetPrototypeOf(value);
+        }
+
+        public bool OrdinarySetPrototypeOf(IValue value)
         {
             if (!(value is NullValue) && !(value is Object))
                 throw new InvalidOperationException("Object.SetPrototypeOf: Only an object or null is allowed as a prototype.");

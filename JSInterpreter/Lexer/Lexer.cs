@@ -38,34 +38,26 @@ namespace JSInterpreter.Lexer
         private static readonly Dictionary<string, TokenType> two_char_tokens = new Dictionary<string, TokenType>();
         private static readonly Dictionary<char, TokenType> single_char_tokens = new Dictionary<char, TokenType>();
 
+        public Token CurrentToken { get => currentState.CurrentToken; private set => currentState.CurrentToken = value; }
+
         private readonly string source;
-        private int position;
-        private Token currentToken;
-        private char currentChar;
-        private bool hasErrors;
-        private int lineNumber = 1;
-        private int lineColumn = 1;
-        private bool logErrors = true;
-        private bool PassedNewLine;
+        private readonly bool logErrors = true;
+        private readonly Stack<LexerState> stateStack;
 
-        public static Tokens Lex(string source)
-        {
-            var lexer = new Lexer(source);
+        private LexerState currentState;
 
-            var tokens = new Tokens();
-            var token = lexer.Next();
-            do
-            {
-                tokens.Add(token);
-                token = lexer.Next();
-            } while (token.Type != TokenType.Eof);
-            return tokens;
-        }
+        private int position { get => currentState.position; set => currentState.position = value; }
+        private char currentChar { get => currentState.currentChar; set => currentState.currentChar = value; }
+        private int lineNumber { get => currentState.lineNumber; set => currentState.lineNumber = value; }
+        private int lineColumn { get => currentState.lineColumn; set => currentState.lineColumn = value; }
+        private bool passedNewLine { get => currentState.passedNewLine; set => currentState.passedNewLine = value; }
 
-        private Lexer(string source)
+
+        public Lexer(string source)
         {
             this.source = source;
-            currentToken = new Token(TokenType.Eof, null, null, 0, 0, false);
+            stateStack = new Stack<LexerState>();
+            currentState = new LexerState(0, default, 1, 1, false, default);
 
             if (!keywords.Any())
             {
@@ -187,7 +179,7 @@ namespace JSInterpreter.Lexer
             {
                 lineNumber++;
                 lineColumn = 1;
-                PassedNewLine = true;
+                passedNewLine = true;
             }
             else
             {
@@ -275,49 +267,16 @@ namespace JSInterpreter.Lexer
 
         private void SyntaxError(string msg)
         {
-            hasErrors = true;
             if (logErrors)
                 Console.WriteLine($"Syntax Error: {msg} (line: {lineNumber}, column: {lineColumn})");
         }
 
-        private Token Next()
+        public Token Next()
         {
-            PassedNewLine = false;
+            passedNewLine = false;
             int trivia_start = position;
 
-            // Consume whitespace and comments
-            while (true)
-            {
-                if (char.IsWhiteSpace(currentChar))
-                {
-                    do
-                    {
-                        Consume();
-                    } while (char.IsWhiteSpace(currentChar));
-                }
-                else if (IsLineCommentStart())
-                {
-                    Consume();
-                    do
-                    {
-                        Consume();
-                    } while (!IsEOF() && currentChar != '\n');
-                }
-                else if (IsBlockCommentStart())
-                {
-                    Consume();
-                    do
-                    {
-                        Consume();
-                    } while (!IsEOF() && !IsBlockCommentEnd());
-                    Consume(); // Consume *
-                    Consume(); // Consume /
-                }
-                else
-                {
-                    break;
-                }
-            }
+            ConsumeWhitespaceAndComments();
 
             int value_start = position;
             var token_type = TokenType.Invalid;
@@ -507,15 +466,96 @@ namespace JSInterpreter.Lexer
                 }
             }
 
-            currentToken = new Token(
+            CurrentToken = new Token(
                 token_type,
                 source.Substring(trivia_start - 1, value_start - trivia_start),
                 source.Substring(value_start - 1, position - value_start),
+                trivia_start - 1,
+                value_start - 1,
                 lineNumber,
                 lineColumn - position + value_start,
-                PassedNewLine);
+                passedNewLine);
 
-            return currentToken;
+            return CurrentToken;
+        }
+
+        public Token NextRegex(Token regexStart)
+        {
+            if (IsLineTerminator() || currentChar == '*' || currentChar == '/')
+                return null;
+
+            int value_start = position;
+
+            while (currentChar != '/' && currentChar != '\0')
+            {
+                if (IsLineTerminator())
+                    return null;
+                if (Match('\\', '/'))
+                {
+                    Consume();
+                }
+                Consume();
+            }
+            if (currentChar != '/')
+                return null;
+            // trailing /
+            Consume();
+            // flags
+            while (IsIdentifierMiddle())
+            {
+                Consume();
+            }
+
+            return CurrentToken = new Token(
+                TokenType.RegexLiteral,
+                regexStart.Trivia,
+                regexStart.Value + source.Substring(value_start - 1, position - value_start),
+                regexStart.TriviaStart,
+                regexStart.ValueStart,
+                regexStart.LineNumber,
+                regexStart.LineColumn,
+                regexStart.PassedNewLine);
+        }
+
+        private bool IsLineTerminator()
+        {
+            return currentChar == '\n' || currentChar == '\r';
+        }
+
+        private void ConsumeWhitespaceAndComments()
+        {
+            while (true)
+            {
+                if (char.IsWhiteSpace(currentChar))
+                {
+                    do
+                    {
+                        Consume();
+                    } while (char.IsWhiteSpace(currentChar));
+                }
+                else if (IsLineCommentStart())
+                {
+                    Consume();
+                    do
+                    {
+                        Consume();
+                    } while (!IsEOF() && currentChar != '\n');
+                }
+                else if (IsBlockCommentStart())
+                {
+                    Consume();
+                    do
+                    {
+                        Consume();
+                    } while (!IsEOF() && !IsBlockCommentEnd());
+                    Consume(); // Consume *
+                    Consume(); // Consume /
+                }
+                else
+                {
+                    break;
+                }
+            }
         }
 
         private static bool IsHexDigit(char c)
@@ -525,9 +565,19 @@ namespace JSInterpreter.Lexer
                (c >= 'A' && c <= 'F');
         }
 
-        private bool HasErrors()
+        public void SaveState()
         {
-            return hasErrors;
+            stateStack.Push(currentState);
+        }
+
+        public void RestoreState()
+        {
+            currentState = stateStack.Pop();
+        }
+
+        public void DeleteState()
+        {
+            stateStack.Pop();
         }
     }
 }

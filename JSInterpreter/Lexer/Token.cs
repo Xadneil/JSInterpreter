@@ -24,6 +24,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+using JSInterpreter.AST;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -39,11 +40,16 @@ namespace JSInterpreter.Lexer
         public int LineColumn { get; private set; }
         public bool PassedNewLine { get; private set; }
 
-        public Token(TokenType type, string trivia, string value, int lineNumber, int lineColumn, bool passedNewLine)
+        public int TriviaStart { get; private set; }
+        public int ValueStart { get; private set; }
+
+        public Token(TokenType type, string trivia, string value, int triviaStart, int valueStart, int lineNumber, int lineColumn, bool passedNewLine)
         {
             Type = type;
             Trivia = trivia;
             Value = value;
+            TriviaStart = triviaStart;
+            ValueStart = valueStart;
             LineNumber = lineNumber;
             LineColumn = lineColumn;
             PassedNewLine = passedNewLine;
@@ -176,6 +182,17 @@ namespace JSInterpreter.Lexer
                 throw new InvalidOperationException("BoolValue can only be used on a boolean literal.");
             }
             return Value == "true";
+        }
+
+        // /abc/g
+        // 012345
+        // length = 6
+        public RegularExpressionLiteral RegexValue()
+        {
+            var lastSlash = Value.LastIndexOf('/');
+            if (lastSlash == Value.Length - 1)
+                return new RegularExpressionLiteral(Value[1..^1], "");
+            return new RegularExpressionLiteral(Value[1..lastSlash], Value.Substring(lastSlash + 1));
         }
     }
 }

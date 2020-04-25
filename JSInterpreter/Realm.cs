@@ -9,7 +9,7 @@ namespace JSInterpreter
         public static Realm CreateRealm()
         {
             var realmRec = new Realm();
-            realmRec.CreateIntrinsics();
+            //realmRec.CreateIntrinsics();
             return realmRec;
         }
 

@@ -9,29 +9,32 @@ namespace JSInterpreter.Parser
 {
     public class Parser
     {
-        private readonly Tokens tokens;
-        private int tokenIndex = 0;
         private bool success;
         private ParseFailureException exception;
+        private readonly Lexer.Lexer lexer;
 
         public Parser(string source)
         {
-            tokens = Lexer.Lexer.Lex(source);
+            lexer = new Lexer.Lexer(source);
+            lexer.Next();
         }
 
         private Parser Parse(Action what)
         {
-            int pos = tokenIndex;
+            lexer.SaveState();
             try
             {
                 what();
                 success = true;
+                exception = null;
+                lexer.DeleteState();
             }
             catch (ParseFailureException e)
             {
-                tokenIndex = pos;
+                lexer.RestoreState();
                 success = false;
-                exception = e;
+                if (exception == null)
+                    exception = e;
             }
             return this;
         }
@@ -40,7 +43,10 @@ namespace JSInterpreter.Parser
         {
             if (!success)
             {
-                return Parse(what);
+                var ret = Parse(what);
+                if (success)
+                    exception = null;
+                return ret;
             }
             return this;
         }
@@ -56,20 +62,20 @@ namespace JSInterpreter.Parser
 
         private Token Consume()
         {
-            var oldIndex = tokenIndex;
-            tokenIndex++;
-            return tokens[oldIndex];
+            var oldToken = lexer.CurrentToken;
+            lexer.Next();
+            return oldToken;
         }
 
-        private Token CurrentToken
+        private Token ConsumeNextRegex(Token regexStart)
         {
-            get
-            {
-                if (tokenIndex >= tokens.Count)
-                    return new Token(TokenType.Eof, "", "", 0, 0, false);
-                return tokens[tokenIndex];
-            }
+            var oldToken = lexer.CurrentToken;
+            lexer.NextRegex(regexStart);
+            return oldToken;
         }
+
+
+        private Token CurrentToken => lexer.CurrentToken;
 
         private void ConsumeOrInsertSemicolon()
         {
@@ -79,11 +85,11 @@ namespace JSInterpreter.Parser
                 Consume();
                 return;
             }
-            if (tokenIndex >= tokens.Count)
+            if (CurrentToken.Type == TokenType.Eof)
                 return;
             // Insert semicolon if...
             // ...token is preceeded by one or more newlines
-            if (tokens[tokenIndex].Trivia.Contains('\n'))
+            if (CurrentToken.Trivia.Contains('\n'))
                 return;
             // ...token is a closing curly brace
             if (Match(TokenType.CurlyClose))
@@ -115,10 +121,6 @@ namespace JSInterpreter.Parser
 
         public Script ParseScript()
         {
-            if (tokens.Count == 0)
-            {
-                return new Script(new StatementList(Utils.EmptyList<IStatementListItem>()));
-            }
             var statementList = ParseStatementList();
             if (CurrentToken.Type != TokenType.Eof && exception != null)
                 throw exception;
@@ -142,7 +144,7 @@ namespace JSInterpreter.Parser
         {
             switch (CurrentToken.Type)
             {
-                case TokenType.BracketOpen:
+                case TokenType.CurlyOpen:
                     return ParseBlock();
                 case TokenType.Var:
                     return ParseVariableStatement();
@@ -388,7 +390,7 @@ namespace JSInterpreter.Parser
                 }
                 if (Match(TokenType.Equals))
                 {
-                    Consume();
+                    //don't consume the =, since ParseInitializer will do it.
                     var variableDeclarationList = ParseVariableDeclarationListWithInitialIdentifier(firstIdentifier);
                     Consume(TokenType.Semicolon);
                     IExpression test = null;
@@ -765,9 +767,6 @@ namespace JSInterpreter.Parser
             IAssignmentExpression expression = null;
             Parse(() =>
             {
-                expression = ParseConditionalExpression();
-            }).Or(() =>
-            {
                 ILeftHandSideExpression lhs = ParseLeftHandSideExpression();
                 if (Match(TokenType.Equals))
                 {
@@ -784,6 +783,9 @@ namespace JSInterpreter.Parser
                     return;
                 }
                 throw new ParseFailureException();
+            }).Or(() =>
+            {
+                expression = ParseConditionalExpression();
             }).OrThrow("assignment expression");
             return expression;
         }
@@ -1260,7 +1262,6 @@ namespace JSInterpreter.Parser
                 Consume(TokenType.DoubleAsterisk);
                 var rhs = ParseExponentiationExpression();
                 expression = new ExponentiationExpression(lhs, rhs);
-
             }).Or(() =>
             {
                 expression = ParseUnaryExpression();
@@ -1355,7 +1356,7 @@ namespace JSInterpreter.Parser
 
         private bool MatchUpdateOperator()
         {
-            return Match(TokenType.PlusPlus) || Match(TokenType.MinusEquals);
+            return Match(TokenType.PlusPlus) || Match(TokenType.MinusMinus);
         }
 
         private ILeftHandSideExpression ParseLeftHandSideExpression()
@@ -1363,10 +1364,10 @@ namespace JSInterpreter.Parser
             ILeftHandSideExpression lhs = null;
             Parse(() =>
             {
-                lhs = ParseNewExpression();
+                lhs = ParseCallExpression();
             }).Or(() =>
             {
-                lhs = ParseCallExpression();
+                lhs = ParseNewExpression();
             }).OrThrow("left hand side expression");
             return lhs;
         }
@@ -1531,7 +1532,9 @@ namespace JSInterpreter.Parser
             if (Match(TokenType.BracketOpen))
             {
                 Consume();
-                return new MemberExpressionTail(ParseExpression(), ParseMemberExpressionTail());
+                var expression = ParseExpression();
+                Consume(TokenType.BracketClose);
+                return new MemberExpressionTail(expression, ParseMemberExpressionTail());
             }
             if (Match(TokenType.Period))
             {
@@ -1548,7 +1551,9 @@ namespace JSInterpreter.Parser
             if (Match(TokenType.BracketOpen))
             {
                 Consume();
-                return new SuperIndexMemberExpression(ParseExpression());
+                var expression = ParseExpression();
+                Consume(TokenType.BracketClose);
+                return new SuperIndexMemberExpression(expression);
             }
             if (Match(TokenType.Period))
             {
@@ -1561,34 +1566,34 @@ namespace JSInterpreter.Parser
 
         private IPrimaryExpression ParsePrimaryExpression()
         {
-            if (Match(TokenType.This))
+            switch (CurrentToken.Type)
             {
-                Consume();
-                return ThisExpression.Instance;
+                case TokenType.This:
+                    Consume();
+                    return ThisExpression.Instance;
+                case TokenType.Identifier:
+                    return new IdentifierReference(new Identifier(Consume().Value));
+                case TokenType.BoolLiteral:
+                    return new Literal(Consume().BoolValue());
+                case TokenType.NullLiteral:
+                    Consume();
+                    return Literal.NullLiteral;
+                case TokenType.NumericLiteral:
+                    return new Literal(Consume().DoubleValue());
+                case TokenType.Slash:
+                case TokenType.SlashEquals:
+                    return ParseRegularExpressionLiteral();
+                case TokenType.StringLiteral:
+                    return new Literal(Consume().StringValue());
+                case TokenType.BracketOpen:
+                    return ParseArrayLiteral();
+                case TokenType.CurlyOpen:
+                    return ParseObjectLiteral();
+                case TokenType.Function:
+                    return ParseFunctionExpression();
+                case TokenType.ParenOpen:
+                    return ParseParenthesizedExpression();
             }
-            if (Match(TokenType.Identifier))
-                return new IdentifierReference(new Identifier(Consume().Value));
-            if (Match(TokenType.BoolLiteral))
-                return new Literal(Consume().BoolValue());
-            if (Match(TokenType.NullLiteral))
-            {
-                Consume();
-                return Literal.NullLiteral;
-            }
-            if (Match(TokenType.NumericLiteral))
-                return new Literal(Consume().DoubleValue());
-            if (Match(TokenType.Slash) || Match(TokenType.SlashEquals))
-                return ParseRegularExpressionLiteral();
-            if (Match(TokenType.StringLiteral))
-                return new Literal(Consume().StringValue());
-            if (Match(TokenType.BracketOpen))
-                return ParseArrayLiteral();
-            if (Match(TokenType.CurlyOpen))
-                return ParseObjectLiteral();
-            if (Match(TokenType.Function))
-                return ParseFunctionExpression();
-            if (Match(TokenType.ParenOpen))
-                return ParseParenthesizedExpression();
 
             Expected("primary expression");
             return null;
@@ -1596,18 +1601,10 @@ namespace JSInterpreter.Parser
 
         private RegularExpressionLiteral ParseRegularExpressionLiteral()
         {
-            var startType = CurrentToken.Type;
-            Consume();
-            var body = new StringBuilder();
-            if (startType == TokenType.SlashEquals)
-                body.Append('=');
-            while (CurrentToken.Type != TokenType.Slash)
-            {
-                body.Append(Consume().Value);
-            }
-            Consume(TokenType.Slash);
-            var flags = Consume(TokenType.Identifier).Value;
-            return new RegularExpressionLiteral(body.ToString(), flags);
+            ConsumeNextRegex(CurrentToken);
+            if (CurrentToken == null)
+                throw new ParseFailureException("Regex is not valid.");
+            return Consume().RegexValue();
         }
 
         private ArrayLiteral ParseArrayLiteral()

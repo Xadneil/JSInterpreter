@@ -52,7 +52,7 @@ namespace JSInterpreter.AST
                 throw new InvalidOperationException("Spec 12.3.5.1 super step 2");
             var funcComp = GetSuperConstructor(interpreter);
             if (funcComp.IsAbrupt()) return funcComp;
-            var func = funcComp.value as FunctionObject;
+            var func = funcComp.value as Constructor;
 
             var argList = arguments.ArgumentListEvaluation();
             if (argList.IsAbrupt()) return argList;

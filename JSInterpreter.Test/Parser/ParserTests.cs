@@ -67,6 +67,32 @@ namespace JSInterpreter.Test
             Assert.Equal(expectedFlags, literal.flags);
         }
 
+        [Fact]
+        public void ShouldParseCompareArray()
+        {
+            FunctionDeclaration declaration;
+
+            var program = new Parser.Parser(@"function compareArray(aExpected, aActual) {
+    if (aActual.length != aExpected.length) {
+        return false;
+    }
+
+    aExpected.sort();
+    aActual.sort();
+
+    var s;
+    for (var i = 0; i < aExpected.length; i++) {
+        if (aActual[i] !== aExpected[i]) {
+            return false;
+        }
+    }
+    return true;
+}").ParseScript();
+            var body = program.scriptBody.statements;
+
+            Assert.Single(body);
+            Assert.NotNull(declaration = body.First().As<FunctionDeclaration>());
+        }
 
         [Fact]
         public void ShouldParseBinaryExpression()

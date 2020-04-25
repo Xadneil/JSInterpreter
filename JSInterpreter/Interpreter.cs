@@ -96,6 +96,11 @@ namespace JSInterpreter
         {
             return Realm;
         }
+
+        public void Execute(string source)
+        {
+            new Parser.Parser(source).ParseScript().Evaluate(this);
+        }
     }
 
     public class ExecutionContext
