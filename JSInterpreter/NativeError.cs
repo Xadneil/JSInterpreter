@@ -14,5 +14,16 @@ namespace JSInterpreter
                 DefinePropertyOrThrow("message", new PropertyDescriptor(new StringValue(message), true, false, true));
             }
         }
+
+        public string Message
+        {
+            get
+            {
+                var comp = Get("message");
+                if (comp.IsAbrupt()) return "Error getting message";
+                var stringValue = comp.value as StringValue;
+                return stringValue?.@string ?? "message property is not a string";
+            }
+        }
     }
 }

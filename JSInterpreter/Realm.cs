@@ -17,7 +17,7 @@ namespace JSInterpreter
         {
             Intrinsics = new Intrinsics();
             Intrinsics.ObjectPrototype = Utils.ObjectCreate(null);
-            Intrinsics.ThrowTypeError = Utils.CreateBuiltinFunction(() => Completion.ThrowTypeError(), Utils.EmptyList<string>(), this, null);
+            Intrinsics.ThrowTypeError = Utils.CreateBuiltinFunction(() => Completion.ThrowTypeError("Intrinsics.ThrowTypeError"), Utils.EmptyList<string>(), this, null);
             Intrinsics.FunctionPrototype = Utils.CreateBuiltinFunction(() => Completion.NormalCompletion(), Utils.EmptyList<string>(), this, Intrinsics.ObjectPrototype);
             Intrinsics.ThrowTypeError.SetPrototypeOf(Intrinsics.FunctionPrototype);
             AddRestrictedFunctionProperties(Intrinsics.FunctionPrototype);

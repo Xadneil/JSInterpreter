@@ -41,24 +41,40 @@ namespace JSInterpreter
             return new Completion(CompletionType.Throw, error, null);
         }
 
-        public static Completion ThrowTypeError()
-        {
-            return new Completion(CompletionType.Throw, new NativeError(), null);
-        }
-
         public static Completion ThrowTypeError(string message)
         {
-            return new Completion(CompletionType.Throw, new NativeError(message), null);
-        }
-
-        public static Completion ThrowReferenceError()
-        {
-            return new Completion(CompletionType.Throw, new NativeError(), null);
+            return Throw(new NativeError("TypeError: " + message + Environment.NewLine + StackTrace));
         }
 
         public static Completion ThrowReferenceError(string message)
         {
-            return new Completion(CompletionType.Throw, new NativeError(message), null);
+            return Throw(new NativeError("ReferenceError: " + message + Environment.NewLine + StackTrace));
+        }
+
+        public static Completion ThrowSyntaxError(string message)
+        {
+            return Throw(new NativeError("SyntaxError: " + message + Environment.NewLine + StackTrace));
+        }
+
+        private static string StackTrace
+        {
+            get
+            {
+                var st = new System.Diagnostics.StackTrace(2, fNeedFileInfo: true);
+                var sb = new StringBuilder();
+                foreach (var frame in st.GetFrames())
+                {
+                    if (!System.IO.File.Exists(frame.GetFileName()))
+                        break;
+                    sb.Append("   at ");
+                    sb.Append(frame.GetMethod().DeclaringType);
+                    sb.Append(".");
+                    sb.Append(frame.GetMethod().Name);
+                    sb.Append(": ");
+                    sb.AppendLine(frame.GetFileLineNumber().ToString());
+                }
+                return sb.ToString();
+            }
         }
 
         public bool IsAbrupt()
@@ -82,7 +98,7 @@ namespace JSInterpreter
 
             var @base = reference.baseValue;
             if (reference.IsUnresolvableReference())
-                return Completion.ThrowReferenceError();
+                return Completion.ThrowReferenceError($"cannot get {reference.referencedName} from unresolvable reference");
             if (reference.IsPropertyReference())
             {
                 if (reference.HasPrimitiveBase())

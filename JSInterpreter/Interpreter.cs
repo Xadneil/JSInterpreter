@@ -18,7 +18,7 @@ namespace JSInterpreter
         private readonly Stack<ExecutionContext> executionContextStack = new Stack<ExecutionContext>();
         private readonly Realm Realm;
 
-        public Interpreter()
+        private Interpreter()
         {
             Realm = Realm.CreateRealm();
         }
@@ -99,7 +99,9 @@ namespace JSInterpreter
 
         public void Execute(string source)
         {
-            new Parser.Parser(source).ParseScript().Evaluate(this);
+            var completion = new Parser.Parser(source).ParseScript().ScriptEvaluate(this);
+            if (completion.completionType == CompletionType.Throw)
+                throw new JavascriptException(completion);
         }
     }
 

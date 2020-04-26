@@ -37,7 +37,7 @@ namespace JSInterpreter
         {
             if (!bindings.ContainsKey(name))
                 throw new InvalidOperationException("Spec 8.1.1.1.6 step 2");
-            if (bindings[name].Value == null) return Completion.ThrowReferenceError();
+            if (bindings[name].Value == null) return Completion.ThrowReferenceError($"binding {name} does not exist.");
             return Completion.NormalCompletion(bindings[name].Value);
         }
 
@@ -69,20 +69,20 @@ namespace JSInterpreter
             if (!bindings.ContainsKey(name))
             {
                 if (strict)
-                    return Completion.ThrowReferenceError();
+                    return Completion.ThrowReferenceError($"binding {name} does not exist.");
                 CreateMutableBinding(name, true);
                 InitializeBinding(name, value);
                 return Completion.NormalCompletion();
             }
             var binding = bindings[name];
             if (binding.strict.GetValueOrDefault(false)) strict = true;
-            if (binding.Value == null) return Completion.ThrowReferenceError();
+            if (binding.Value == null) return Completion.ThrowReferenceError($"{name} has not been initialized yet.");
             else if (binding.mutable) binding.Value = value;
             else
             {
                 // attempt to change value of immutable binding
                 if (strict)
-                    return Completion.ThrowTypeError();
+                    return Completion.ThrowTypeError("attempt to change value of immutable binding");
             }
             return Completion.NormalCompletion();
         }

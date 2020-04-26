@@ -174,7 +174,7 @@ namespace JSInterpreter.AST
                 if (iteratorKind == IteratorKind.Async)
                     throw new NotImplementedException("async");
                 if (!(nextResult is Object nextResultObject))
-                    return Completion.ThrowTypeError();
+                    return Completion.ThrowTypeError("iterator next did not return an object.");
                 if (done)
                     return Completion.NormalCompletion(V);
                 var nextValueComp = nextResultObject.Get("value");
@@ -552,9 +552,9 @@ namespace JSInterpreter.AST
             foreach (var dn in boundNames)
             {
                 if (isConst)
-                    loopEnvRec.CreateImmutableBinding(dn.name, true);
+                    loopEnvRec.CreateImmutableBinding(dn, true);
                 else
-                    loopEnvRec.CreateMutableBinding(dn.name, false);
+                    loopEnvRec.CreateMutableBinding(dn, false);
             }
             interpreter.RunningExecutionContext().LexicalEnvironment = loopEnv;
             var forDecl = lexicalDeclaration.Evaluate(interpreter);
@@ -563,7 +563,7 @@ namespace JSInterpreter.AST
                 interpreter.RunningExecutionContext().LexicalEnvironment = oldEnv;
                 return forDecl;
             }
-            var perIterationLets = isConst ? Utils.EmptyList<string>() : boundNames.Select(b => b.name);
+            var perIterationLets = isConst ? Utils.EmptyList<string>() : boundNames.Select(b => b);
             var bodyResult = ForBodyEvaluation(leftExpression, rightExpression, doStatement, perIterationLets, labels);
             interpreter.RunningExecutionContext().LexicalEnvironment = oldEnv;
             return bodyResult;

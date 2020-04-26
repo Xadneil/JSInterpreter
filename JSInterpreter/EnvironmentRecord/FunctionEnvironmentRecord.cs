@@ -33,7 +33,7 @@ namespace JSInterpreter
             if (ThisBindingStatus == ThisBindingStatus.Lexical)
                 throw new InvalidOperationException("FunctionEnvironmentRecord.BindThisValue: ThisBindingStatus must not be Lexical");
             if (ThisBindingStatus == ThisBindingStatus.Initialized)
-                return Completion.ThrowReferenceError();
+                return Completion.ThrowReferenceError("'this' value is already initialized");
             ThisValue = value;
             ThisBindingStatus = ThisBindingStatus.Initialized;
             return Completion.NormalCompletion(value);
@@ -56,7 +56,7 @@ namespace JSInterpreter
             if (ThisBindingStatus == ThisBindingStatus.Lexical)
                 throw new InvalidOperationException("Spec 8.1.1.3.4 step 2");
             if (ThisBindingStatus == ThisBindingStatus.Uninitialized)
-                return Completion.ThrowReferenceError();
+                return Completion.ThrowReferenceError("'this' value is not initialized");
             return Completion.NormalCompletion(ThisValue);
         }
 

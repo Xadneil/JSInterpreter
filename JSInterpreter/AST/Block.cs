@@ -68,13 +68,13 @@ namespace JSInterpreter.AST
                 foreach (var dn in d.BoundNames())
                 {
                     if (d.IsConstantDeclaration())
-                        envRec.CreateImmutableBinding(dn.name, true);
+                        envRec.CreateImmutableBinding(dn, true);
                     else
-                        envRec.CreateMutableBinding(dn.name, false);
+                        envRec.CreateMutableBinding(dn, false);
                 }
                 if (d is FunctionDeclaration functionDeclaration)
                 {
-                    var fn = d.BoundNames()[0].name;
+                    var fn = d.BoundNames()[0];
                     var fo = functionDeclaration.InstantiateFunctionObject(env);
                     envRec.InitializeBinding(fn, fo);
                 }

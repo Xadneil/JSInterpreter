@@ -21,7 +21,7 @@ namespace JSInterpreter
             if (PComp.IsAbrupt()) return PComp;
             var P = PComp.value;
             if (!(P is Object protoObj))
-                return Completion.ThrowTypeError();
+                return Completion.ThrowTypeError("prototype is not an object");
             while (true)
             {
                 var objComp = obj.GetPrototypeOf();

@@ -380,6 +380,13 @@ namespace JSInterpreter.AST
         {
             return LabelledEvaluate(interpreter, new List<string>());
         }
+
+        public IReadOnlyList<string> LexicallyDeclaredNames()
+        {
+            if (labelledItem is FunctionDeclaration f)
+                return f.BoundNames();
+            return Utils.EmptyList<string>();
+        }
     }
 
     public class ThrowStatement : Statement

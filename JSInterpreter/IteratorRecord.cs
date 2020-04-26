@@ -39,7 +39,7 @@ namespace JSInterpreter
             }
             if (!(innerResult.value is Object))
             {
-                Current = Completion.ThrowTypeError();
+                Current = Completion.ThrowTypeError("iterator return did not return an object");
             }
         }
 
@@ -49,7 +49,7 @@ namespace JSInterpreter
             if (Current.IsAbrupt()) return false;
             if (!(Current.value is Object o))
             {
-                Current = Completion.ThrowTypeError();
+                Current = Completion.ThrowTypeError("iterator next did not return an object.");
                 return false;
             }
 

@@ -490,7 +490,7 @@ namespace JSInterpreter.Lexer
             {
                 if (IsLineTerminator())
                     return null;
-                if (Match('\\', '/'))
+                if (currentChar == '\\')
                 {
                     Consume();
                 }

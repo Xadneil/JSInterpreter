@@ -68,20 +68,40 @@ namespace JSInterpreter.AST
             }
             return lastValue;
         }
+
+        public virtual IReadOnlyList<string> LexicallyDeclaredNames()
+        {
+            return statements.SelectMany(i => i.LexicallyDeclaredNames()).ToList();
+        }
+
+        public IReadOnlyList<string> TopLevelLexicallyDeclaredNames()
+        {
+            return statements.SelectMany(i => i.TopLevelLexicallyDeclaredNames()).ToList();
+        }
     }
 
     public class FunctionStatementList : StatementList
     {
         public FunctionStatementList(IReadOnlyList<IStatementListItem> statements) : base(statements) { }
 
-        public override IReadOnlyList<IScopedDeclaration> VarScopedDeclarations()
+        public override IReadOnlyList<string> LexicallyDeclaredNames()
         {
-            return base.TopLevelVarScopedDeclarations();
+            return TopLevelLexicallyDeclaredNames();
         }
 
         public override IReadOnlyList<IDeclarationPart> LexicallyScopedDeclarations()
         {
-            return base.TopLevelLexicallyScopedDeclarations();
+            return TopLevelLexicallyScopedDeclarations();
+        }
+
+        public override IReadOnlyList<string> VarDeclaredNames()
+        {
+            return TopLevelVarDeclaredNames();
+        }
+
+        public override IReadOnlyList<IScopedDeclaration> VarScopedDeclarations()
+        {
+            return TopLevelVarScopedDeclarations();
         }
 
         public Completion EvaluateBody(FunctionObject functionObject, IReadOnlyList<IValue> arguments)
@@ -91,7 +111,50 @@ namespace JSInterpreter.AST
         }
     }
 
+    public class ScriptStatementList : StatementList
+    {
+        public ScriptStatementList(IReadOnlyList<IStatementListItem> statements) : base(statements) { }
+
+        public override IReadOnlyList<string> LexicallyDeclaredNames()
+        {
+            return TopLevelLexicallyDeclaredNames();
+        }
+
+        public override IReadOnlyList<IDeclarationPart> LexicallyScopedDeclarations()
+        {
+            return TopLevelLexicallyScopedDeclarations();
+        }
+
+        public override IReadOnlyList<string> VarDeclaredNames()
+        {
+            return TopLevelVarDeclaredNames();
+        }
+
+        public override IReadOnlyList<IScopedDeclaration> VarScopedDeclarations()
+        {
+            return TopLevelVarScopedDeclarations();
+        }
+
+    }
+
     public interface IStatementListItem : ISharedFunctions
     {
+        public IReadOnlyList<string> LexicallyDeclaredNames()
+        {
+            if (this is LabelledStatement l)
+                return l.LexicallyDeclaredNames();
+            if (this is IDeclarationPart d)
+            {
+                return d.BoundNames();
+            }
+            return Utils.EmptyList<string>();
+        }
+
+        public IReadOnlyList<string> TopLevelLexicallyDeclaredNames()
+        {
+            if (this is IDeclarationPart d && !(this is HoistableDeclaration))
+                return d.BoundNames();
+            return Utils.EmptyList<string>();
+        }
     }
 }

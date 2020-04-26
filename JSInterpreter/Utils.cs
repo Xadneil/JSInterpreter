@@ -24,7 +24,7 @@ namespace JSInterpreter
         {
             var success = CreateDataProperty(O, P, V);
             if (success.IsAbrupt()) return success;
-            if (success.Other == false) return Completion.ThrowTypeError().WithEmptyBool();
+            if (success.Other == false) return Completion.ThrowTypeError($"CreateDataPropertyOrThrow {P} failed").WithEmptyBool();
             return success;
         }
 

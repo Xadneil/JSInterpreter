@@ -124,7 +124,7 @@ namespace JSInterpreter.Parser
             var statementList = ParseStatementList();
             if (CurrentToken.Type != TokenType.Eof && exception != null)
                 throw exception;
-            return new Script(statementList);
+            return new Script(new ScriptStatementList(statementList.statements));
         }
 
         private IStatementListItem ParseStatementListItem()
@@ -1374,13 +1374,17 @@ namespace JSInterpreter.Parser
 
         private INewExpression ParseNewExpression()
         {
-            if (Match(TokenType.New))
+            INewExpression expression = null;
+            Parse(() =>
             {
-                Consume();
+                expression = ParseMemberExpression();
+            }).Or(() =>
+            {
+                Consume(TokenType.New);
                 var expression = ParseNewExpression();
-                return new NewExpression(expression);
-            }
-            return ParseMemberExpression();
+                expression = new NewExpression(expression);
+            }).OrThrow("New Expression");
+            return expression;
         }
 
         private ICallExpression ParseCallExpression()
@@ -1496,7 +1500,9 @@ namespace JSInterpreter.Parser
             if (Match(TokenType.New))
             {
                 Consume();
-                return new NewMemberExpression(ParseMemberExpression(), ParseArguments());
+                var left = ParseMemberExpression();
+                var arguments = ParseArguments();
+                return new NewMemberExpression(left, arguments);
             }
             if (Match(TokenType.Super))
             {

@@ -26,23 +26,13 @@ namespace JSInterpreter.AST
 
     public interface IDeclarationPart
     {
-        IReadOnlyList<BoundName> BoundNames();
+        IReadOnlyList<string> BoundNames();
         bool IsConstantDeclaration();
-    }
-
-    public struct BoundName
-    {
-        public readonly string name;
-
-        public BoundName(string name)
-        {
-            this.name = name;
-        }
     }
 
     public abstract class HoistableDeclaration : Declaration, IDeclarationPart
     {
-        public abstract IReadOnlyList<BoundName> BoundNames();
+        public abstract IReadOnlyList<string> BoundNames();
         public abstract bool IsConstantDeclaration();
     }
 
@@ -57,9 +47,9 @@ namespace JSInterpreter.AST
             this.lexicalDeclarationItems = lexicalDeclarationItems;
         }
 
-        public IReadOnlyList<BoundName> BoundNames()
+        public IReadOnlyList<string> BoundNames()
         {
-            return lexicalDeclarationItems.Select(i => new BoundName(i.name)).ToList();
+            return lexicalDeclarationItems.Select(i => i.name).ToList();
         }
 
         public override Completion Evaluate(Interpreter interpreter)

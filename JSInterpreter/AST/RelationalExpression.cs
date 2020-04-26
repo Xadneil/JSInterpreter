@@ -67,7 +67,7 @@ namespace JSInterpreter.AST
                     return InstanceOf(leftValue, rightValue);
                 case RelationalOperator.In:
                     if (!(rightValue is Object o))
-                        return Completion.ThrowTypeError();
+                        return Completion.ThrowTypeError("in operator applied to non-object");
                     var propertyKey = leftValue.ToPropertyKey();
                     if (propertyKey.IsAbrupt()) return propertyKey;
                     return o.HasProperty(propertyKey.Other);
@@ -119,7 +119,7 @@ namespace JSInterpreter.AST
         private Completion InstanceOf(IValue V, IValue target)
         {
             if (!(target is Object))
-                return Completion.ThrowTypeError();
+                return Completion.ThrowTypeError("instanceof operator applied to non-object");
             if (!(target is Callable callable))
                 throw new InvalidOperationException("RelationalExpression.InstanceOf: LHS must be a function object.");
             return callable.OrdinaryHasInstance(V);

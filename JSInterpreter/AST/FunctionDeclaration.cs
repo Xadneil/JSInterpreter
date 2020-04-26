@@ -27,15 +27,15 @@ namespace JSInterpreter.AST
             this.functionBody = functionBody;
         }
 
-        public override IReadOnlyList<BoundName> BoundNames()
+        public override IReadOnlyList<string> BoundNames()
         {
             if (isAnonymous)
             {
-                return new List<BoundName>(1) { new BoundName("*default*") };
+                return new List<string>(1) { "*default*" };
             }
             else
             {
-                return new List<BoundName>(1) { new BoundName(identifier.name) };
+                return new List<string>(1) { identifier.name };
             }
         }
 
@@ -66,7 +66,7 @@ namespace JSInterpreter.AST
 
         public override IReadOnlyList<string> TopLevelVarDeclaredNames()
         {
-            return BoundNames().Select(n => n.name).ToList();
+            return BoundNames();
         }
 
         public override IReadOnlyList<IScopedDeclaration> TopLevelVarScopedDeclarations()

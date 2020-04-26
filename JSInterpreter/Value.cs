@@ -59,7 +59,7 @@ namespace JSInterpreter
                     if (!(resultComp.value is Object)) return resultComp;
                 }
             }
-            return Completion.ThrowTypeError();
+            return Completion.ThrowTypeError("ToPrimitive didn't find a toString or valueOf method");
         }
 
         public Completion ToPrimitive(PrimitiveHint hint = PrimitiveHint.Default)
@@ -78,8 +78,8 @@ namespace JSInterpreter
         {
             return this switch
             {
-                UndefinedValue _ => Completion.ThrowTypeError(),
-                NullValue _ => Completion.ThrowTypeError(),
+                UndefinedValue _ => Completion.ThrowTypeError("undefined is not an object"),
+                NullValue _ => Completion.ThrowTypeError("null is not an object"),
                 _ => Completion.NormalCompletion(this)
             };
         }
@@ -314,7 +314,7 @@ namespace JSInterpreter
             if (IsUnresolvableReference())
             {
                 if (strict)
-                    return Completion.ThrowReferenceError();
+                    return Completion.ThrowReferenceError($"Cannot set {referencedName} on unresolvable reference");
                 var globalObj = Interpreter.Instance().RunningExecutionContext().Realm.GlobalObject;
                 return globalObj.Set(referencedName, W, false);
             }
@@ -328,7 +328,7 @@ namespace JSInterpreter
                 var success = obj.InternalSet(referencedName, W, GetThisValue());
                 if (success.IsAbrupt()) return success;
                 if (success.Other == false && strict)
-                    return Completion.ThrowTypeError();
+                    return Completion.ThrowTypeError($"PutValue for {referencedName} failed");
                 return Completion.NormalCompletion();
             }
             if (!(@base is EnvironmentRecord envRec))

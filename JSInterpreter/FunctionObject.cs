@@ -154,7 +154,7 @@ namespace JSInterpreter
             {
                 if (d is FunctionDeclaration functionDeclaration)
                 {
-                    var fn = functionDeclaration.BoundNames()[0].name;
+                    var fn = functionDeclaration.BoundNames()[0];
                     if (!functionNames.Contains(fn))
                     {
                         functionNames.AddFirst(fn);
@@ -269,14 +269,14 @@ namespace JSInterpreter
                 foreach (var dn in d.BoundNames())
                 {
                     if (d.IsConstantDeclaration())
-                        lexEnvRec.CreateImmutableBinding(dn.name, true);
+                        lexEnvRec.CreateImmutableBinding(dn, true);
                     else
-                        lexEnvRec.CreateMutableBinding(dn.name, false);
+                        lexEnvRec.CreateMutableBinding(dn, false);
                 }
             }
             foreach (var f in functionsToInitialize)
             {
-                var fn = f.BoundNames()[0].name;
+                var fn = f.BoundNames()[0];
                 FunctionObject fo = f.InstantiateFunctionObject(lexEnv);
                 varEnvRec.SetMutableBinding(fn, fo, false);
             }

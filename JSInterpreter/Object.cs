@@ -96,7 +96,7 @@ namespace JSInterpreter
             // ensure no prototype loops
             while (!done)
             {
-                if (p == NullValue.Instance)
+                if (p == null || p == NullValue.Instance)
                     done = true;
                 else if (p == this)
                     return false;
@@ -180,11 +180,11 @@ namespace JSInterpreter
                 !Desc.Writable.HasValue)
                 return true;
 
-            if (!current.Configurable.Value)
+            if (!current.Configurable.GetValueOrDefault())
             {
                 if (Desc.Configurable.HasValue && Desc.Configurable.Value)
                     return false;
-                if (Desc.Enumerable.HasValue && (Desc.Enumerable.Value != current.Enumerable.Value))
+                if (Desc.Enumerable.HasValue && (Desc.Enumerable.Value != current.Enumerable.GetValueOrDefault()))
                     return false;
             }
 
@@ -196,7 +196,7 @@ namespace JSInterpreter
             }
             else if (current.IsDataDescriptor() != Desc.IsDataDescriptor())
             {
-                if (!current.Configurable.Value)
+                if (!current.Configurable.GetValueOrDefault())
                     return false;
 
                 // "convert" from data to accessor or accessor to data by resetting all descriptor properties.
@@ -209,7 +209,7 @@ namespace JSInterpreter
             }
             else if (current.IsDataDescriptor() && Desc.IsDataDescriptor())
             {
-                if (!current.Configurable.Value && !current.Writable.Value)
+                if (!current.Configurable.GetValueOrDefault() && !current.Writable.GetValueOrDefault())
                 {
                     if (Desc.Writable.HasValue && Desc.Writable.Value)
                         return false;
@@ -220,7 +220,7 @@ namespace JSInterpreter
             }
             else if (current.IsAccessorDescriptor() && Desc.IsAccessorDescriptor())
             {
-                if (!current.Configurable.Value)
+                if (!current.Configurable.GetValueOrDefault())
                 {
                     if (Desc.Set != null && Desc.Set != current.Set) return false;
                     if (Desc.Get != null && Desc.Get != current.Get) return false;
@@ -248,7 +248,7 @@ namespace JSInterpreter
         {
             var success = DefineOwnProperty(name, property);
             if (success.IsAbrupt()) return success;
-            if (success.Other == false) return Completion.ThrowTypeError().WithEmptyBool();
+            if (success.Other == false) return Completion.ThrowTypeError("DefinePropertyOrThrow failed").WithEmptyBool();
             return success;
         }
 
@@ -256,8 +256,8 @@ namespace JSInterpreter
         {
             var hasOwnComp = GetOwnProperty(name);
             if (hasOwnComp.IsAbrupt()) return hasOwnComp.WithEmptyBool();
-            IValue hasOwn = hasOwnComp.Other.Value;
-            if (hasOwn != UndefinedValue.Instance)
+            var hasOwn = hasOwnComp.Other;
+            if (hasOwn != null)
                 return true;
             var parentComp = GetPrototypeOf();
             if (parentComp.IsAbrupt()) return parentComp.WithEmptyBool();
@@ -301,7 +301,7 @@ namespace JSInterpreter
         {
             var success = InternalSet(P, V, this);
             if (success.IsAbrupt()) return success;
-            if (success.Other == false && Throw) return Completion.ThrowTypeError();
+            if (success.Other == false && Throw) return Completion.ThrowTypeError($"Set {P} failed");
             return success;
         }
 
@@ -437,7 +437,7 @@ namespace JSInterpreter
             if (func == UndefinedValue.Instance || func == NullValue.Instance)
                 return Completion.NormalCompletion(UndefinedValue.Instance);
             if (!(func is Callable))
-                return Completion.ThrowTypeError();
+                return Completion.ThrowTypeError($"GetMethod({name}) failed, it is not callable");
             return Completion.NormalCompletion(func);
         }
 
@@ -451,11 +451,11 @@ namespace JSInterpreter
             if (iteratorComp.IsAbrupt()) return iteratorComp.WithEmpty<IEnumerator<Completion>>();
             var iterator = iteratorComp.value;
             if (!(iterator is Object o))
-                return Completion.ThrowTypeError().WithEmpty<IEnumerator<Completion>>();
+                return Completion.ThrowTypeError("@@iterator method did not return an object").WithEmpty<IEnumerator<Completion>>();
             var nextMethodComp = o.Get("next");
             if (nextMethodComp.IsAbrupt()) return nextMethodComp.WithEmpty<IEnumerator<Completion>>();
             if (!(nextMethodComp.value is Callable c))
-                return Completion.ThrowTypeError().WithEmpty<IEnumerator<Completion>>();
+                return Completion.ThrowTypeError("iterator next is not callable").WithEmpty<IEnumerator<Completion>>();
             return Completion.NormalWith<IEnumerator<Completion>>(new ObjectIteratorRecord(o, c));
         }
     }
