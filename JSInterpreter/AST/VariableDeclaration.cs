@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace JSInterpreter.AST
 {
-    public class VariableDeclaration
+    public class VariableDeclaration : IScopedDeclaration
     {
         public readonly string name;
         public readonly IAssignmentExpression assignmentExpression;

@@ -19,21 +19,6 @@ namespace JSInterpreter.AST
             return scriptBody.TopLevelLexicallyScopedDeclarations();
         }
 
-        public override IReadOnlyList<IDeclarationPart> TopLevelLexicallyScopedDeclarations()
-        {
-            return scriptBody.TopLevelLexicallyScopedDeclarations();
-        }
-
-        public override IReadOnlyList<string> TopLevelVarDeclaredNames()
-        {
-            return VarDeclaredNames();
-        }
-
-        public override IReadOnlyList<IScopedDeclaration> TopLevelVarScopedDeclarations()
-        {
-            return VarScopedDeclarations();
-        }
-
         public override IReadOnlyList<string> VarDeclaredNames()
         {
             return scriptBody.TopLevelVarDeclaredNames();
@@ -53,17 +38,13 @@ namespace JSInterpreter.AST
 
         public Completion ScriptEvaluate(Interpreter interpreter)
         {
-            var go = new GlobalObject();
-            var globalEnvRec = new GlobalEnvironmentRecord(new ObjectEnvironmentRecord(go, false), go, new DeclarativeEnvironmentRecord());
-            var globalEnv = new LexicalEnvironment
-            {
-                EnvironmentRecord = globalEnvRec
-            };
+            //TODO get realm from script record
+            var globalEnv = interpreter.CurrentRealm().GlobalEnv;
             var scriptCxt = new ExecutionContext
             {
                 VariableEnvironment = globalEnv,
                 LexicalEnvironment = globalEnv,
-                Realm = new Realm()
+                Realm = interpreter.CurrentRealm()
             };
             interpreter.PushExecutionStack(scriptCxt);
             var result = GlobalDeclarationInstantiation(globalEnv);

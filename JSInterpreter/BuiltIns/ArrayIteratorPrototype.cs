@@ -4,7 +4,8 @@ using System.Text;
 
 namespace JSInterpreter
 {
-    public class ObjectConstructor : FunctionObject
+    public class ArrayIteratorPrototype : Object
     {
+
     }
 }

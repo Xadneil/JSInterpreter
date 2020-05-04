@@ -48,6 +48,11 @@ namespace JSInterpreter
             return prim.value.ToNumber();
         }
 
+        internal bool HasInternalSlot(string name)
+        {
+            return customInternalSlots.ContainsKey(name);
+        }
+
         internal object GetCustomInternalSlot(string name)
         {
             return customInternalSlots[name];
@@ -109,13 +114,13 @@ namespace JSInterpreter
 
         public virtual CompletionOr<PropertyDescriptor> GetOwnProperty(string P)
         {
-            return OrdinaryGetOwnProperty(P);
+            return Completion.NormalWith(OrdinaryGetOwnProperty(P));
         }
 
-        public CompletionOr<PropertyDescriptor> OrdinaryGetOwnProperty(string name)
+        public PropertyDescriptor OrdinaryGetOwnProperty(string name)
         {
             if (!propertyNames.TryGetValue(name, out int propertyIndex))
-                return Completion.NormalCompletion(UndefinedValue.Instance).WithEmpty<PropertyDescriptor>();
+                return null;
             properties.TryGetValue(propertyIndex, out PropertyDescriptor X);
             var D = new PropertyDescriptor();
             if (X.IsDataDescriptor())
@@ -129,7 +134,7 @@ namespace JSInterpreter
                 D.Set = X.Set;
             }
 
-            return Completion.NormalWith(D);
+            return D;
         }
 
         public virtual BooleanCompletion DefineOwnProperty(string name, PropertyDescriptor property)
@@ -272,7 +277,12 @@ namespace JSInterpreter
             return InternalGet(name, this);
         }
 
-        internal Completion InternalGet(string name, IValue receiver)
+        public virtual Completion InternalGet(string name, IValue receiver)
+        {
+            return OrdinaryGet(name, receiver);
+        }
+
+        public Completion OrdinaryGet(string name, IValue receiver)
         {
             var desc = GetOwnProperty(name);
             if (desc.IsAbrupt()) return desc;
@@ -297,15 +307,20 @@ namespace JSInterpreter
             return propertyDescriptor.Get.Call(receiver);
         }
 
-        public Completion Set(string P, IValue V, bool Throw)
+        public BooleanCompletion Set(string P, IValue V, bool Throw)
         {
             var success = InternalSet(P, V, this);
             if (success.IsAbrupt()) return success;
-            if (success.Other == false && Throw) return Completion.ThrowTypeError($"Set {P} failed");
+            if (success.Other == false && Throw) return Completion.ThrowTypeError($"Set {P} failed").WithEmptyBool();
             return success;
         }
 
-        public BooleanCompletion InternalSet(string name, IValue value, IValue receiver)
+        public virtual BooleanCompletion InternalSet(string name, IValue value, IValue receiver)
+        {
+            return OrdinarySet(name, value, receiver);
+        }
+
+        public BooleanCompletion OrdinarySet(string name, IValue value, IValue receiver)
         {
             var ownDesc = GetOwnProperty(name);
             if (ownDesc.IsAbrupt()) return ownDesc.WithEmptyBool();
@@ -318,8 +333,7 @@ namespace JSInterpreter
             {
                 var parentComp = GetPrototypeOf();
                 if (parentComp.IsAbrupt()) return parentComp.WithEmptyBool();
-                var parent = parentComp.value as Object;
-                if (parent != null)
+                if (parentComp.value is Object parent)
                 {
                     return parent.InternalSet(name, value, receiver);
                 }
@@ -361,14 +375,19 @@ namespace JSInterpreter
             return true;
         }
 
-        public BooleanCompletion Delete(string name)
+        public virtual BooleanCompletion InternalDelete(string name)
+        {
+            return OrdinaryDelete(name);
+        }
+
+        public BooleanCompletion OrdinaryDelete(string name)
         {
             var descComp = GetOwnProperty(name);
             if (descComp.IsAbrupt()) return descComp.WithEmptyBool();
             var desc = descComp.Other;
             if (desc == null)
                 return true;
-            if (desc.Configurable.Value)
+            if (desc.Configurable.GetValueOrDefault())
             {
                 propertyNames.Remove(name, out int propertyIndex);
                 properties.Remove(propertyIndex);
@@ -424,9 +443,9 @@ namespace JSInterpreter
             }
         }
 
-        public CompletionOr<IEnumerator<Completion>> EnumerateObjectProperties()
+        public CompletionOr<IteratorRecord> EnumerateObjectProperties()
         {
-            return Completion.NormalWith(AllPropertyKeys().GetEnumerator());
+            return Completion.NormalWith(IteratorRecord.FromEnumerable(AllPropertyKeys()));
         }
 
         public Completion GetMethod(string name)
@@ -441,22 +460,22 @@ namespace JSInterpreter
             return Completion.NormalCompletion(func);
         }
 
-        public CompletionOr<IEnumerator<Completion>> GetIterator()
+        public CompletionOr<IteratorRecord> GetIterator()
         {
             // assuming hint is sync
             var methodComp = GetMethod("@@iterator");
-            if (methodComp.IsAbrupt()) return methodComp.WithEmpty<IEnumerator<Completion>>();
+            if (methodComp.IsAbrupt()) return methodComp.WithEmpty<IteratorRecord>();
             var method = methodComp.value as Callable;
             var iteratorComp = method.Call(this);
-            if (iteratorComp.IsAbrupt()) return iteratorComp.WithEmpty<IEnumerator<Completion>>();
+            if (iteratorComp.IsAbrupt()) return iteratorComp.WithEmpty<IteratorRecord>();
             var iterator = iteratorComp.value;
             if (!(iterator is Object o))
-                return Completion.ThrowTypeError("@@iterator method did not return an object").WithEmpty<IEnumerator<Completion>>();
+                return Completion.ThrowTypeError("@@iterator method did not return an object").WithEmpty<IteratorRecord>();
             var nextMethodComp = o.Get("next");
-            if (nextMethodComp.IsAbrupt()) return nextMethodComp.WithEmpty<IEnumerator<Completion>>();
+            if (nextMethodComp.IsAbrupt()) return nextMethodComp.WithEmpty<IteratorRecord>();
             if (!(nextMethodComp.value is Callable c))
-                return Completion.ThrowTypeError("iterator next is not callable").WithEmpty<IEnumerator<Completion>>();
-            return Completion.NormalWith<IEnumerator<Completion>>(new ObjectIteratorRecord(o, c));
+                return Completion.ThrowTypeError("iterator next is not callable").WithEmpty<IteratorRecord>();
+            return Completion.NormalWith<IteratorRecord>(new IteratorRecord(o, c, false));
         }
     }
 }

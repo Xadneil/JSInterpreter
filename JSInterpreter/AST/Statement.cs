@@ -8,10 +8,7 @@ namespace JSInterpreter.AST
     public interface ISharedFunctions : IHasLexicallyScopedDeclarations, IHasEvaluate
     {
         IReadOnlyList<string> VarDeclaredNames();
-        IReadOnlyList<string> TopLevelVarDeclaredNames();
         IReadOnlyList<IScopedDeclaration> VarScopedDeclarations();
-        IReadOnlyList<IScopedDeclaration> TopLevelVarScopedDeclarations();
-        IReadOnlyList<IDeclarationPart> TopLevelLexicallyScopedDeclarations();
     }
 
     public abstract class Statement : IStatementListItem, ILabelledItem
@@ -32,9 +29,6 @@ namespace JSInterpreter.AST
         }
 
         public abstract IReadOnlyList<IDeclarationPart> LexicallyScopedDeclarations();
-        public abstract IReadOnlyList<IDeclarationPart> TopLevelLexicallyScopedDeclarations();
-        public abstract IReadOnlyList<string> TopLevelVarDeclaredNames();
-        public abstract IReadOnlyList<IScopedDeclaration> TopLevelVarScopedDeclarations();
         public abstract IReadOnlyList<string> VarDeclaredNames();
         public abstract IReadOnlyList<IScopedDeclaration> VarScopedDeclarations();
     }
@@ -51,21 +45,6 @@ namespace JSInterpreter.AST
         public override IReadOnlyList<IDeclarationPart> LexicallyScopedDeclarations()
         {
             return Utils.EmptyList<IDeclarationPart>();
-        }
-
-        public override IReadOnlyList<IDeclarationPart> TopLevelLexicallyScopedDeclarations()
-        {
-            return Utils.EmptyList<IDeclarationPart>();
-        }
-
-        public override IReadOnlyList<string> TopLevelVarDeclaredNames()
-        {
-            return VarDeclaredNames();
-        }
-
-        public override IReadOnlyList<IScopedDeclaration> TopLevelVarScopedDeclarations()
-        {
-            return VarScopedDeclarations();
         }
 
         public override IReadOnlyList<string> VarDeclaredNames()
@@ -103,19 +82,9 @@ namespace JSInterpreter.AST
             return Utils.EmptyList<IDeclarationPart>();
         }
 
-        public override IReadOnlyList<IDeclarationPart> TopLevelLexicallyScopedDeclarations()
-        {
-            return Utils.EmptyList<IDeclarationPart>();
-        }
-
         public override IReadOnlyList<string> VarDeclaredNames()
         {
             return variableDeclarations.BoundNames();
-        }
-
-        public override IReadOnlyList<string> TopLevelVarDeclaredNames()
-        {
-            return Utils.EmptyList<string>();
         }
 
         public override IReadOnlyList<IScopedDeclaration> VarScopedDeclarations()
@@ -123,28 +92,11 @@ namespace JSInterpreter.AST
             return variableDeclarations.Cast<IScopedDeclaration>().ToList();
         }
 
-        public override IReadOnlyList<IScopedDeclaration> TopLevelVarScopedDeclarations()
-        {
-            return Utils.EmptyList<IScopedDeclaration>();
-        }
-
         public override Completion Evaluate(Interpreter interpreter)
         {
-            foreach (var variable in variableDeclarations.Where(v => v.assignmentExpression != null))
-            {
-                var lhsComp = interpreter.ResolveBinding(variable.name);
-                if (lhsComp.IsAbrupt()) return lhsComp;
-                if (!(lhsComp.value is ReferenceValue lhs))
-                    throw new InvalidOperationException("ResolveBinding did not return a reference");
-                Completion value;
-                if (variable.assignmentExpression is FunctionExpression functionExpression && functionExpression.isAnonymous)
-                    value = functionExpression.NamedEvaluate(interpreter, variable.name);
-                else
-                    value = variable.assignmentExpression.Evaluate(interpreter).GetValue();
-                if (value.IsAbrupt()) return value;
-                lhs.PutValue(value.value);
-            }
-            return Completion.NormalCompletion(UndefinedValue.Instance);
+            var comp = variableDeclarations.Evaluate(interpreter);
+            if (comp.IsAbrupt()) return comp;
+            return Completion.NormalCompletion();
         }
     }
 
@@ -188,21 +140,6 @@ namespace JSInterpreter.AST
             return Utils.EmptyList<IDeclarationPart>();
         }
 
-        public override IReadOnlyList<IDeclarationPart> TopLevelLexicallyScopedDeclarations()
-        {
-            return Utils.EmptyList<IDeclarationPart>();
-        }
-
-        public override IReadOnlyList<string> TopLevelVarDeclaredNames()
-        {
-            return VarDeclaredNames();
-        }
-
-        public override IReadOnlyList<IScopedDeclaration> TopLevelVarScopedDeclarations()
-        {
-            return VarScopedDeclarations();
-        }
-
         public override IReadOnlyList<string> VarDeclaredNames()
         {
             return Utils.EmptyList<string>();
@@ -242,21 +179,6 @@ namespace JSInterpreter.AST
             return Utils.EmptyList<IDeclarationPart>();
         }
 
-        public override IReadOnlyList<IDeclarationPart> TopLevelLexicallyScopedDeclarations()
-        {
-            return Utils.EmptyList<IDeclarationPart>();
-        }
-
-        public override IReadOnlyList<string> TopLevelVarDeclaredNames()
-        {
-            return VarDeclaredNames();
-        }
-
-        public override IReadOnlyList<IScopedDeclaration> TopLevelVarScopedDeclarations()
-        {
-            return VarScopedDeclarations();
-        }
-
         public override IReadOnlyList<string> VarDeclaredNames()
         {
             return Utils.EmptyList<string>();
@@ -293,21 +215,6 @@ namespace JSInterpreter.AST
             return Utils.EmptyList<IDeclarationPart>();
         }
 
-        public override IReadOnlyList<IDeclarationPart> TopLevelLexicallyScopedDeclarations()
-        {
-            return Utils.EmptyList<IDeclarationPart>();
-        }
-
-        public override IReadOnlyList<string> TopLevelVarDeclaredNames()
-        {
-            return VarDeclaredNames();
-        }
-
-        public override IReadOnlyList<IScopedDeclaration> TopLevelVarScopedDeclarations()
-        {
-            return VarScopedDeclarations();
-        }
-
         public override IReadOnlyList<string> VarDeclaredNames()
         {
             return Utils.EmptyList<string>();
@@ -340,9 +247,15 @@ namespace JSInterpreter.AST
             return labelledItem.VarDeclaredNames();
         }
 
-        public override IReadOnlyList<string> TopLevelVarDeclaredNames()
+        public IReadOnlyList<string> TopLevelVarDeclaredNames()
         {
-            return labelledItem.TopLevelVarDeclaredNames();
+            if (labelledItem is LabelledStatement l)
+                return l.TopLevelVarDeclaredNames();
+            if (labelledItem is Statement)
+                return labelledItem.VarDeclaredNames();
+            if (labelledItem is FunctionDeclaration f)
+                return f.BoundNames();
+            throw new InvalidOperationException($"Invalid ILabelledItem {labelledItem.GetType()}");
         }
 
         public override IReadOnlyList<IScopedDeclaration> VarScopedDeclarations()
@@ -350,19 +263,20 @@ namespace JSInterpreter.AST
             return labelledItem.VarScopedDeclarations();
         }
 
-        public override IReadOnlyList<IScopedDeclaration> TopLevelVarScopedDeclarations()
+        public IReadOnlyList<IScopedDeclaration> TopLevelVarScopedDeclarations()
         {
-            return labelledItem.TopLevelVarScopedDeclarations();
+            if (labelledItem is LabelledStatement l)
+                return l.TopLevelVarScopedDeclarations();
+            if (labelledItem is Statement)
+                return labelledItem.VarScopedDeclarations();
+            if (labelledItem is FunctionDeclaration f)
+                return new List<IScopedDeclaration> { f };
+            throw new InvalidOperationException($"Invalid ILabelledItem {labelledItem.GetType()}");
         }
 
         public override IReadOnlyList<IDeclarationPart> LexicallyScopedDeclarations()
         {
             return labelledItem.LexicallyScopedDeclarations();
-        }
-
-        public override IReadOnlyList<IDeclarationPart> TopLevelLexicallyScopedDeclarations()
-        {
-            return Utils.EmptyList<IDeclarationPart>();
         }
 
         public override Completion LabelledEvaluate(Interpreter interpreter, List<string> labelSet)
@@ -403,21 +317,6 @@ namespace JSInterpreter.AST
             return Utils.EmptyList<IDeclarationPart>();
         }
 
-        public override IReadOnlyList<IDeclarationPart> TopLevelLexicallyScopedDeclarations()
-        {
-            return Utils.EmptyList<IDeclarationPart>();
-        }
-
-        public override IReadOnlyList<string> TopLevelVarDeclaredNames()
-        {
-            return VarDeclaredNames();
-        }
-
-        public override IReadOnlyList<IScopedDeclaration> TopLevelVarScopedDeclarations()
-        {
-            return VarScopedDeclarations();
-        }
-
         public override IReadOnlyList<string> VarDeclaredNames()
         {
             return Utils.EmptyList<string>();
@@ -448,21 +347,6 @@ namespace JSInterpreter.AST
             return Utils.EmptyList<IDeclarationPart>();
         }
 
-        public override IReadOnlyList<IDeclarationPart> TopLevelLexicallyScopedDeclarations()
-        {
-            return Utils.EmptyList<IDeclarationPart>();
-        }
-
-        public override IReadOnlyList<string> TopLevelVarDeclaredNames()
-        {
-            return VarDeclaredNames();
-        }
-
-        public override IReadOnlyList<IScopedDeclaration> TopLevelVarScopedDeclarations()
-        {
-            return VarScopedDeclarations();
-        }
-
         public override IReadOnlyList<string> VarDeclaredNames()
         {
             return Utils.EmptyList<string>();
@@ -479,21 +363,6 @@ namespace JSInterpreter.AST
         public override IReadOnlyList<IDeclarationPart> LexicallyScopedDeclarations()
         {
             return Utils.EmptyList<IDeclarationPart>();
-        }
-
-        public override IReadOnlyList<IDeclarationPart> TopLevelLexicallyScopedDeclarations()
-        {
-            return Utils.EmptyList<IDeclarationPart>();
-        }
-
-        public override IReadOnlyList<string> TopLevelVarDeclaredNames()
-        {
-            return VarDeclaredNames();
-        }
-
-        public override IReadOnlyList<IScopedDeclaration> TopLevelVarScopedDeclarations()
-        {
-            return VarScopedDeclarations();
         }
 
         public override IReadOnlyList<string> VarDeclaredNames()

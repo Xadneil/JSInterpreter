@@ -11,6 +11,8 @@ namespace JSInterpreter
         public StringObject(StringValue value)
         {
             this.value = value;
+            prototype = Interpreter.Instance().CurrentRealm().Intrinsics.StringPrototype;
+            DefineOwnProperty("length", new PropertyDescriptor(new NumberValue(value.@string.Length), false, false, false));
         }
     }
 }

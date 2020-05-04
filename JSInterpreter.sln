@@ -5,7 +5,12 @@ VisualStudioVersion = 16.0.29806.167
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "JSInterpreter", "JSInterpreter\JSInterpreter.csproj", "{AC41EEE7-A016-4797-A0E4-A7BB511715F0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JSInterpreter.Test", "JSInterpreter.Test\JSInterpreter.Test.csproj", "{863451DD-5A97-49DC-814C-6A1A412AC997}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "JSInterpreter.Test", "JSInterpreter.Test\JSInterpreter.Test.csproj", "{863451DD-5A97-49DC-814C-6A1A412AC997}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{581604E2-EC56-4320-9743-E91F6CF227E3}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -1,70 +1,110 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 
 namespace JSInterpreter
 {
-    public class ObjectIteratorRecord : IEnumerator<Completion>
+    public class IteratorRecord
     {
-        private readonly Object iterator;
-        private readonly Callable nextMethod;
+        public readonly Object Iterator;
+        public readonly Callable NextMethod;
+        public bool Done;
 
-        public ObjectIteratorRecord(Object iterator, Callable nextMethod)
+        public IteratorRecord(Object iterator, Callable nextMethod, bool done)
         {
-            this.iterator = iterator;
-            this.nextMethod = nextMethod;
+            Iterator = iterator;
+            NextMethod = nextMethod;
+            Done = done;
         }
 
-        public Completion Current { get; private set; }
-
-        object IEnumerator.Current => Current;
-
-        public void Dispose()
+        public Completion IteratorNext(IValue value = null)
         {
-            var returnComp = iterator.GetMethod("return");
-            if (returnComp.IsAbrupt())
-            {
-                Current = returnComp;
-                return;
-            }
-            var @return = returnComp.value;
-            if (@return == UndefinedValue.Instance)
-                return;
-            var innerResult = (@return as Callable).Call(iterator);
+            Completion result;
+            if (value == null)
+                result = NextMethod.Call(Iterator);
+            else
+                result = NextMethod.Call(Iterator, new List<IValue>() { value });
+            if (result.IsAbrupt()) return result;
+            if (!(result.value is Object))
+                return Completion.ThrowTypeError("iterator next must return an object.");
+            return result;
+        }
+
+        public static Completion IteratorComplete(IValue iterResult)
+        {
+            if (!(iterResult is Object o))
+                throw new InvalidOperationException("Spec 7.4.3 step 1");
+            var comp = o.Get("done");
+            if (comp.IsAbrupt()) return comp;
+            return Completion.NormalCompletion(comp.value.ToBoolean());
+        }
+
+        public static Completion IteratorValue(IValue iterResult)
+        {
+            if (!(iterResult is Object o))
+                throw new InvalidOperationException("Spec 7.4.4 step 1");
+            return o.Get("value");
+        }
+
+        public Completion IteratorStep()
+        {
+            var result = IteratorNext();
+            if (result.IsAbrupt()) return result;
+            var done = IteratorComplete(result.value);
+            if (done.IsAbrupt()) return done;
+            if (done.value == BooleanValue.True)
+                return Completion.NormalCompletion(BooleanValue.False);
+            return result;
+        }
+
+        public Completion IteratorClose(Completion completion)
+        {
+            var @return = Iterator.GetMethod("return");
+            if (@return.IsAbrupt()) return @return;
+            if (@return.value == UndefinedValue.Instance)
+                return completion;
+            var innerResult = (@return.value as Callable).Call(Iterator);
+            if (completion.completionType == CompletionType.Throw)
+                return completion;
             if (innerResult.completionType == CompletionType.Throw)
-            {
-                Current = innerResult;
-                return;
-            }
+                return innerResult;
             if (!(innerResult.value is Object))
-            {
-                Current = Completion.ThrowTypeError("iterator return did not return an object");
-            }
+                return Completion.ThrowTypeError("iterator return did not return an object.");
+            return completion;
         }
 
-        public bool MoveNext()
+        public static IteratorRecord FromEnumerable(IEnumerable<Completion> values)
         {
-            Current = nextMethod.Call(iterator);
-            if (Current.IsAbrupt()) return false;
-            if (!(Current.value is Object o))
-            {
-                Current = Completion.ThrowTypeError("iterator next did not return an object.");
-                return false;
-            }
-
-            var doneComp = o.Get("done");
-            if (doneComp.IsAbrupt())
-            {
-                Current = doneComp;
-                return false;
-            }
-            return doneComp.value.ToBoolean() == BooleanValue.False;
+            var iterator = new EnumerableIteratorObject(values);
+            return new IteratorRecord(iterator, iterator.GetMethod("next").value as Callable, false);
         }
 
-        public void Reset()
+        private class EnumerableIteratorObject : Object
         {
-            throw new NotImplementedException("object iterator records cannot be reset.");
+            private readonly IEnumerator<Completion> values;
+
+            public EnumerableIteratorObject(IEnumerable<Completion> values)
+            {
+                this.values = values.GetEnumerator();
+                DefineOwnProperty("next", new PropertyDescriptor(Utils.CreateBuiltinFunction(Next, Utils.EmptyList<string>()), false, false, false));
+            }
+
+            private Completion Next(IValue arg1, IReadOnlyList<IValue> arg2)
+            {
+                var hasNext = values.MoveNext();
+                if (!hasNext)
+                {
+                    var doneRet = Utils.ObjectCreate(null);
+                    doneRet.DefineOwnProperty("done", new PropertyDescriptor(BooleanValue.True, false, false, false));
+                    return Completion.NormalCompletion(doneRet);
+                }
+                if (values.Current.IsAbrupt())
+                    return values.Current;
+                var ret = Utils.ObjectCreate(null);
+                ret.DefineOwnProperty("value", new PropertyDescriptor(values.Current.value, false, false, false));
+                ret.DefineOwnProperty("done", new PropertyDescriptor(BooleanValue.False, false, false, false));
+                return Completion.NormalCompletion(ret);
+            }
         }
     }
 }

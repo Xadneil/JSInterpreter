@@ -5,7 +5,7 @@ using System.Text;
 
 namespace JSInterpreter.AST
 {
-    public abstract class Declaration : IStatementListItem
+    public abstract class Declaration : IStatementListItem, IDeclarationPart
     {
         public IReadOnlyList<string> VarDeclaredNames()
         {
@@ -17,11 +17,10 @@ namespace JSInterpreter.AST
             return Utils.EmptyList<IScopedDeclaration>();
         }
 
-        public abstract IReadOnlyList<string> TopLevelVarDeclaredNames();
-        public abstract IReadOnlyList<IScopedDeclaration> TopLevelVarScopedDeclarations();
         public abstract IReadOnlyList<IDeclarationPart> LexicallyScopedDeclarations();
-        public abstract IReadOnlyList<IDeclarationPart> TopLevelLexicallyScopedDeclarations();
         public abstract Completion Evaluate(Interpreter interpreter);
+        public abstract IReadOnlyList<string> BoundNames();
+        public abstract bool IsConstantDeclaration();
     }
 
     public interface IDeclarationPart
@@ -30,13 +29,11 @@ namespace JSInterpreter.AST
         bool IsConstantDeclaration();
     }
 
-    public abstract class HoistableDeclaration : Declaration, IDeclarationPart
+    public abstract class HoistableDeclaration : Declaration, IDeclarationPart, IScopedDeclaration
     {
-        public abstract IReadOnlyList<string> BoundNames();
-        public abstract bool IsConstantDeclaration();
     }
 
-    public class LexicalDeclaration : Declaration, IDeclarationPart
+    public class LexicalDeclaration : Declaration
     {
         public readonly LexicalDeclarationType lexicalDeclarationType;
         public readonly IReadOnlyList<LexicalDeclarationItem> lexicalDeclarationItems;
@@ -47,7 +44,7 @@ namespace JSInterpreter.AST
             this.lexicalDeclarationItems = lexicalDeclarationItems;
         }
 
-        public IReadOnlyList<string> BoundNames()
+        public override IReadOnlyList<string> BoundNames()
         {
             return lexicalDeclarationItems.Select(i => i.name).ToList();
         }
@@ -62,7 +59,7 @@ namespace JSInterpreter.AST
             return Completion.NormalCompletion();
         }
 
-        public bool IsConstantDeclaration()
+        public override bool IsConstantDeclaration()
         {
             return lexicalDeclarationType == LexicalDeclarationType.Const;
         }
@@ -70,21 +67,6 @@ namespace JSInterpreter.AST
         public override IReadOnlyList<IDeclarationPart> LexicallyScopedDeclarations()
         {
             return new[] { this }.ToList();
-        }
-
-        public override IReadOnlyList<IDeclarationPart> TopLevelLexicallyScopedDeclarations()
-        {
-            return new[] { this }.ToList();
-        }
-
-        public override IReadOnlyList<string> TopLevelVarDeclaredNames()
-        {
-            return Utils.EmptyList<string>();
-        }
-
-        public override IReadOnlyList<IScopedDeclaration> TopLevelVarScopedDeclarations()
-        {
-            return Utils.EmptyList<IScopedDeclaration>();
         }
     }
 

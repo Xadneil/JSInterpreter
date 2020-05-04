@@ -61,14 +61,16 @@ namespace JSInterpreter.AST
                             throw new InvalidOperationException($"ArrayLiteral: tried to initialize an array using a spread on a non-object");
                         var iteratorComp = @object.GetIterator();
                         if (iteratorComp.IsAbrupt()) return iteratorComp;
-                        var iterator = iteratorComp.Other;
+                        var iteratorRecord = iteratorComp.Other;
                         while (true)
                         {
-                            var next = iterator.MoveNext();
-                            if (iterator.Current.IsAbrupt()) return iterator.Current;
-                            if (!next)
+                            var next = iteratorRecord.IteratorStep();
+                            if (next.IsAbrupt()) return next;
+                            if (next.value == BooleanValue.False)
                                 break;
-                            status = Utils.CreateDataProperty(array, nextIndex.ToString(), iterator.Current.value);
+                            var nextValue = IteratorRecord.IteratorValue(next.value);
+                            if (nextValue.IsAbrupt()) return nextValue;
+                            status = Utils.CreateDataProperty(array, nextIndex.ToString(), nextValue.value);
                             if (status.IsAbrupt() || !status.Other)
                                 throw new InvalidOperationException("Spec 12.2.5.2, Spread, step 4e");
                             nextIndex++;

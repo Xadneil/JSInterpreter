@@ -19,8 +19,8 @@ namespace JSInterpreter
 
         private static string Description(Completion completion)
         {
-            if (completion.value != null && completion.value is NativeError n)
-                return n.Message;
+            if (completion.value != null && completion.value is Object e && e.HasOwnProperty("message").Other)
+                return (e.Get("message").value.ToJsString().value as StringValue).@string;
             return completion.value?.GetType().ToString();
         }
 

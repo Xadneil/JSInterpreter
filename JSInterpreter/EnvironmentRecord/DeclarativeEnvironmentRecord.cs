@@ -37,7 +37,10 @@ namespace JSInterpreter
         {
             if (!bindings.ContainsKey(name))
                 throw new InvalidOperationException("Spec 8.1.1.1.6 step 2");
-            if (bindings[name].Value == null) return Completion.ThrowReferenceError($"binding {name} does not exist.");
+            if (bindings[name].Value == null)
+            {
+                return Completion.ThrowReferenceError($"binding {name} does not exist.");
+            }
             return Completion.NormalCompletion(bindings[name].Value);
         }
 
@@ -85,6 +88,11 @@ namespace JSInterpreter
                     return Completion.ThrowTypeError("attempt to change value of immutable binding");
             }
             return Completion.NormalCompletion();
+        }
+
+        public override IValue WithBaseObject()
+        {
+            return UndefinedValue.Instance;
         }
     }
 }

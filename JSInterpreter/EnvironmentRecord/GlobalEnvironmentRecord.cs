@@ -180,5 +180,10 @@ namespace JSInterpreter
                 VarNames.Add(n);
             return Completion.NormalCompletion();
         }
+
+        public override IValue WithBaseObject()
+        {
+            return UndefinedValue.Instance;
+        }
     }
 }

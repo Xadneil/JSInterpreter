@@ -127,6 +127,14 @@ namespace JSInterpreter.Parser
             return new Script(new ScriptStatementList(statementList.statements));
         }
 
+        public FunctionStatementList ParseFunctionBody()
+        {
+            var statementList = ParseStatementList();
+            if (CurrentToken.Type != TokenType.Eof && exception != null)
+                throw exception;
+            return new FunctionStatementList(statementList.statements);
+        }
+
         private IStatementListItem ParseStatementListItem()
         {
             IStatementListItem item = null;
@@ -666,7 +674,7 @@ namespace JSInterpreter.Parser
             return new FunctionDeclaration(parameters, statements);
         }
 
-        private FormalParameters ParseFormalParameters()
+        public FormalParameters ParseFormalParameters()
         {
             string restParameter = null;
             var list = new List<FormalParameter>();
@@ -1377,12 +1385,14 @@ namespace JSInterpreter.Parser
             INewExpression expression = null;
             Parse(() =>
             {
-                expression = ParseMemberExpression();
+                Consume(TokenType.New);
+                var innerExpression = ParseNewExpression();
+                expression = new NewExpression(innerExpression);
+                if (CurrentToken.Type == TokenType.ParenOpen)
+                    throw new ParseFailureException();
             }).Or(() =>
             {
-                Consume(TokenType.New);
-                var expression = ParseNewExpression();
-                expression = new NewExpression(expression);
+                expression = ParseMemberExpression();
             }).OrThrow("New Expression");
             return expression;
         }

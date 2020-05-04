@@ -15,7 +15,7 @@ namespace JSInterpreter.AST
 
         public Completion Evaluate(Interpreter interpreter)
         {
-            var obj = Utils.ObjectCreate(ObjectPrototype.Instance);
+            var obj = Utils.ObjectCreate(interpreter.CurrentRealm().Intrinsics.ObjectPrototype);
             foreach (var property in propertyDefinitions)
             {
                 Completion valueComp;

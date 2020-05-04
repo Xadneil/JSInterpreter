@@ -10,7 +10,7 @@ namespace JSInterpreter
         {
             var length = (int)lengthInteger;
             if (proto == null)
-                proto = ArrayPrototype.Instance;
+                proto = Interpreter.Instance().CurrentRealm().Intrinsics.ArrayPrototype;
             var A = new ArrayObject();
             A.prototype = proto;
             A.IsExtensible = true;
@@ -24,10 +24,9 @@ namespace JSInterpreter
                 return ArraySetLength(Desc);
             else if (int.TryParse(P, out int index))
             {
-                var oldLenDescComp = OrdinaryGetOwnProperty("length");
-                if (oldLenDescComp.IsAbrupt() || oldLenDescComp.Other == null || !(oldLenDescComp.Other.Value is NumberValue))
+                var oldLenDesc = OrdinaryGetOwnProperty("length");
+                if (oldLenDesc == null || !(oldLenDesc.Value is NumberValue))
                     throw new InvalidOperationException("Spec 9.4.2.1 Step 3b");
-                var oldLenDesc = oldLenDescComp.Other;
                 var oldLen = (int)(oldLenDesc.Value as NumberValue).number;
 
                 if (index >= oldLen && oldLenDesc.Writable.HasValue && oldLenDesc.Writable.Value)
@@ -55,10 +54,9 @@ namespace JSInterpreter
             }
             var newLenDesc = new PropertyDescriptor(Desc.Value, Desc.Writable, Desc.Enumerable, Desc.Configurable);
             var newLen = (int)(Desc.Value as NumberValue).number;
-            var oldLenDescComp = OrdinaryGetOwnProperty("length");
-            if (oldLenDescComp.IsAbrupt() || oldLenDescComp.Other == null || !(oldLenDescComp.Other.Value is NumberValue))
+            var oldLenDesc = OrdinaryGetOwnProperty("length");
+            if (oldLenDesc == null || !(oldLenDesc.Value is NumberValue))
                 throw new InvalidOperationException("Spec 9.4.2.4 Step 8");
-            var oldLenDesc = oldLenDescComp.Other;
             var oldLen = (int)(oldLenDesc.Value as NumberValue).number;
             if (oldLen >= newLen)
                 return OrdinaryDefineOwnProperty("length", newLenDesc);
@@ -78,7 +76,7 @@ namespace JSInterpreter
             while (newLen < oldLen)
             {
                 oldLen--;
-                var deleteSucceeded = Delete(oldLen.ToString()).Other;
+                var deleteSucceeded = InternalDelete(oldLen.ToString()).Other;
                 if (deleteSucceeded == false)
                 {
                     newLenDesc.Value = new NumberValue(oldLen + 1);

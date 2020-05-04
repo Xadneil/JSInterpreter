@@ -33,7 +33,7 @@ namespace JSInterpreter.AST
             var propertyKey = propertyNameValue.ToPropertyKey();
             if (propertyKey.IsAbrupt()) return propertyKey;
             //TODO detect strict mode
-            return Completion.NormalCompletion(new ReferenceValue(baseValue, propertyKey.Other, strict: true));
+            return Completion.NormalCompletion(new ReferenceValue(baseValue, propertyKey.Other, strict: false));
         }
     }
 
@@ -56,7 +56,7 @@ namespace JSInterpreter.AST
             var coercible = baseValue.RequireObjectCoercible();
             if (coercible.IsAbrupt()) return coercible;
             //TODO detect strict mode
-            return Completion.NormalCompletion(new ReferenceValue(baseValue, dotIdentifierName, strict: true));
+            return Completion.NormalCompletion(new ReferenceValue(baseValue, dotIdentifierName, strict: false));
         }
     }
 
@@ -102,7 +102,7 @@ namespace JSInterpreter.AST
             var propertyKey = propertyNameValue.ToPropertyKey();
             if (propertyKey.IsAbrupt()) return propertyKey;
             //TODO detect strict mode
-            return SuperHelper.MakeSuperPropertyReference(actualThis, propertyKey.Other, true);
+            return SuperHelper.MakeSuperPropertyReference(actualThis, propertyKey.Other, false);
         }
     }
 
@@ -126,7 +126,7 @@ namespace JSInterpreter.AST
             var actualThis = actualThisComp.value;
 
             //TODO detect strict mode
-            return SuperHelper.MakeSuperPropertyReference(actualThis, superDotIdentifierName, true);
+            return SuperHelper.MakeSuperPropertyReference(actualThis, superDotIdentifierName, false);
         }
     }
 

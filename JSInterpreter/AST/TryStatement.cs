@@ -56,16 +56,6 @@ namespace JSInterpreter.AST
             return new TryStatement(TryStatementType.TryCatchFinally, tryBlock, catchBlock, finallyBlock, catchParameter);
         }
 
-        public override IReadOnlyList<string> TopLevelVarDeclaredNames()
-        {
-            return VarDeclaredNames();
-        }
-
-        public override IReadOnlyList<IScopedDeclaration> TopLevelVarScopedDeclarations()
-        {
-            return VarScopedDeclarations();
-        }
-
         public override IReadOnlyList<string> VarDeclaredNames()
         {
             switch (tryStatementType)
@@ -97,11 +87,6 @@ namespace JSInterpreter.AST
         }
 
         public override IReadOnlyList<IDeclarationPart> LexicallyScopedDeclarations()
-        {
-            return Utils.EmptyList<IDeclarationPart>();
-        }
-
-        public override IReadOnlyList<IDeclarationPart> TopLevelLexicallyScopedDeclarations()
         {
             return Utils.EmptyList<IDeclarationPart>();
         }

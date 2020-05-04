@@ -20,6 +20,14 @@ namespace JSInterpreter
             Configurable = configurable;
         }
 
+        public PropertyDescriptor(Callable getter, Callable setter, bool? enumerable, bool? configurable)
+        {
+            Get = getter;
+            Set = setter;
+            Enumerable = enumerable;
+            Configurable = configurable;
+        }
+
         public PropertyDescriptor()
         {
         }
@@ -38,7 +46,7 @@ namespace JSInterpreter
 
         public Object ToObject()
         {
-            var obj = Utils.ObjectCreate(ObjectPrototype.Instance);
+            var obj = Utils.ObjectCreate(Interpreter.Instance().CurrentRealm().Intrinsics.ObjectPrototype);
             if (Value != null)
                 Utils.CreateDataProperty(obj, "value", Value);
             if (Writable.HasValue)
@@ -52,6 +60,11 @@ namespace JSInterpreter
             if (Configurable.HasValue)
                 Utils.CreateDataProperty(obj, "configurable", Configurable.Value ? BooleanValue.True : BooleanValue.False);
             return obj;
+        }
+
+        public PropertyDescriptor Copy()
+        {
+            return (PropertyDescriptor)MemberwiseClone();
         }
 
         public static CompletionOr<PropertyDescriptor> FromObject(Object Obj)

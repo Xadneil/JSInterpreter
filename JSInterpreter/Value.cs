@@ -87,6 +87,9 @@ namespace JSInterpreter
 
     public class NumberValue : IValue
     {
+        internal static NumberValue One = new NumberValue(1);
+        internal static NumberValue PositiveZero = new NumberValue(0);
+        internal static NumberValue DoubleNaN = new NumberValue(double.NaN);
         public readonly double number;
 
         public NumberValue(double number)
@@ -121,15 +124,16 @@ namespace JSInterpreter
         public static BooleanValue True = new BooleanValue(true);
         public static BooleanValue False = new BooleanValue(false);
 
-        private readonly Object wrapperObject;
-        private NumberValue cachedNumber;
-        private StringValue cachedString;
+        private readonly Completion wrapperObject;
+        private readonly Completion cachedNumber;
+        private readonly Completion cachedString;
 
         private BooleanValue(bool boolean)
         {
             this.boolean = boolean;
-            wrapperObject = new Object();
-            //TODO: create boolean wrapper object
+            wrapperObject = Completion.NormalCompletion(new BooleanObject(this));
+            cachedNumber = Completion.NormalCompletion(new NumberValue(boolean ? 1 : 0));
+            cachedString = Completion.NormalCompletion(new StringValue(boolean ? "true" : "false"));
         }
 
         public bool IsPrimitive()
@@ -139,33 +143,24 @@ namespace JSInterpreter
 
         public Completion ToObject()
         {
-            throw new NotImplementedException("BooleanValue.ToObject");
-            //return wrapperObject;
+            return wrapperObject;
         }
 
         public Completion ToJsString()
         {
-            if (cachedString == null)
-            {
-                cachedString = new StringValue(boolean ? "true" : "false");
-            }
-            return Completion.NormalCompletion(cachedString);
+            return cachedString;
         }
 
         public Completion ToNumber()
         {
-            if (cachedNumber == null)
-            {
-                cachedNumber = new NumberValue(boolean ? 1 : 0);
-            }
-
-            return Completion.NormalCompletion(cachedNumber);
+            return cachedNumber;
         }
     }
 
     public class StringValue : IValue
     {
         public readonly string @string;
+        public readonly static StringValue Empty = new StringValue("");
 
         public StringValue(string @string)
         {
@@ -189,8 +184,10 @@ namespace JSInterpreter
 
         public Completion ToNumber()
         {
-            if (!double.TryParse(@string, out double result))
-                return Completion.NormalCompletion(new NumberValue(double.NaN));
+            if (string.IsNullOrWhiteSpace(@string))
+                return Completion.NormalCompletion(NumberValue.PositiveZero);
+            if (!double.TryParse(@string.Trim(), out double result))
+                return Completion.NormalCompletion(NumberValue.DoubleNaN);
             return Completion.NormalCompletion(new NumberValue(result));
         }
     }

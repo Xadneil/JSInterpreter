@@ -56,7 +56,7 @@ namespace JSInterpreter.AST
                 }
                 else
                 {
-                    var stmtCompletion = falseStatement.Evaluate(interpreter);
+                    var stmtCompletion = trueStatement.Evaluate(interpreter);
                     return stmtCompletion.UpdateEmpty(UndefinedValue.Instance);
                 }
             }
@@ -65,21 +65,6 @@ namespace JSInterpreter.AST
         public override IReadOnlyList<IDeclarationPart> LexicallyScopedDeclarations()
         {
             return Utils.EmptyList<IDeclarationPart>();
-        }
-
-        public override IReadOnlyList<IDeclarationPart> TopLevelLexicallyScopedDeclarations()
-        {
-            return Utils.EmptyList<IDeclarationPart>();
-        }
-
-        public override IReadOnlyList<string> TopLevelVarDeclaredNames()
-        {
-            return VarDeclaredNames();
-        }
-
-        public override IReadOnlyList<IScopedDeclaration> TopLevelVarScopedDeclarations()
-        {
-            return VarScopedDeclarations();
         }
 
         public override IReadOnlyList<string> VarDeclaredNames()

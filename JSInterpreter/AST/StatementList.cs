@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace JSInterpreter.AST
 {
-    public class StatementList : Statement, IHasLexicallyScopedDeclarations
+    public class StatementList : Statement
     {
         public readonly IReadOnlyList<IStatementListItem> statements;
 
@@ -18,9 +18,18 @@ namespace JSInterpreter.AST
             return statements.Any();
         }
 
-        public override IReadOnlyList<string> TopLevelVarDeclaredNames()
+        public IReadOnlyList<string> TopLevelVarDeclaredNames()
         {
-            return statements.SelectMany(i => i.TopLevelVarDeclaredNames()).ToList();
+            return statements.SelectMany(i =>
+            {
+                if (i is HoistableDeclaration h)
+                    return h.BoundNames();
+                else if (i is Declaration)
+                    return Utils.EmptyList<string>();
+                else if (i is LabelledStatement l)
+                    return l.TopLevelVarDeclaredNames();
+                return i.VarDeclaredNames();
+            }).ToList();
         }
 
         public override IReadOnlyList<IScopedDeclaration> VarScopedDeclarations()
@@ -36,9 +45,18 @@ namespace JSInterpreter.AST
             return ret;
         }
 
-        public override IReadOnlyList<IScopedDeclaration> TopLevelVarScopedDeclarations()
+        public IReadOnlyList<IScopedDeclaration> TopLevelVarScopedDeclarations()
         {
-            return statements.SelectMany(i => i.TopLevelVarScopedDeclarations()).ToList();
+            return statements.SelectMany(i =>
+            {
+                if (i is HoistableDeclaration h)
+                    return new List<IScopedDeclaration>() { h };
+                else if (i is Declaration)
+                    return Utils.EmptyList<IScopedDeclaration>();
+                else if (i is LabelledStatement l)
+                    return l.TopLevelVarScopedDeclarations();
+                return i.VarScopedDeclarations();
+            }).ToList();
         }
 
         public override IReadOnlyList<IDeclarationPart> LexicallyScopedDeclarations()
@@ -46,9 +64,14 @@ namespace JSInterpreter.AST
             return statements.SelectMany(i => i.LexicallyScopedDeclarations()).ToList();
         }
 
-        public override IReadOnlyList<IDeclarationPart> TopLevelLexicallyScopedDeclarations()
+        public IReadOnlyList<IDeclarationPart> TopLevelLexicallyScopedDeclarations()
         {
-            return statements.SelectMany(i => i.TopLevelLexicallyScopedDeclarations()).ToList();
+            return statements.SelectMany(i =>
+            {
+                if (i is Declaration d && !(i is HoistableDeclaration))
+                    return new List<IDeclarationPart>() { d };
+                return Utils.EmptyList<IDeclarationPart>();
+            }).ToList();
         }
 
         public override IReadOnlyList<string> VarDeclaredNames()
@@ -106,7 +129,8 @@ namespace JSInterpreter.AST
 
         public Completion EvaluateBody(FunctionObject functionObject, IReadOnlyList<IValue> arguments)
         {
-            functionObject.FunctionDeclarationInstantiation(arguments);
+            var comp = functionObject.FunctionDeclarationInstantiation(arguments);
+            if (comp.IsAbrupt()) return comp;
             return Evaluate(Interpreter.Instance());
         }
     }

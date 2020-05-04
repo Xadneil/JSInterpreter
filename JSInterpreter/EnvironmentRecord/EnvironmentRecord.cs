@@ -24,5 +24,7 @@
         {
             return false;
         }
+
+        public abstract IValue WithBaseObject();
     }
 }

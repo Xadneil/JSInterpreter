@@ -27,10 +27,13 @@ namespace JSInterpreter.AST
 
         public Completion Evaluate(Interpreter interpreter)
         {
-            var lhs = leftHandSideExpression.Evaluate(interpreter).GetValue();
+            var lhs = leftHandSideExpression.Evaluate(interpreter);
             if (lhs.IsAbrupt()) return lhs;
 
-            var oldValueComp = lhs.value.ToNumber();
+            var lhsValue = lhs.GetValue();
+            if (lhsValue.IsAbrupt()) return lhsValue;
+
+            var oldValueComp = lhsValue.value.ToNumber();
             if (oldValueComp.IsAbrupt()) return oldValueComp;
             var oldValue = oldValueComp.value as NumberValue;
 
@@ -63,10 +66,13 @@ namespace JSInterpreter.AST
 
         public Completion Evaluate(Interpreter interpreter)
         {
-            var lhs = unaryExpression.Evaluate(interpreter).GetValue();
+            var lhs = unaryExpression.Evaluate(interpreter);
             if (lhs.IsAbrupt()) return lhs;
 
-            var oldValueComp = lhs.value.ToNumber();
+            var lhsValue = lhs.GetValue();
+            if (lhsValue.IsAbrupt()) return lhsValue;
+
+            var oldValueComp = lhsValue.value.ToNumber();
             if (oldValueComp.IsAbrupt()) return oldValueComp;
             var oldValue = oldValueComp.value as NumberValue;
 

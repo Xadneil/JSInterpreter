@@ -19,7 +19,7 @@ namespace JSInterpreter.AST
             return statementList.VarDeclaredNames();
         }
 
-        public override IReadOnlyList<string> TopLevelVarDeclaredNames()
+        public IReadOnlyList<string> TopLevelVarDeclaredNames()
         {
             return statementList.TopLevelVarDeclaredNames();
         }
@@ -29,7 +29,7 @@ namespace JSInterpreter.AST
             return statementList.VarScopedDeclarations();
         }
 
-        public override IReadOnlyList<IScopedDeclaration> TopLevelVarScopedDeclarations()
+        public IReadOnlyList<IScopedDeclaration> TopLevelVarScopedDeclarations()
         {
             return statementList.TopLevelVarScopedDeclarations();
         }
@@ -39,7 +39,7 @@ namespace JSInterpreter.AST
             return statementList.LexicallyScopedDeclarations();
         }
 
-        public override IReadOnlyList<IDeclarationPart> TopLevelLexicallyScopedDeclarations()
+        public IReadOnlyList<IDeclarationPart> TopLevelLexicallyScopedDeclarations()
         {
             return statementList.TopLevelLexicallyScopedDeclarations();
         }

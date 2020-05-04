@@ -87,7 +87,7 @@ namespace JSInterpreter.AST
                 if (reference is SuperReferenceValue)
                     return Completion.ThrowReferenceError("OperatorUnaryExpression.EvaluateDelete: cannot delete from super").WithEmptyBool();
                 var baseObj = ((IValue)reference.baseValue).ToObject().value as Object;
-                var deleteStatus = baseObj.Delete(reference.referencedName);
+                var deleteStatus = baseObj.InternalDelete(reference.referencedName);
                 if (deleteStatus.IsAbrupt()) return deleteStatus;
                 var success = deleteStatus.Other;
                 if (success == false && reference.strict)

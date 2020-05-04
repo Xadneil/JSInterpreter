@@ -40,7 +40,7 @@ namespace JSInterpreter
             IValue thisArgument = null;
             if (ConstructorKind == ConstructorKind.Base)
             {
-                var thisComp = Utils.OrdinaryCreateFromConstructor(newTarget, "%ObjectPrototype%");
+                var thisComp = Utils.OrdinaryCreateFromConstructor(newTarget, i => i.ObjectPrototype);
                 if (thisComp.IsAbrupt()) return thisComp;
                 thisArgument = thisComp.value;
             }
@@ -134,10 +134,12 @@ namespace JSInterpreter
 
         private Completion OrdinaryCallEvaluateBody(IReadOnlyList<IValue> arguments)
         {
-            return Code.EvaluateBody(this, arguments);
+            if (Code != null)
+                return Code.EvaluateBody(this, arguments);
+            return Completion.NormalCompletion();
         }
 
-        public void FunctionDeclarationInstantiation(IReadOnlyList<IValue> arguments)
+        public Completion FunctionDeclarationInstantiation(IReadOnlyList<IValue> arguments)
         {
             var calleeContext = Interpreter.Instance().RunningExecutionContext();
             var env = calleeContext.LexicalEnvironment;
@@ -198,7 +200,7 @@ namespace JSInterpreter
                 }
                 else
                 {
-                    throw new NotImplementedException("FunctionObject.FunctionDeclarationInstantiation: Mapped arguments object is not implemented.");
+                    ao = CreateMappedArgumentsObject(FormalParameters, arguments, envRec);
                 }
                 if (Strict)
                 {
@@ -215,8 +217,13 @@ namespace JSInterpreter
             {
                 parameterBindings = parameterNames;
             }
-
-            //TODO hasDuplicates with the iteratorBindingInitialization for FormalParameters
+            var iterator = new ArgumentIterator(arguments);
+            Completion comp;
+            if (hasDuplicates)
+                comp = FormalParameters.IteratorBindingInitialization(null, iterator);
+            else
+                comp = FormalParameters.IteratorBindingInitialization(env, iterator);
+            if (comp.IsAbrupt()) return comp;
 
             LexicalEnvironment varEnv;
             EnvironmentRecord varEnvRec;
@@ -280,11 +287,73 @@ namespace JSInterpreter
                 FunctionObject fo = f.InstantiateFunctionObject(lexEnv);
                 varEnvRec.SetMutableBinding(fn, fo, false);
             }
+
+            return Completion.NormalCompletion();
+        }
+
+        private Object CreateMappedArgumentsObject(FormalParameters formalParameters, IReadOnlyList<IValue> arguments, EnvironmentRecord env)
+        {
+            var map = Utils.ObjectCreate(null);
+            var obj = new MappedArguments(map);
+            var parameterNames = formalParameters.BoundNames();
+            int index;
+            for (index = 0; index < arguments.Count; index++)
+            {
+                Utils.CreateDataProperty(obj, index.ToString(), arguments[index]);
+            }
+            obj.DefinePropertyOrThrow("length", new PropertyDescriptor(new NumberValue(arguments.Count), true, false, true));
+            var mappedNames = new List<string>();
+            for (index = parameterNames.Count - 1; index >= 0; index--)
+            {
+                var name = parameterNames[index];
+                if (!mappedNames.Contains(name))
+                {
+                    mappedNames.Add(name);
+                    if (index < arguments.Count)
+                    {
+                        var g = MakeArgGetter(name, env);
+                        var p = MakeArgSetter(name, env);
+                        map.DefineOwnProperty(index.ToString(), new PropertyDescriptor(p, g, false, true));
+                    }
+                }
+            }
+            DefinePropertyOrThrow("@@iterator", new PropertyDescriptor(Utils.CreateBuiltinFunction(ArrayPrototype.values, Utils.EmptyList<string>()), true, false, true));
+            DefinePropertyOrThrow("callee", new PropertyDescriptor(this, true, false, true));
+            return obj;
+        }
+
+        private FunctionObject MakeArgGetter(string name, EnvironmentRecord env)
+        {
+            var getter = Utils.CreateBuiltinFunction((@this, arguments) =>
+            {
+                var thisObj = @this as Object;
+                var name = thisObj.GetCustomInternalSlot("Name") as string;
+                var env = thisObj.GetCustomInternalSlot("Env") as EnvironmentRecord;
+                return env.GetBindingValue(name, false);
+            }, new[] { "Name", "Env" });
+            getter.SetCustomInternalSlot("Name", name);
+            getter.SetCustomInternalSlot("Env", env);
+            return getter;
+        }
+
+        private FunctionObject MakeArgSetter(string name, EnvironmentRecord env)
+        {
+            var setter = Utils.CreateBuiltinFunction((@this, arguments) =>
+            {
+                var thisObj = @this as Object;
+                var name = thisObj.GetCustomInternalSlot("Name") as string;
+                var env = thisObj.GetCustomInternalSlot("Env") as EnvironmentRecord;
+                var value = arguments[0];
+                return env.SetMutableBinding(name, value, false);
+            }, new[] { "Name", "Env" });
+            setter.SetCustomInternalSlot("Name", name);
+            setter.SetCustomInternalSlot("Env", env);
+            return setter;
         }
 
         private static Object CreateUnmappedArgumentsObject(IReadOnlyList<IValue> arguments)
         {
-            var obj = Utils.ObjectCreate(ObjectPrototype.Instance, new[] { "ParameterMap" });
+            var obj = Utils.ObjectCreate(Interpreter.Instance().CurrentRealm().Intrinsics.ObjectPrototype, new[] { "ParameterMap" });
             obj.SetCustomInternalSlot("ParameterMap", UndefinedValue.Instance);
             obj.DefinePropertyOrThrow("length", new PropertyDescriptor(new NumberValue(arguments.Count), true, false, true));
             for (int i = 0; i < arguments.Count; i++)
@@ -303,7 +372,7 @@ namespace JSInterpreter
         {
             if (prototype == null)
             {
-                prototype = Utils.ObjectCreate(ObjectPrototype.Instance);
+                prototype = Utils.ObjectCreate(Interpreter.Instance().CurrentRealm().Intrinsics.ObjectPrototype);
                 prototype.DefinePropertyOrThrow("constructor", new PropertyDescriptor(this, writablePrototype, false, true));
             }
             DefinePropertyOrThrow("prototype", new PropertyDescriptor(prototype, writablePrototype, false, false));
@@ -325,7 +394,7 @@ namespace JSInterpreter
         {
             if (prototype == null)
             {
-                prototype = FunctionPrototype.Instance;
+                prototype = Interpreter.Instance().CurrentRealm().Intrinsics.FunctionPrototype;
             }
             var functionKind = kind == FunctionCreateKind.Normal ? FunctionKind.Normal : FunctionKind.NonConstructor;
             FunctionObject F = FunctionAllocate(prototype, strict, functionKind);

@@ -27,6 +27,11 @@ namespace JSInterpreter.AST
             if (funcComp.IsAbrupt()) return funcComp;
             var func = funcComp.value;
 
+            if (func == UndefinedValue.Instance && @ref.value is ReferenceValue r)
+            {
+                return Completion.ThrowReferenceError($"Cannot call undefined method {r.referencedName } on a {r.baseValue.GetType().Name}");
+            }
+
             if (@ref.value is ReferenceValue referenceValue && !referenceValue.baseValue.IsPrimitive() && referenceValue.referencedName == "eval")
             {
                 throw new NotImplementedException("MemberCallExpression.Evaluate: eval is not implemented.");
@@ -95,6 +100,10 @@ namespace JSInterpreter.AST
             var funcComp = @ref.GetValue();
             if (funcComp.IsAbrupt()) return funcComp;
             var func = funcComp.value;
+
+            if (func == UndefinedValue.Instance && @ref.value is ReferenceValue r)
+                return Completion.ThrowReferenceError($"Cannot call undefined method {r.referencedName } on a {r.baseValue.GetType().Name}");
+
             //TODO: support tail calls
             return Utils.EvaluateCall(func, @ref.value, arguments, tailCall: false);
         }
@@ -124,7 +133,7 @@ namespace JSInterpreter.AST
             var propertyKey = propertyNameValue.ToPropertyKey();
             if (propertyKey.IsAbrupt()) return propertyKey;
             //TODO detect strict mode
-            return Completion.NormalCompletion(new ReferenceValue(baseValue, propertyKey.Other, strict: true));
+            return Completion.NormalCompletion(new ReferenceValue(baseValue, propertyKey.Other, strict: false));
         }
     }
 
@@ -147,7 +156,7 @@ namespace JSInterpreter.AST
             var coercible = baseValue.RequireObjectCoercible();
             if (coercible.IsAbrupt()) return coercible;
             //TODO detect strict mode
-            return Completion.NormalCompletion(new ReferenceValue(baseValue, dotIdentifierName, strict: true));
+            return Completion.NormalCompletion(new ReferenceValue(baseValue, dotIdentifierName, strict: false));
         }
     }
 }

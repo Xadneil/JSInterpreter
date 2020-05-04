@@ -25,7 +25,7 @@ namespace JSInterpreter
 
         public override BooleanCompletion DeleteBinding(string name)
         {
-            return BindingObject.Delete(name);
+            return BindingObject.InternalDelete(name);
         }
 
         public override Completion GetBindingValue(string name, bool strict)
@@ -71,6 +71,13 @@ namespace JSInterpreter
         public override Completion SetMutableBinding(string name, IValue value, bool strict)
         {
             return BindingObject.Set(name, value, strict);
+        }
+
+        public override IValue WithBaseObject()
+        {
+            if (withEnvironment)
+                return BindingObject;
+            return UndefinedValue.Instance;
         }
     }
 }

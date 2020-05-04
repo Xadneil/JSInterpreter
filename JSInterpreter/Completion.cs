@@ -36,24 +36,44 @@ namespace JSInterpreter
             return new Completion(CompletionType.Normal, null, null);
         }
 
-        public static Completion Throw(Object error)
-        {
-            return new Completion(CompletionType.Throw, error, null);
-        }
-
         public static Completion ThrowTypeError(string message)
         {
-            return Throw(new NativeError("TypeError: " + message + Environment.NewLine + StackTrace));
+            Completion errorInstance = NewErrorInstance(message, i => i.TypeErrorConstructor);
+            if (errorInstance.IsAbrupt()) return errorInstance;
+            return Throw(errorInstance.value);
         }
 
         public static Completion ThrowReferenceError(string message)
         {
-            return Throw(new NativeError("ReferenceError: " + message + Environment.NewLine + StackTrace));
+            Completion errorInstance = NewErrorInstance(message, i => i.ReferenceErrorConstructor);
+            if (errorInstance.IsAbrupt()) return errorInstance;
+            return Throw(errorInstance.value);
         }
 
         public static Completion ThrowSyntaxError(string message)
         {
-            return Throw(new NativeError("SyntaxError: " + message + Environment.NewLine + StackTrace));
+            Completion errorInstance = NewErrorInstance(message, i => i.SyntaxErrorConstructor);
+            if (errorInstance.IsAbrupt()) return errorInstance;
+            return Throw(errorInstance.value);
+        }
+
+        public static Completion ThrowRangeError(string message)
+        {
+            Completion errorInstance = NewErrorInstance(message, i => i.RangeErrorConstructor);
+            if (errorInstance.IsAbrupt()) return errorInstance;
+            return Throw(errorInstance.value);
+        }
+
+        private static Completion Throw(IValue error)
+        {
+            return new Completion(CompletionType.Throw, error, null);
+        }
+
+        private static Completion NewErrorInstance<T>(string message, Func<Intrinsics, T> constructorFunc) where T : ErrorConstructor
+        {
+            var constructor = constructorFunc(Interpreter.Instance().CurrentRealm().Intrinsics);
+            var errorInstance = constructor.InternalConstruct(new[] { new StringValue($"{constructor.Name}: {message}{Environment.NewLine}{StackTrace}") }, null);
+            return errorInstance;
         }
 
         private static string StackTrace
@@ -125,7 +145,7 @@ namespace JSInterpreter
 
         public BooleanCompletion WithEmptyBool()
         {
-            return new BooleanCompletion(CompletionType.Normal, null, null, default);
+            return new BooleanCompletion(completionType, value, target, default);
         }
     }
 
@@ -155,7 +175,7 @@ namespace JSInterpreter
 
         public static implicit operator BooleanCompletion(bool b)
         {
-            return new BooleanCompletion(CompletionType.Normal, null, null, b);
+            return new BooleanCompletion(CompletionType.Normal, b ? BooleanValue.True : BooleanValue.False, null, b);
         }
     }
 }

@@ -22,21 +22,6 @@ namespace JSInterpreter.AST
             return caseBlock.LexicallyScopedDeclarations();
         }
 
-        public override IReadOnlyList<IDeclarationPart> TopLevelLexicallyScopedDeclarations()
-        {
-            return Utils.EmptyList<IDeclarationPart>();
-        }
-
-        public override IReadOnlyList<string> TopLevelVarDeclaredNames()
-        {
-            return VarDeclaredNames();
-        }
-
-        public override IReadOnlyList<IScopedDeclaration> TopLevelVarScopedDeclarations()
-        {
-            return VarScopedDeclarations();
-        }
-
         public override IReadOnlyList<string> VarDeclaredNames()
         {
             return caseBlock.VarDeclaredNames();

@@ -83,10 +83,13 @@ namespace JSInterpreter
                     var iteratorRecord = iteratorRecordComp.Other;
                     while (true)
                     {
-                        var next = iteratorRecord.MoveNext();
-                        if (iteratorRecord.Current.IsAbrupt()) return iteratorRecord.Current.WithEmpty<List<IValue>>();
-                        if (!next) break;
-                        ret.Add(iteratorRecord.Current.value);
+                        var next = iteratorRecord.IteratorStep();
+                        if (next.IsAbrupt()) return next.WithEmpty<List<IValue>>();
+                        if (next.value == BooleanValue.False)
+                            break;
+                        var nextArg = IteratorRecord.IteratorValue(next.value);
+                        if (nextArg.IsAbrupt()) return nextArg.WithEmpty<List<IValue>>();
+                        ret.Add(nextArg.value);
                     }
                     break;
                 case IAssignmentExpression assignmentExpression:
@@ -112,7 +115,7 @@ namespace JSInterpreter
                 {
                     if (!(reference.baseValue is EnvironmentRecord envRec))
                         throw new InvalidOperationException("Utils.EvaluateCall: reference.baseValue is not a recognized IReferenceable");
-                    throw new NotImplementedException("Utils.EvaluateCall: Spec 12.3.4.2 Step 1bii: With statements are not implemented.");
+                    thisValue = envRec.WithBaseObject();
                 }
             }
             else
@@ -122,7 +125,9 @@ namespace JSInterpreter
             if (argList.IsAbrupt()) return argList;
 
             if (!(func is Callable functionObject))
+            {
                 return Completion.ThrowTypeError("Utils.EvaluateCall: func must be a function object.");
+            }
             if (tailCall)
             {
                 throw new NotImplementedException("Utils.EvaluateCall: tail calls not implemented");
@@ -130,7 +135,7 @@ namespace JSInterpreter
             return functionObject.Call(thisValue, argList.Other);
         }
 
-        internal static Completion OrdinaryCreateFromConstructor(Object constructor, string intrinsicDefaultProto, IEnumerable<string> internalSlotsList = null)
+        internal static Completion OrdinaryCreateFromConstructor(Object constructor, Func<Intrinsics, Object> intrinsicDefaultProto, IEnumerable<string> internalSlotsList = null)
         {
             var protoComp = GetPrototypeFromConstructor(constructor, intrinsicDefaultProto);
             if (protoComp.IsAbrupt()) return protoComp;
@@ -138,7 +143,7 @@ namespace JSInterpreter
             return Completion.NormalCompletion(ObjectCreate(proto, internalSlotsList));
         }
 
-        private static Completion GetPrototypeFromConstructor(Object constructor, string intrinsicDefaultProto)
+        public static Completion GetPrototypeFromConstructor(Object constructor, Func<Intrinsics, Object> intrinsicDefaultProto)
         {
             if (!(constructor is Callable))
                 throw new InvalidOperationException("GetPrototypeFromConstructor: constructor is not callable");
@@ -147,15 +152,66 @@ namespace JSInterpreter
             var proto = protoComp.value;
             if (!(proto is Object))
             {
-                if (intrinsicDefaultProto == "%ObjectPrototype%")
-                {
-                    proto = ObjectPrototype.Instance;
-                }
+                //TODO get realm from constructor
+                var realm = Interpreter.Instance().CurrentRealm();
+                proto = intrinsicDefaultProto(realm.Intrinsics);
             }
             return Completion.NormalCompletion(proto);
         }
 
-        public static FunctionObject CreateBuiltinFunction(Func<Completion> steps, IEnumerable<string> internalSlotsList, Realm realm = null, Object prototype = null)
+        internal static Completion IteratorBindingInitializationBindingRestIdentifier(Identifier restParameterIdentifier, LexicalEnvironment env, ArgumentIterator arguments)
+        {
+            var lhsComp = Interpreter.Instance().ResolveBinding(restParameterIdentifier.name, env);
+            if (lhsComp.IsAbrupt()) return lhsComp;
+            var lhs = lhsComp.value as ReferenceValue;
+            var A = ArrayObject.ArrayCreate(0);
+            int n = 0;
+            for (; ; n++)
+            {
+                if (arguments.Done)
+                {
+                    if (env == null)
+                        return lhs.PutValue(A);
+                    return lhs.InitializeReferencedBinding(A);
+                }
+                var nextValue = arguments.Next();
+                var status = Utils.CreateDataProperty(A, n.ToString(), nextValue);
+                if (!status.Other)
+                    throw new InvalidOperationException("BindingRestElement IteratorBindingInitialization: assert step 4g");
+            }
+        }
+
+        internal static Completion IteratorBindingInitializationSingleNameBinding(Identifier identifier, IAssignmentExpression initializer, LexicalEnvironment env, ArgumentIterator arguments)
+        {
+            var lhsComp = Interpreter.Instance().ResolveBinding(identifier.name, env);
+            if (lhsComp.IsAbrupt()) return lhsComp;
+            var lhs = lhsComp.value as ReferenceValue;
+            IValue v;
+            if (!arguments.Done)
+                v = arguments.Next();
+            else
+                v = UndefinedValue.Instance;
+            if (initializer != null && v == UndefinedValue.Instance)
+            {
+                if (initializer is FunctionExpression f && f.isAnonymous)
+                {
+                    var comp = f.NamedEvaluate(Interpreter.Instance(), identifier.name);
+                    if (comp.IsAbrupt()) return comp;
+                    v = comp.value;
+                }
+                else
+                {
+                    var comp = initializer.Evaluate(Interpreter.Instance()).GetValue();
+                    if (comp.IsAbrupt()) return comp;
+                    v = comp.value;
+                }
+            }
+            if (env == null)
+                return lhs.PutValue(v);
+            return lhs.InitializeReferencedBinding(v);
+        }
+
+        public static FunctionObject CreateBuiltinFunction(Func<IValue, IReadOnlyList<IValue>, Completion> steps, IEnumerable<string> internalSlotsList, Realm realm = null, Object prototype = null)
         {
             if (realm == null)
                 realm = Interpreter.Instance().CurrentRealm();
@@ -172,17 +228,33 @@ namespace JSInterpreter
 
         public class BuiltinFunction : FunctionObject
         {
-            private readonly Func<Completion> CallAction;
+            private readonly Func<IValue, IReadOnlyList<IValue>, Completion> CallAction;
 
-            public BuiltinFunction(Func<Completion> callAction)
+            public BuiltinFunction(Func<IValue, IReadOnlyList<IValue>, Completion> callAction)
             {
                 CallAction = callAction;
             }
 
             public override Completion InternalCall(IValue @this, IReadOnlyList<IValue> arguments)
             {
-                return CallAction();
+                return CallAction(@this, arguments);
             }
+        }
+
+        public static Completion CheckArguments(IReadOnlyList<IValue> arguments, int requiredCount)
+        {
+            if (arguments.Count() < requiredCount)
+                return Completion.ThrowTypeError($"{requiredCount} arguments are required.");
+            return Completion.NormalCompletion();
+        }
+
+        public static Completion CheckArguments<T>(IReadOnlyList<IValue> arguments) where T : IValue
+        {
+            if (arguments.Count() < 1)
+                return Completion.ThrowTypeError("1 argument is required.");
+            if (!(arguments.ElementAt(0) is T))
+                return Completion.ThrowTypeError($"Argument 1 must be a {nameof(T)}.");
+            return Completion.NormalCompletion();
         }
     }
 
