@@ -9,6 +9,35 @@ namespace JSInterpreter
         public ArrayPrototype(ArrayConstructor constructor, Realm realm)
         {
             DefinePropertyOrThrow("constructor", new PropertyDescriptor(constructor, true, false, true));
+
+            DefinePropertyOrThrow("push", new PropertyDescriptor(Utils.CreateBuiltinFunction(push, Utils.EmptyList<string>(), realm), true, false, true));
+        }
+
+        private Completion push(IValue @this, IReadOnlyList<IValue> arguments)
+        {
+            var OComp = @this.ToObject();
+            if (OComp.IsAbrupt()) return OComp;
+            var O = OComp.value as Object;
+
+            var lenComp = O.Get("length");
+            if (lenComp.IsAbrupt()) return lenComp;
+            var toLenComp = ToLength(lenComp.value);
+            if (toLenComp.IsAbrupt()) return toLenComp;
+            long len = toLenComp.Other;
+
+            if (len + arguments.Count > (1L << 53) - 1)
+                return Completion.ThrowTypeError("Too many values in the array.");
+
+            for (int i = 0; i < arguments.Count; i++)
+            {
+                O.Set((len + i).ToString(), arguments[i], true);
+            }
+
+            var lenValue = new NumberValue(len + arguments.Count);
+            var setComp = O.Set("length", lenValue, true);
+            if (setComp.IsAbrupt()) return setComp;
+
+            return Completion.NormalCompletion(lenValue);
         }
 
         public static Completion values(IValue @this, IReadOnlyList<IValue> arguments)
@@ -26,5 +55,16 @@ namespace JSInterpreter
             iterator.SetCustomInternalSlot("ArrayIterationKind", kind);
             return iterator;
         }
+
+        private CompletionOr<long> ToLength(IValue value)
+        {
+            var lenComp = value.ToNumber();
+            if (lenComp.IsAbrupt()) return lenComp.WithEmpty<long>();
+            var len = (long)(lenComp.value as NumberValue).number;
+            if (len < 0)
+                return Completion.NormalWith(0L);
+            return Completion.NormalWith(Math.Min(len, (1L << 53) - 1));
+        }
+
     }
 }

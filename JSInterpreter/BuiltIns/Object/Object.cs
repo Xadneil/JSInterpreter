@@ -134,6 +134,9 @@ namespace JSInterpreter
                 D.Set = X.Set;
             }
 
+            D.Enumerable = X.Enumerable;
+            D.Configurable = X.Configurable;
+
             return D;
         }
 

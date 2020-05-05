@@ -27,6 +27,7 @@ namespace JSInterpreter
             Intrinsics.FunctionConstructor = new FunctionConstructor(Intrinsics.ObjectPrototype);
             Intrinsics.FunctionPrototype = Intrinsics.FunctionConstructor.prototype as FunctionPrototype;
 
+            Intrinsics.ObjectConstructor.DefineDeferredProperties(this);
             Intrinsics.ObjectPrototype.DefineDeferredProperties(this);
             Intrinsics.FunctionPrototype.DefineDeferredProperties(this);
 

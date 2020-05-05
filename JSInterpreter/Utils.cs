@@ -56,8 +56,8 @@ namespace JSInterpreter
         public static Object ObjectCreate(IValue proto, IEnumerable<string> internalSlotsList = null)
         {
             var obj = new Object();
-            if (proto != null)
-                obj.SetPrototypeOf(proto);
+            if (proto is Object o)
+                obj.prototype = o;
             if (internalSlotsList != null)
             {
                 obj.AddCustomInternalSlots(internalSlotsList);
@@ -254,6 +254,19 @@ namespace JSInterpreter
                 return Completion.ThrowTypeError("1 argument is required.");
             if (!(arguments.ElementAt(0) is T))
                 return Completion.ThrowTypeError($"Argument 1 must be a {nameof(T)}.");
+            return Completion.NormalCompletion();
+        }
+
+        public static Completion CheckArguments<T1, T2, T3>(IReadOnlyList<IValue> arguments) where T1 : IValue where T2 : IValue where T3 : IValue
+        {
+            if (arguments.Count() < 3)
+                return Completion.ThrowTypeError("3 arguments are required.");
+            if (!(arguments.ElementAt(0) is T1))
+                return Completion.ThrowTypeError($"Argument 1 must be a {nameof(T1)}.");
+            if (!(arguments.ElementAt(1) is T2))
+                return Completion.ThrowTypeError($"Argument 2 must be a {nameof(T2)}.");
+            if (!(arguments.ElementAt(2) is T3))
+                return Completion.ThrowTypeError($"Argument 3 must be a {nameof(T3)}.");
             return Completion.NormalCompletion();
         }
     }

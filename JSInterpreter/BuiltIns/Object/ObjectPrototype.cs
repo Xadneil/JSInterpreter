@@ -18,33 +18,21 @@ namespace JSInterpreter
         {
             DefinePropertyOrThrow("constructor", new PropertyDescriptor(objectConstructor, true, false, true));
 
-            DefinePropertyOrThrow("getPrototypeOf", new PropertyDescriptor(Utils.CreateBuiltinFunction(getPrototypeOf, Utils.EmptyList<string>(), realm), true, false, true));
+            DefinePropertyOrThrow("hasOwnProperty", new PropertyDescriptor(Utils.CreateBuiltinFunction(hasOwnProperty, Utils.EmptyList<string>(), realm), true, false, true));
             DefinePropertyOrThrow("isPrototypeOf", new PropertyDescriptor(Utils.CreateBuiltinFunction(isPrototypeOf, Utils.EmptyList<string>(), realm), true, false, true));
-            DefinePropertyOrThrow("preventExtensions", new PropertyDescriptor(Utils.CreateBuiltinFunction(preventExtensions, Utils.EmptyList<string>(), realm), true, false, true));
             DefinePropertyOrThrow("toString", new PropertyDescriptor(Utils.CreateBuiltinFunction(ToObjectString, Utils.EmptyList<string>(), realm), true, false, true));
-
-#warning add remaining Object Prototype properties
         }
 
-        private Completion getPrototypeOf(IValue @this, IReadOnlyList<IValue> arguments)
+        private Completion hasOwnProperty(IValue @this, IReadOnlyList<IValue> arguments)
         {
-            var argCheck = Utils.CheckArguments(arguments, 1);
-            if (argCheck.IsAbrupt()) return argCheck;
-            var O = arguments[0].ToObject();
+            var argComp = Utils.CheckArguments(arguments, 1);
+            if (argComp.IsAbrupt()) return argComp;
+
+            var P = arguments[0].ToPropertyKey();
+            if (P.IsAbrupt()) return P;
+            var O = @this.ToObject();
             if (O.IsAbrupt()) return O;
-            return (O.value as Object).GetPrototypeOf();
-        }
-
-        private Completion preventExtensions(IValue @this, IReadOnlyList<IValue> arguments)
-        {
-            var argCheck = Utils.CheckArguments(arguments, 1);
-            if (argCheck.IsAbrupt()) return argCheck;
-            if (!(arguments[0] is Object O))
-                return Completion.NormalCompletion(arguments[0]);
-            var status = O.PreventExtensions();
-            if (status == false)
-                return Completion.ThrowTypeError("Could not prevent extensions");
-            return Completion.NormalCompletion(O);
+            return (O.value as Object).HasOwnProperty(P.Other);
         }
 
         private Completion isPrototypeOf(IValue @this, IReadOnlyList<IValue> arguments)
