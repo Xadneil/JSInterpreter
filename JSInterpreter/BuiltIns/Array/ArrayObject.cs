@@ -29,7 +29,7 @@ namespace JSInterpreter
                     throw new InvalidOperationException("Spec 9.4.2.1 Step 3b");
                 var oldLen = (int)(oldLenDesc.Value as NumberValue).number;
 
-                if (index >= oldLen && oldLenDesc.Writable.HasValue && oldLenDesc.Writable.Value)
+                if (index >= oldLen && !oldLenDesc.Writable.GetValueOrDefault())
                     return false;
                 var succeeded = OrdinaryDefineOwnProperty(P, Desc).Other;
                 if (succeeded == false)
