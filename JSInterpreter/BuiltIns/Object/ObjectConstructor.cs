@@ -18,6 +18,7 @@ namespace JSInterpreter
         {
             DefinePropertyOrThrow("create", new PropertyDescriptor(Utils.CreateBuiltinFunction(create, Utils.EmptyList<string>(), realm), true, false, true));
             DefinePropertyOrThrow("defineProperty", new PropertyDescriptor(Utils.CreateBuiltinFunction(defineProperty, Utils.EmptyList<string>(), realm), true, false, true));
+            DefinePropertyOrThrow("getOwnPropertyDescriptor", new PropertyDescriptor(Utils.CreateBuiltinFunction(getOwnPropertyDescriptor, Utils.EmptyList<string>(), realm), true, false, true));
             DefinePropertyOrThrow("getPrototypeOf", new PropertyDescriptor(Utils.CreateBuiltinFunction(getPrototypeOf, Utils.EmptyList<string>(), realm), true, false, true));
             DefinePropertyOrThrow("preventExtensions", new PropertyDescriptor(Utils.CreateBuiltinFunction(preventExtensions, Utils.EmptyList<string>(), realm), true, false, true));
         }
@@ -85,6 +86,20 @@ namespace JSInterpreter
             if (comp.IsAbrupt()) return comp;
 
             return Completion.NormalCompletion(O);
+        }
+
+        private Completion getOwnPropertyDescriptor(IValue @this, IReadOnlyList<IValue> arguments)
+        {
+            var argCheck = Utils.CheckArguments(arguments, 2);
+            if (argCheck.IsAbrupt()) return argCheck;
+
+            var obj = arguments[0].ToObject();
+            if (obj.IsAbrupt()) return obj;
+            var key = arguments[1].ToPropertyKey();
+            if (key.IsAbrupt()) return key;
+            var desc = (obj.value as Object).GetOwnProperty(key.Other);
+            if (desc.IsAbrupt()) return desc;
+            return Completion.NormalCompletion((IValue)desc.Other?.ToObject() ?? UndefinedValue.Instance);
         }
 
         private Completion getPrototypeOf(IValue @this, IReadOnlyList<IValue> arguments)
