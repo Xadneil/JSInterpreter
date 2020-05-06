@@ -44,5 +44,15 @@ namespace JSInterpreter.AST
         {
             return interpreter.ResolveBinding(identifier.name);
         }
+
+        public Completion PropertyDefinitionEvaluation(Object @object, bool enumerable)
+        {
+            var valueComp = Evaluate(Interpreter.Instance()).GetValue();
+            if (valueComp.IsAbrupt()) return valueComp;
+            var value = valueComp.value;
+            if (Utils.CreateDataPropertyOrThrow(@object, identifier.name, value).IsAbrupt())
+                throw new InvalidOperationException("Spec ! 12.2.6.8 IdentifierReference, step 6");
+            return Completion.NormalCompletion();
+        }
     }
 }

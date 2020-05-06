@@ -20,7 +20,7 @@ namespace JSInterpreter.AST
         Exponentiate
     }
 
-    public interface IAssignmentExpression : IExpression, IArrayLiteralItem, IPropertyDefinition, IArgumentItem
+    public interface IAssignmentExpression : IExpression, IArrayLiteralItem, IArgumentItem
     {
     }
 

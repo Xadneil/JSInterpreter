@@ -1679,7 +1679,11 @@ namespace JSInterpreter.Parser
                 }
 
                 IPropertyDefinition propertyDefinition = null;
+
                 Parse(() =>
+                {
+                    propertyDefinition = ParseMethodDefinition();
+                }).Or(() =>
                 {
                     var propertyName = Consume().Value;
                     Consume(TokenType.Colon);
@@ -1701,6 +1705,62 @@ namespace JSInterpreter.Parser
             Consume(TokenType.CurlyClose);
 
             return new ObjectLiteral(definitions);
+        }
+
+        private IMethodDefinition ParseMethodDefinition()
+        {
+            if (CurrentToken.Type != TokenType.Identifier)
+                Expected("method name, get, or set");
+            var identifier = Consume().Value;
+            IMethodDefinition methodDefinition = null;
+            Parse(() =>
+            {
+                if (identifier != "get")
+                {
+                    Expected("get");
+                    return;
+                }
+                var propertyName = Consume(TokenType.Identifier).Value;
+                Consume(TokenType.ParenOpen);
+                Consume(TokenType.ParenClose);
+                Consume(TokenType.CurlyOpen);
+                var body = ParseStatementList();
+                Consume(TokenType.CurlyClose);
+                methodDefinition = new Getter(propertyName, new FunctionStatementList(body.statements));
+            }).Or(() =>
+            {
+                if (identifier != "set")
+                {
+                    Expected("get");
+                    return;
+                }
+                var propertyName = Consume(TokenType.Identifier).Value;
+                Consume(TokenType.ParenOpen);
+                var name = ParseBindingIdentifier();
+                FormalParameter formalParameter;
+                if (Match(TokenType.Equals))
+                {
+                    var initializer = ParseInitializer();
+                    formalParameter = new FormalParameter(new Identifier(name), initializer);
+                }
+                else
+                    formalParameter = new FormalParameter(new Identifier(name));
+                Consume(TokenType.ParenClose);
+                Consume(TokenType.CurlyOpen);
+                var body = ParseStatementList();
+                Consume(TokenType.CurlyClose);
+                methodDefinition = new Setter(propertyName, formalParameter, new FunctionStatementList(body.statements));
+            }).Or(() =>
+            {
+                Consume(TokenType.ParenOpen);
+                var parameters = ParseFormalParameters();
+                Consume(TokenType.ParenClose);
+                Consume(TokenType.CurlyOpen);
+                var body = ParseStatementList();
+                Consume(TokenType.CurlyClose);
+                methodDefinition = new MethodDefinition(identifier, parameters, new FunctionStatementList(body.statements));
+            }).OrThrow("method definition");
+            return methodDefinition;
         }
 
         private FunctionExpression ParseFunctionExpression()
