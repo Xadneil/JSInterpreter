@@ -152,11 +152,18 @@ namespace JSInterpreter
             var proto = protoComp.value;
             if (!(proto is Object))
             {
-                //TODO get realm from constructor
-                var realm = Interpreter.Instance().CurrentRealm();
+                Realm realm = GetFunctionRealm(constructor as Callable);
                 proto = intrinsicDefaultProto(realm.Intrinsics);
             }
             return Completion.NormalCompletion(proto);
+        }
+
+        private static Realm GetFunctionRealm(Callable obj)
+        {
+            if (obj is FunctionObject o)
+                return o.Realm;
+            //TODO bound function exotic, proxy exotic
+            return Interpreter.Instance().CurrentRealm();
         }
 
         internal static Completion IteratorBindingInitializationBindingRestIdentifier(Identifier restParameterIdentifier, LexicalEnvironment env, ArgumentIterator arguments)
