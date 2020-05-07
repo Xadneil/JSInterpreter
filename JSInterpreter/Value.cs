@@ -24,7 +24,7 @@ namespace JSInterpreter
                 UndefinedValue _ => false,
                 NullValue _ => false,
                 BooleanValue b => b.boolean,
-                NumberValue n => n.number != 0 && n.number != double.NaN,
+                NumberValue n => n.number != 0 && !double.IsNaN(n.number),
                 StringValue s => s.@string.Length > 0,
                 Object _ => true,
                 _ => throw new InvalidOperationException("IValue.ToBoolean: unknown conversion")
