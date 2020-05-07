@@ -214,6 +214,11 @@ namespace JSInterpreter
                     Configurable = current.Configurable,
                     Enumerable = current.Enumerable
                 };
+                //Spec 9.1.6.3 step 2ci says to use default values, and default for writable is false
+                if (Desc.IsDataDescriptor())
+                {
+                    properties[index].Writable = false;
+                }
             }
             else if (current.IsDataDescriptor() && Desc.IsDataDescriptor())
             {
