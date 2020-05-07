@@ -1687,17 +1687,41 @@ namespace JSInterpreter.Parser
                     propertyDefinition = ParseMethodDefinition();
                 }).Or(() =>
                 {
-                    var propertyName = Consume().Value;
+                    var propertyName = Consume();
+                    string identifier;
+                    if (propertyName.Type == TokenType.NumericLiteral)
+                        identifier = propertyName.DoubleValue().ToString();
+                    else if (propertyName.Type == TokenType.StringLiteral)
+                        identifier = propertyName.StringValue();
+                    else if (propertyName.Type == TokenType.Identifier)
+                        identifier = propertyName.Value;
+                    else
+                    {
+                        Expected("number or string property name");
+                        return;
+                    }
                     Consume(TokenType.Colon);
-                    propertyDefinition = new PropertyDefinition(propertyName, ParseAssignmentExpression());
+                    propertyDefinition = new PropertyDefinition(identifier, ParseAssignmentExpression());
                 }).Or(() =>
                 {
-                    var identifier = Consume().Value;
+                    var propertyName = Consume();
+                    string identifier;
+                    if (propertyName.Type == TokenType.NumericLiteral)
+                        identifier = propertyName.DoubleValue().ToString();
+                    else if (propertyName.Type == TokenType.StringLiteral)
+                        identifier = propertyName.StringValue();
+                    else if (propertyName.Type == TokenType.Identifier)
+                        identifier = propertyName.Value;
+                    else
+                    {
+                        Expected("number or string property name");
+                        return;
+                    }
                     var initializer = ParseInitializer();
                     propertyDefinition = new PropertyDefinition(identifier, initializer);
                 }).Or(() =>
                 {
-                    propertyDefinition = new IdentifierReference(new Identifier(Consume().Value));
+                    propertyDefinition = new IdentifierReference(new Identifier(Consume(TokenType.Identifier).Value));
                 }).OrThrow("object literal property definition");
                 definitions.Add(propertyDefinition);
 
