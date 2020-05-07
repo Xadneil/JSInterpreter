@@ -21,6 +21,12 @@ namespace JSInterpreter
             DefinePropertyOrThrow("hasOwnProperty", new PropertyDescriptor(Utils.CreateBuiltinFunction(hasOwnProperty, Utils.EmptyList<string>(), realm), true, false, true));
             DefinePropertyOrThrow("isPrototypeOf", new PropertyDescriptor(Utils.CreateBuiltinFunction(isPrototypeOf, Utils.EmptyList<string>(), realm), true, false, true));
             DefinePropertyOrThrow("toString", new PropertyDescriptor(Utils.CreateBuiltinFunction(ToObjectString, Utils.EmptyList<string>(), realm), true, false, true));
+            DefinePropertyOrThrow("valueOf", new PropertyDescriptor(Utils.CreateBuiltinFunction(valueOf, Utils.EmptyList<string>(), realm), true, false, true));
+        }
+
+        private Completion valueOf(IValue @this, IReadOnlyList<IValue> arguments)
+        {
+            return @this.ToObject();
         }
 
         private Completion hasOwnProperty(IValue @this, IReadOnlyList<IValue> arguments)
