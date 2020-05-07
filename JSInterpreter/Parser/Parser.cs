@@ -1639,6 +1639,8 @@ namespace JSInterpreter.Parser
                 }
                 if (width > 0)
                     items.Add(new Elision(width));
+                if (Match(TokenType.BracketClose))
+                    break;
                 if (Match(TokenType.Ellipsis))
                 {
                     Consume();
