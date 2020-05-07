@@ -16,18 +16,22 @@ namespace JSInterpreter
         {
             if (arguments.Count == 0)
             {
-                return Completion.NormalCompletion(new StringObject(StringValue.Empty));
+                return Completion.NormalCompletion(StringValue.Empty);
             }
 
             var arg = arguments[0].ToJsString();
             if (arg.IsAbrupt()) return arg;
 
-            return Completion.NormalCompletion(new StringObject(arg.value as StringValue));
+            return Completion.NormalCompletion(arg.value);
         }
 
         public override Completion InternalConstruct(IReadOnlyList<IValue> arguments, Object newTarget)
         {
-            return InternalCall(this, arguments);
+            var comp = InternalCall(this, arguments);
+            if (comp.IsAbrupt()) return comp;
+            if (newTarget == null)
+                return comp;
+            return Completion.NormalCompletion(new StringObject(comp.value as StringValue));
         }
     }
 }
