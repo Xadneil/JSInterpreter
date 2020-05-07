@@ -33,6 +33,7 @@ namespace JSInterpreter
 
             Intrinsics.ArrayConstructor = new ArrayConstructor(Intrinsics.FunctionPrototype);
             Intrinsics.ArrayPrototype = new ArrayPrototype(Intrinsics.ArrayConstructor, this);
+            Intrinsics.ArrayConstructor.InitPrototypeProperty(Intrinsics.ArrayPrototype);
 
             Intrinsics.DateConstructor = new DateConstructor(Intrinsics.FunctionPrototype);
             Intrinsics.DatePrototype = new DatePrototype(Intrinsics.DateConstructor, this);
