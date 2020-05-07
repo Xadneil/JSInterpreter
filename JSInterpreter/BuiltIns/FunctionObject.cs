@@ -299,7 +299,7 @@ namespace JSInterpreter
             int index;
             for (index = 0; index < arguments.Count; index++)
             {
-                Utils.CreateDataProperty(obj, index.ToString(), arguments[index]);
+                Utils.CreateDataProperty(obj, index.ToString(System.Globalization.CultureInfo.InvariantCulture), arguments[index]);
             }
             obj.DefinePropertyOrThrow("length", new PropertyDescriptor(new NumberValue(arguments.Count), true, false, true));
             var mappedNames = new List<string>();
@@ -313,7 +313,7 @@ namespace JSInterpreter
                     {
                         var g = MakeArgGetter(name, env);
                         var p = MakeArgSetter(name, env);
-                        map.DefineOwnProperty(index.ToString(), new PropertyDescriptor(p, g, false, true));
+                        map.DefineOwnProperty(index.ToString(System.Globalization.CultureInfo.InvariantCulture), new PropertyDescriptor(p, g, false, true));
                     }
                 }
             }
@@ -322,7 +322,7 @@ namespace JSInterpreter
             return obj;
         }
 
-        private FunctionObject MakeArgGetter(string name, EnvironmentRecord env)
+        private static FunctionObject MakeArgGetter(string name, EnvironmentRecord env)
         {
             var getter = Utils.CreateBuiltinFunction((@this, arguments) =>
             {
@@ -336,7 +336,7 @@ namespace JSInterpreter
             return getter;
         }
 
-        private FunctionObject MakeArgSetter(string name, EnvironmentRecord env)
+        private static FunctionObject MakeArgSetter(string name, EnvironmentRecord env)
         {
             var setter = Utils.CreateBuiltinFunction((@this, arguments) =>
             {
@@ -358,7 +358,7 @@ namespace JSInterpreter
             obj.DefinePropertyOrThrow("length", new PropertyDescriptor(new NumberValue(arguments.Count), true, false, true));
             for (int i = 0; i < arguments.Count; i++)
             {
-                Utils.CreateDataProperty(obj, i.ToString(), arguments[i]);
+                Utils.CreateDataProperty(obj, i.ToString(System.Globalization.CultureInfo.InvariantCulture), arguments[i]);
             }
             return obj;
         }

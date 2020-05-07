@@ -76,7 +76,7 @@ namespace JSInterpreter.Lexer
                         double value = 0;
 
                         double modulo = 1;
-                        var literal = number.ToLowerInvariant();
+                        var literal = number.ToUpperInvariant();
                         var length = literal.Length - 1;
                         for (var i = length; i >= 0; i--)
                         {
@@ -88,7 +88,7 @@ namespace JSInterpreter.Lexer
                             }
                             else
                             {
-                                value += modulo * (c - 'a' + 10);
+                                value += modulo * (c - 'A' + 10);
                             }
 
                             modulo *= 16;
@@ -113,7 +113,7 @@ namespace JSInterpreter.Lexer
                 }
             }
 
-            return double.Parse(Value);
+            return double.Parse(Value, System.Globalization.CultureInfo.InvariantCulture);
         }
 
         public string StringValue()

@@ -9,7 +9,7 @@ namespace JSInterpreter
     public class Interpreter : IDisposable
     {
         private static Script staScript;
-        public static bool staCached = false;
+        public static bool staCached { get; private set; } = false;
 
         [ThreadStatic]
         private static Interpreter interpreter;
@@ -206,6 +206,7 @@ namespace JSInterpreter
             queue = () => job(source);
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA1816:Dispose methods should call SuppressFinalize")]
         public void Dispose()
         {
             interpreter = null;

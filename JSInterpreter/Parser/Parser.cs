@@ -89,7 +89,7 @@ namespace JSInterpreter.Parser
                 return;
             // Insert semicolon if...
             // ...token is preceeded by one or more newlines
-            if (CurrentToken.Trivia.Contains('\n'))
+            if (CurrentToken.Trivia.Contains('\n', StringComparison.InvariantCulture))
                 return;
             // ...token is a closing curly brace
             if (Match(TokenType.CurlyClose))
@@ -1690,7 +1690,7 @@ namespace JSInterpreter.Parser
                     var propertyName = Consume();
                     string identifier;
                     if (propertyName.Type == TokenType.NumericLiteral)
-                        identifier = propertyName.DoubleValue().ToString();
+                        identifier = propertyName.DoubleValue().ToString(System.Globalization.CultureInfo.InvariantCulture);
                     else if (propertyName.Type == TokenType.StringLiteral)
                         identifier = propertyName.StringValue();
                     else if (propertyName.Type == TokenType.Identifier)
@@ -1707,7 +1707,7 @@ namespace JSInterpreter.Parser
                     var propertyName = Consume();
                     string identifier;
                     if (propertyName.Type == TokenType.NumericLiteral)
-                        identifier = propertyName.DoubleValue().ToString();
+                        identifier = propertyName.DoubleValue().ToString(System.Globalization.CultureInfo.InvariantCulture);
                     else if (propertyName.Type == TokenType.StringLiteral)
                         identifier = propertyName.StringValue();
                     else if (propertyName.Type == TokenType.Identifier)

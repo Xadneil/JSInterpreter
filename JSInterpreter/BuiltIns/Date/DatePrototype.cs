@@ -402,7 +402,7 @@ namespace JSInterpreter
 
         private static string TimeZoneString(DateTimeOffset t)
         {
-            return t.ToString("'GMT'K", CultureInfo.InvariantCulture).Replace(":", "");
+            return t.ToString("'GMT'K", CultureInfo.InvariantCulture).Replace(":", "", StringComparison.InvariantCulture);
         }
 
         public static DateTimeOffset ToLocalTime(DateTime t)
@@ -549,7 +549,7 @@ namespace JSInterpreter
                 return 1;
             }
 
-            throw new ArgumentException(nameof(t));
+            throw new ArgumentException("Invalid number of days in year", nameof(t));
         }
 
         public static double DaylightSavingTa(double t)

@@ -41,7 +41,7 @@ namespace JSInterpreter.AST
             this.literalType = literalType;
         }
 
-        public static Literal NullLiteral = new Literal(LiteralType.Null);
+        public readonly static Literal NullLiteral = new Literal(LiteralType.Null);
 
         public Completion Evaluate(Interpreter interpreter)
         {

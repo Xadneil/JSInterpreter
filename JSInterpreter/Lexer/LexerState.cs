@@ -4,6 +4,7 @@ using System.Text;
 
 namespace JSInterpreter.Lexer
 {
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1815:Override equals and operator equals on value types")]
     public struct LexerState
     {
         public int position;

@@ -62,7 +62,7 @@ namespace JSInterpreter
                 int k = 0;
                 foreach (var arg in arguments)
                 {
-                    var defineStatus = Utils.CreateDataProperty(array, k.ToString(), arg);
+                    var defineStatus = Utils.CreateDataProperty(array, k.ToString(System.Globalization.CultureInfo.InvariantCulture), arg);
                     if (!defineStatus.Other)
                         throw new InvalidOperationException("CreateDataProperty in array constructor failed. Spec 22.1.1.3 step 8d");
                     k++;

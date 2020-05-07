@@ -6,7 +6,7 @@ namespace JSInterpreter
 {
     public class ErrorConstructor : Constructor
     {
-        public readonly string Name;
+        public string Name { get; private set; }
         private readonly Func<Intrinsics, Object> dispatchPrototype;
 
         public ErrorConstructor(FunctionPrototype prototype, string name)

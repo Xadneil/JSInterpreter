@@ -182,7 +182,7 @@ namespace JSInterpreter
                     return lhs.InitializeReferencedBinding(A);
                 }
                 var nextValue = arguments.Next();
-                var status = Utils.CreateDataProperty(A, n.ToString(), nextValue);
+                var status = Utils.CreateDataProperty(A, n.ToString(System.Globalization.CultureInfo.InvariantCulture), nextValue);
                 if (!status.Other)
                     throw new InvalidOperationException("BindingRestElement IteratorBindingInitialization: assert step 4g");
             }
@@ -233,7 +233,7 @@ namespace JSInterpreter
             return func;
         }
 
-        public class BuiltinFunction : FunctionObject
+        private class BuiltinFunction : FunctionObject
         {
             private readonly Func<IValue, IReadOnlyList<IValue>, Completion> CallAction;
 
@@ -250,14 +250,14 @@ namespace JSInterpreter
 
         public static Completion CheckArguments(IReadOnlyList<IValue> arguments, int requiredCount)
         {
-            if (arguments.Count() < requiredCount)
+            if (arguments.Count < requiredCount)
                 return Completion.ThrowTypeError($"{requiredCount} arguments are required.");
             return Completion.NormalCompletion();
         }
 
         public static Completion CheckArguments<T>(IReadOnlyList<IValue> arguments) where T : IValue
         {
-            if (arguments.Count() < 1)
+            if (arguments.Count < 1)
                 return Completion.ThrowTypeError("1 argument is required.");
             if (!(arguments.ElementAt(0) is T))
                 return Completion.ThrowTypeError($"Argument 1 must be a {nameof(T)}.");
@@ -266,7 +266,7 @@ namespace JSInterpreter
 
         public static Completion CheckArguments<T1, T2, T3>(IReadOnlyList<IValue> arguments) where T1 : IValue where T2 : IValue where T3 : IValue
         {
-            if (arguments.Count() < 3)
+            if (arguments.Count < 3)
                 return Completion.ThrowTypeError("3 arguments are required.");
             if (!(arguments.ElementAt(0) is T1))
                 return Completion.ThrowTypeError($"Argument 1 must be a {nameof(T1)}.");
@@ -278,7 +278,7 @@ namespace JSInterpreter
         }
     }
 
-    public class EmptyListClass<T>
+    public static class EmptyListClass<T>
     {
         public static readonly IReadOnlyList<T> Instance = new List<T>(0);
     }

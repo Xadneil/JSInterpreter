@@ -54,12 +54,12 @@ namespace JSInterpreter
                 }
             }
 
-            if (trimmedString.StartsWith("Infinity"))
+            if (trimmedString.StartsWith("Infinity", StringComparison.InvariantCulture))
             {
                 return Completion.NormalCompletion(new NumberValue(sign * double.PositiveInfinity));
             }
 
-            if (trimmedString.StartsWith("NaN"))
+            if (trimmedString.StartsWith("NaN", StringComparison.InvariantCulture))
             {
                 return Completion.NormalCompletion(new NumberValue(double.NaN));
             }
@@ -183,6 +183,7 @@ namespace JSInterpreter
             return Completion.NormalCompletion(new NumberValue((double)(sign * number)));
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types")]
         public static Completion parseInt(IValue @this, IReadOnlyList<IValue> arguments)
         {
             var argComp = Utils.CheckArguments(arguments, 1);
@@ -193,7 +194,7 @@ namespace JSInterpreter
             var s = inputString.Trim();
 
             int R = 0;
-            if (arguments.Count() > 1)
+            if (arguments.Count > 1)
             {
                 var radixComp = arguments[1].ToNumber();
                 if (radixComp.IsAbrupt()) return radixComp;
@@ -218,7 +219,7 @@ namespace JSInterpreter
 
             if (R == 0)
             {
-                if (s.Length >= 2 && s.StartsWith("0x") || s.StartsWith("0X"))
+                if (s.Length >= 2 && s.StartsWith("0x", StringComparison.InvariantCulture) || s.StartsWith("0X", StringComparison.InvariantCulture))
                 {
                     R = 16;
                 }
@@ -236,7 +237,7 @@ namespace JSInterpreter
                 stripPrefix = false;
             }
 
-            if (stripPrefix && s.Length >= 2 && s.StartsWith("0x") || s.StartsWith("0X"))
+            if (stripPrefix && s.Length >= 2 && s.StartsWith("0x", StringComparison.InvariantCulture) || s.StartsWith("0X", StringComparison.InvariantCulture))
             {
                 s = s.Substring(2);
             }
@@ -253,7 +254,7 @@ namespace JSInterpreter
 
         private static double Parse(string number, int radix)
         {
-            if (number == "")
+            if (number.Length == 0)
             {
                 return double.NaN;
             }

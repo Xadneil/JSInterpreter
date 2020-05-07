@@ -4,9 +4,9 @@ namespace JSInterpreter.Parser
 {
     public class MemberExpressionTail
     {
-        public readonly IExpression Expression;
-        public readonly string IdentifierName;
-        public readonly MemberExpressionTail Tail;
+        public IExpression Expression { get; private set; }
+        public string IdentifierName { get; private set; }
+        public MemberExpressionTail Tail { get; private set; }
 
         public MemberExpressionTail(IExpression expression, MemberExpressionTail tail)
         {

@@ -76,7 +76,7 @@ namespace JSInterpreter
             while (newLen < oldLen)
             {
                 oldLen--;
-                var deleteSucceeded = InternalDelete(oldLen.ToString()).Other;
+                var deleteSucceeded = InternalDelete(oldLen.ToString(System.Globalization.CultureInfo.InvariantCulture)).Other;
                 if (deleteSucceeded == false)
                 {
                     newLenDesc.Value = new NumberValue(oldLen + 1);

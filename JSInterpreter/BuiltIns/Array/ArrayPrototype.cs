@@ -30,7 +30,7 @@ namespace JSInterpreter
 
             for (int i = 0; i < arguments.Count; i++)
             {
-                O.Set((len + i).ToString(), arguments[i], true);
+                O.Set((len + i).ToString(System.Globalization.CultureInfo.InvariantCulture), arguments[i], true);
             }
 
             var lenValue = new NumberValue(len + arguments.Count);
@@ -56,7 +56,7 @@ namespace JSInterpreter
             return iterator;
         }
 
-        private CompletionOr<long> ToLength(IValue value)
+        private static CompletionOr<long> ToLength(IValue value)
         {
             var lenComp = value.ToNumber();
             if (lenComp.IsAbrupt()) return lenComp.WithEmpty<long>();

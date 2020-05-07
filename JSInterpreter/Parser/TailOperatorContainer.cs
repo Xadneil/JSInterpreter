@@ -2,13 +2,13 @@
 
 namespace JSInterpreter.Parser
 {
-    public class TailOperatorContainer<T, O> where O : Enum
+    public class TailOperatorContainer<TRHS, TOp> where TOp : Enum
     {
-        public T RHS;
-        public O Op;
-        public TailOperatorContainer<T, O> Tail;
+        public TRHS RHS { get; private set; }
+        public TOp Op { get; private set; }
+        public TailOperatorContainer<TRHS, TOp> Tail { get; private set; }
 
-        public TailOperatorContainer(T rhs, O op, TailOperatorContainer<T, O> tail)
+        public TailOperatorContainer(TRHS rhs, TOp op, TailOperatorContainer<TRHS, TOp> tail)
         {
             RHS = rhs;
             Op = op;

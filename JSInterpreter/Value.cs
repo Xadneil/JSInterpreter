@@ -104,7 +104,7 @@ namespace JSInterpreter
 
         public Completion ToJsString()
         {
-            return Completion.NormalCompletion(new StringValue(number.ToString()));
+            return Completion.NormalCompletion(new StringValue(number.ToString(System.Globalization.CultureInfo.InvariantCulture)));
         }
 
         public Completion ToNumber()
@@ -121,8 +121,8 @@ namespace JSInterpreter
     public class BooleanValue : IValue
     {
         public readonly bool boolean;
-        public static BooleanValue True = new BooleanValue(true);
-        public static BooleanValue False = new BooleanValue(false);
+        public static readonly BooleanValue True = new BooleanValue(true);
+        public static readonly BooleanValue False = new BooleanValue(false);
 
         private readonly Completion wrapperObject;
         private readonly Completion cachedNumber;

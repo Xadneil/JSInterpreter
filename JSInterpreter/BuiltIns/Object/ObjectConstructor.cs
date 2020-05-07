@@ -52,7 +52,7 @@ namespace JSInterpreter
             return InternalCall(this, arguments);
         }
 
-        private Completion create(IValue @this, IReadOnlyList<IValue> arguments)
+        private static Completion create(IValue @this, IReadOnlyList<IValue> arguments)
         {
             var argComp = Utils.CheckArguments(arguments, 1);
             if (argComp.IsAbrupt()) return argComp;
@@ -66,7 +66,7 @@ namespace JSInterpreter
             return Completion.NormalCompletion(obj);
         }
 
-        private Completion defineProperty(IValue @this, IReadOnlyList<IValue> arguments)
+        private static Completion defineProperty(IValue @this, IReadOnlyList<IValue> arguments)
         {
             var argComp = Utils.CheckArguments<Object, IValue, Object>(arguments);
             if (argComp.IsAbrupt()) return argComp;
@@ -88,7 +88,7 @@ namespace JSInterpreter
             return Completion.NormalCompletion(O);
         }
 
-        private Completion getOwnPropertyDescriptor(IValue @this, IReadOnlyList<IValue> arguments)
+        private static Completion getOwnPropertyDescriptor(IValue @this, IReadOnlyList<IValue> arguments)
         {
             var argCheck = Utils.CheckArguments(arguments, 2);
             if (argCheck.IsAbrupt()) return argCheck;
@@ -102,7 +102,7 @@ namespace JSInterpreter
             return Completion.NormalCompletion((IValue)desc.Other?.ToObject() ?? UndefinedValue.Instance);
         }
 
-        private Completion getPrototypeOf(IValue @this, IReadOnlyList<IValue> arguments)
+        private static Completion getPrototypeOf(IValue @this, IReadOnlyList<IValue> arguments)
         {
             var argCheck = Utils.CheckArguments(arguments, 1);
             if (argCheck.IsAbrupt()) return argCheck;
@@ -111,7 +111,7 @@ namespace JSInterpreter
             return (O.value as Object).GetPrototypeOf();
         }
 
-        private Completion preventExtensions(IValue @this, IReadOnlyList<IValue> arguments)
+        private static Completion preventExtensions(IValue @this, IReadOnlyList<IValue> arguments)
         {
             var argCheck = Utils.CheckArguments(arguments, 1);
             if (argCheck.IsAbrupt()) return argCheck;
@@ -123,7 +123,7 @@ namespace JSInterpreter
             return Completion.NormalCompletion(O);
         }
 
-        private Completion ObjectDefineProperties(Object O, IValue Properties)
+        private static Completion ObjectDefineProperties(Object O, IValue Properties)
         {
             var propsComp = Properties.ToObject();
             if (propsComp.IsAbrupt()) return propsComp;

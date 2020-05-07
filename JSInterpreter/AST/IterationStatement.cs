@@ -75,7 +75,7 @@ namespace JSInterpreter.AST
             return false;
         }
 
-        protected Completion ForBodyEvaluation(IExpression test, IExpression increment, Statement stmt, IEnumerable<string> perIterationBindings, List<string> labelSet)
+        protected static Completion ForBodyEvaluation(IExpression test, IExpression increment, Statement stmt, IEnumerable<string> perIterationBindings, List<string> labelSet)
         {
             IValue V = UndefinedValue.Instance;
             var comp = CreatePerIterationEnvironment(perIterationBindings);
@@ -104,7 +104,7 @@ namespace JSInterpreter.AST
             }
         }
 
-        private Completion CreatePerIterationEnvironment(IEnumerable<string> perIterationBindings)
+        private static Completion CreatePerIterationEnvironment(IEnumerable<string> perIterationBindings)
         {
             if (perIterationBindings.Any())
             {

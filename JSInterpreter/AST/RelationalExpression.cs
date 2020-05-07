@@ -99,7 +99,7 @@ namespace JSInterpreter.AST
             }
             if (px is StringValue sx && py is StringValue sy)
             {
-                return Completion.NormalCompletion((sx.@string.CompareTo(sy.@string) < 0) ? BooleanValue.True : BooleanValue.False);
+                return Completion.NormalCompletion((string.Compare(sx.@string, sy.@string, StringComparison.InvariantCulture) < 0) ? BooleanValue.True : BooleanValue.False);
             }
             else
             {

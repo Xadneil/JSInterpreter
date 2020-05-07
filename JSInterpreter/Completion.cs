@@ -91,7 +91,7 @@ namespace JSInterpreter
                     sb.Append(".");
                     sb.Append(frame.GetMethod().Name);
                     sb.Append(": ");
-                    sb.AppendLine(frame.GetFileLineNumber().ToString());
+                    sb.AppendLine(frame.GetFileLineNumber().ToString(System.Globalization.CultureInfo.InvariantCulture));
                 }
                 return sb.ToString();
             }
@@ -173,6 +173,7 @@ namespace JSInterpreter
         {
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2225:Operator overloads have named alternates")]
         public static implicit operator BooleanCompletion(bool b)
         {
             return new BooleanCompletion(CompletionType.Normal, b ? BooleanValue.True : BooleanValue.False, null, b);

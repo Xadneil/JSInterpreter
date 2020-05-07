@@ -4,7 +4,7 @@ using System.Runtime.Serialization;
 namespace JSInterpreter
 {
     [Serializable]
-    internal class JavascriptException : Exception
+    public class JavascriptException : Exception
     {
         private Completion completion;
 

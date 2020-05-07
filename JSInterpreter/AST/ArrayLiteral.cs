@@ -45,7 +45,7 @@ namespace JSInterpreter.AST
                         valueComp = assignmentExpression.Evaluate(Interpreter.Instance()).GetValue();
                         if (valueComp.IsAbrupt()) return valueComp;
                         value = valueComp.value;
-                        status = Utils.CreateDataProperty(array, nextIndex.ToString(), value);
+                        status = Utils.CreateDataProperty(array, nextIndex.ToString(System.Globalization.CultureInfo.InvariantCulture), value);
                         if (status.IsAbrupt() || !status.Other)
                             throw new InvalidOperationException("Spec 12.2.5.2, Assignment, step 5");
                         nextIndex++;
@@ -70,7 +70,7 @@ namespace JSInterpreter.AST
                                 break;
                             var nextValue = IteratorRecord.IteratorValue(next.value);
                             if (nextValue.IsAbrupt()) return nextValue;
-                            status = Utils.CreateDataProperty(array, nextIndex.ToString(), nextValue.value);
+                            status = Utils.CreateDataProperty(array, nextIndex.ToString(System.Globalization.CultureInfo.InvariantCulture), nextValue.value);
                             if (status.IsAbrupt() || !status.Other)
                                 throw new InvalidOperationException("Spec 12.2.5.2, Spread, step 4e");
                             nextIndex++;

@@ -4,10 +4,10 @@ namespace JSInterpreter.Parser
 {
     public class CallExpressionTail
     {
-        public readonly Arguments Arguments;
-        public readonly IExpression Expression;
-        public readonly string IdentifierName;
-        public readonly CallExpressionTail Tail;
+        public Arguments Arguments { get; private set; }
+        public IExpression Expression { get; private set; }
+        public string IdentifierName { get; private set; }
+        public CallExpressionTail Tail { get; private set; }
 
         public CallExpressionTail(Arguments arguments, CallExpressionTail tail)
         {

@@ -73,7 +73,7 @@ namespace JSInterpreter
             return this;
         }
 
-        private LexicalEnvironment NewGlobalEnvironment(Object G, Object thisValue)
+        private static LexicalEnvironment NewGlobalEnvironment(Object G, Object thisValue)
         {
             var env = new LexicalEnvironment();
             var objRec = new ObjectEnvironmentRecord(G, false);

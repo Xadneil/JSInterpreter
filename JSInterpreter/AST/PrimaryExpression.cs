@@ -10,7 +10,7 @@ namespace JSInterpreter.AST
 
     public class ThisExpression : IPrimaryExpression
     {
-        public static ThisExpression Instance = new ThisExpression();
+        public static readonly ThisExpression Instance = new ThisExpression();
 
         private ThisExpression() { }
 
