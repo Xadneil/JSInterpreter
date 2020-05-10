@@ -14,7 +14,8 @@ namespace JSInterpreter
     }
     public enum ConstructorKind
     {
-        Base
+        Base,
+        Derived
     }
     public enum ThisMode
     {

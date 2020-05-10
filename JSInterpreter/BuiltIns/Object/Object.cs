@@ -150,19 +150,22 @@ namespace JSInterpreter
             var currentComp = GetOwnProperty(P);
             if (currentComp.IsAbrupt()) return currentComp.WithEmptyBool();
             var current = currentComp.Other;
-            return ValidateAndApplyPropertyDescriptor(P, IsExtensible, Desc, current);
+            return ValidateAndApplyPropertyDescriptor(this, P, IsExtensible, Desc, current);
         }
 
-        private bool ValidateAndApplyPropertyDescriptor(string name, bool extensible, PropertyDescriptor Desc, PropertyDescriptor current)
+        public static bool ValidateAndApplyPropertyDescriptor(Object O, string name, bool extensible, PropertyDescriptor Desc, PropertyDescriptor current)
         {
             if (current == null)
             {
                 if (!extensible)
                     return false;
 
-                lastAddedIndex++;
-                propertyNames[name] = lastAddedIndex;
-                properties[lastAddedIndex] = Desc;
+                if (O != null)
+                {
+                    O.lastAddedIndex++;
+                    O.propertyNames[name] = O.lastAddedIndex;
+                    O.properties[O.lastAddedIndex] = Desc;
+                }
 
                 #region Set default property descriptor values if not specified
                 if (Desc.IsGenericDescriptor() || Desc.IsDataDescriptor())
@@ -196,7 +199,7 @@ namespace JSInterpreter
                     return false;
             }
 
-            var index = propertyNames[name];
+            var index = (O?.propertyNames[name]).GetValueOrDefault();
 
             if (Desc.IsGenericDescriptor())
             {
@@ -207,17 +210,20 @@ namespace JSInterpreter
                 if (!current.Configurable.GetValueOrDefault())
                     return false;
 
-                // "convert" from data to accessor or accessor to data by resetting all descriptor properties.
-                // new properties will be added below.
-                properties[index] = new PropertyDescriptor()
+                if (O != null)
                 {
-                    Configurable = current.Configurable,
-                    Enumerable = current.Enumerable
-                };
-                //Spec 9.1.6.3 step 2ci says to use default values, and default for writable is false
-                if (Desc.IsDataDescriptor())
-                {
-                    properties[index].Writable = false;
+                    // "convert" from data to accessor or accessor to data by resetting all descriptor properties.
+                    // new properties will be added below.
+                    O.properties[index] = new PropertyDescriptor()
+                    {
+                        Configurable = current.Configurable,
+                        Enumerable = current.Enumerable
+                    };
+                    //Spec 9.1.6.3 step 2ci says to use default values, and default for writable is false
+                    if (Desc.IsDataDescriptor())
+                    {
+                        O.properties[index].Writable = false;
+                    }
                 }
             }
             else if (current.IsDataDescriptor() && Desc.IsDataDescriptor())
@@ -241,18 +247,21 @@ namespace JSInterpreter
                 }
             }
 
-            if (Desc.Configurable.HasValue)
-                properties[index].Configurable = Desc.Configurable;
-            if (Desc.Enumerable.HasValue)
-                properties[index].Enumerable = Desc.Enumerable;
-            if (Desc.Get != null)
-                properties[index].Get = Desc.Get;
-            if (Desc.Set != null)
-                properties[index].Set = Desc.Set;
-            if (Desc.Value != null)
-                properties[index].Value = Desc.Value;
-            if (Desc.Writable.HasValue)
-                properties[index].Writable = Desc.Writable;
+            if (O != null)
+            {
+                if (Desc.Configurable.HasValue)
+                    O.properties[index].Configurable = Desc.Configurable;
+                if (Desc.Enumerable.HasValue)
+                    O.properties[index].Enumerable = Desc.Enumerable;
+                if (Desc.Get != null)
+                    O.properties[index].Get = Desc.Get;
+                if (Desc.Set != null)
+                    O.properties[index].Set = Desc.Set;
+                if (Desc.Value != null)
+                    O.properties[index].Value = Desc.Value;
+                if (Desc.Writable.HasValue)
+                    O.properties[index].Writable = Desc.Writable;
+            }
 
             return true;
         }
@@ -404,7 +413,7 @@ namespace JSInterpreter
             return false;
         }
 
-        public IReadOnlyList<string> OwnPropertyKeys()
+        public virtual IReadOnlyList<string> OwnPropertyKeys()
         {
             var keys = new Stack<string>();
             var keysWithIsNumeric = propertyNames.Select(kvp => (kvp, isNumeric: int.TryParse(kvp.Key, out int index), index));

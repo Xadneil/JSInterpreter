@@ -1,4 +1,5 @@
-﻿using System;
+﻿using JSInterpreter.AST;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -7,6 +8,230 @@ namespace JSInterpreter
 {
     public static class GlobalObjectProperties
     {
+        public static Completion eval(IValue @this, IReadOnlyList<IValue> arguments)
+        {
+            var argComp = Utils.CheckArguments(arguments, 1);
+            if (argComp.IsAbrupt()) return argComp;
+
+            if (Interpreter.Instance().ExecutionContextStackSize() < 2)
+                throw new InvalidOperationException("Spec 18.2.1 step 1");
+            var callerContext = Interpreter.Instance().SecondExecutionContext();
+            var callerRealm = callerContext.Realm;
+            var calleeRealm = Interpreter.Instance().CurrentRealm();
+            //TODO HostEnsureCanCompileStrings
+            return PerformEval(arguments[0], calleeRealm, strictCaller: false, direct: false);
+        }
+
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types")]
+        public static Completion PerformEval(IValue xValue, Realm evalRealm, bool strictCaller, bool direct)
+        {
+            if (!(direct || (!direct && !strictCaller)))
+                throw new InvalidOperationException("Direct evals cannot have strictCaller. Spec 18.2.1.1 step 1");
+            if (!(xValue is StringValue xString))
+                return Completion.NormalCompletion(xValue);
+            var x = xString.@string;
+            var thisEnvRec = Interpreter.Instance().GetThisEnvironment();
+            bool inFunction, inMethod, inDerivedConstructor;
+            if (thisEnvRec is FunctionEnvironmentRecord functionEnvironmentRecord)
+            {
+                var F = functionEnvironmentRecord.FunctionObject;
+                inFunction = true;
+                inMethod = functionEnvironmentRecord.HasSuperBinding();
+                inDerivedConstructor = F.ConstructorKind == ConstructorKind.Derived;
+            }
+            else
+            {
+                inFunction = inMethod = inDerivedConstructor = false;
+            }
+            Script script;
+            try
+            {
+                //TODO use the in variables to apply additional early errors
+                // Spec 18.2.1.1 step 6
+                script = new Parser.Parser(x).ParseScript();
+            }
+            catch (Exception e)
+            {
+                return Completion.ThrowSyntaxError(e.Message);
+            }
+            if (!script.scriptBody.Any())
+                return Completion.NormalCompletion(UndefinedValue.Instance);
+            //TODO detect strict mode
+            var strictEval = false;
+            var ctx = Interpreter.Instance().RunningExecutionContext();
+            LexicalEnvironment lexEnv;
+            LexicalEnvironment varEnv;
+            if (direct)
+            {
+                lexEnv = ctx.LexicalEnvironment.NewDeclarativeEnvironment();
+                varEnv = ctx.VariableEnvironment;
+            }
+            else
+            {
+                lexEnv = evalRealm.GlobalEnv.NewDeclarativeEnvironment();
+                varEnv = evalRealm.GlobalEnv;
+            }
+            if (strictEval)
+                varEnv = lexEnv;
+            var evalCtx = new ExecutionContext()
+            {
+                Realm = evalRealm,
+                VariableEnvironment = varEnv,
+                LexicalEnvironment = lexEnv
+            };
+            Interpreter.Instance().PushExecutionStack(evalCtx);
+            var result = EvalDeclarationInstantiation(script.scriptBody, varEnv, lexEnv, strictEval);
+            if (result.completionType == CompletionType.Normal)
+                result = script.scriptBody.Evaluate(Interpreter.Instance());
+            if (result.completionType == CompletionType.Normal && result.value == null)
+                result = Completion.NormalCompletion(UndefinedValue.Instance);
+            Interpreter.Instance().PopExecutionStack(evalCtx);
+            return result;
+        }
+
+        private static Completion EvalDeclarationInstantiation(ScriptStatementList body, LexicalEnvironment varEnv, LexicalEnvironment lexEnv, bool strict)
+        {
+            var varNames = body.VarDeclaredNames();
+            var varDeclarations = body.VarScopedDeclarations();
+            var lexEnvRec = lexEnv.EnvironmentRecord;
+            var varEnvRec = varEnv.EnvironmentRecord;
+            if (!strict)
+            {
+                if (varEnvRec is GlobalEnvironmentRecord g)
+                {
+                    foreach (var name in varNames)
+                    {
+                        if (g.HasLexicalDeclaration(name))
+                            return Completion.ThrowSyntaxError("Spec 18.2.1.3 step 5ai1");
+                    }
+                }
+                var thisLex = lexEnv;
+                while (thisLex != varEnv)
+                {
+                    var thisEnvRec = thisLex.EnvironmentRecord;
+                    if (!(thisEnvRec is ObjectEnvironmentRecord))
+                    {
+                        foreach (var name in varNames)
+                        {
+                            if (thisEnvRec.HasBinding(name).Other)
+                                return Completion.ThrowSyntaxError("Spec 18.2.1.3 step 5dii2ai");
+                        }
+                    }
+                    thisLex = thisLex.Outer;
+                    if (thisLex == null)
+                    {
+                        throw new InvalidOperationException("thisLex and varEnv never matched");
+                    }
+                }
+            }
+            var functionsToInitialize = new List<FunctionDeclaration>();
+            var declaredFunctionNames = new List<string>();
+            foreach (var d in varDeclarations.Reverse())
+            {
+                if (!(d is VariableDeclaration) && !(d is ForBinding))
+                {
+                    if (!(d is FunctionDeclaration f))
+                        throw new InvalidOperationException("Spec 18.2.1.3 step 8ai");
+                    var fn = f.BoundNames()[0];
+                    if (!declaredFunctionNames.Contains(fn))
+                    {
+                        if (varEnvRec is GlobalEnvironmentRecord g)
+                        {
+                            var fnDefinable = g.CanDeclareGlobalFunction(fn);
+                            if (fnDefinable.IsAbrupt()) return fnDefinable;
+                            if (!fnDefinable.Other)
+                                return Completion.ThrowTypeError($"Function {fn} is not definable in global scope");
+                        }
+                        declaredFunctionNames.Add(fn);
+                        functionsToInitialize.Insert(0, f);
+                    }
+                }
+            }
+            var declaredVarNames = new List<string>();
+            foreach (var d in varDeclarations)
+            {
+                IReadOnlyList<string> boundNames = null;
+                if (d is VariableDeclaration v)
+                    boundNames = v.BoundNames();
+                if (d is ForBinding f)
+                    boundNames = f.BoundNames();
+                if (boundNames != null)
+                {
+                    foreach (var vn in boundNames)
+                    {
+                        if (!declaredFunctionNames.Contains(vn))
+                        {
+                            if (varEnvRec is GlobalEnvironmentRecord g)
+                            {
+                                var fnDefinable = g.CanDeclareGlobalVar(vn);
+                                if (fnDefinable.IsAbrupt()) return fnDefinable;
+                                if (!fnDefinable.Other)
+                                    return Completion.ThrowTypeError($"Variable {vn} is not definable in global scope");
+                            }
+                            if (!declaredVarNames.Contains(vn))
+                                declaredVarNames.Add(vn);
+                        }
+                    }
+                }
+            }
+            var lexDeclarations = body.LexicallyScopedDeclarations();
+            foreach (var d in lexDeclarations)
+            {
+                foreach (var dn in d.BoundNames())
+                {
+                    Completion comp;
+                    if (d.IsConstantDeclaration())
+                        comp = lexEnvRec.CreateImmutableBinding(dn, true);
+                    else
+                        comp = lexEnvRec.CreateMutableBinding(dn, false);
+                    if (comp.IsAbrupt()) return comp;
+                }
+            }
+            foreach (var f in functionsToInitialize)
+            {
+                var fn = f.BoundNames()[0];
+                var fo = f.InstantiateFunctionObject(lexEnv);
+                if (varEnvRec is GlobalEnvironmentRecord g)
+                {
+                    var comp = g.CreateGlobalFunctionBinding(fn, fo, true);
+                    if (comp.IsAbrupt()) return comp;
+                }
+                else
+                {
+                    var bindingExists = varEnvRec.HasBinding(fn);
+                    if (!bindingExists.Other)
+                    {
+                        var status = varEnvRec.CreateMutableBinding(fn, true);
+                        if (status.IsAbrupt())
+                            throw new InvalidOperationException("Spec 18.2.1.3 Step 15dii2");
+                        varEnvRec.InitializeBinding(fn, fo);
+                    }
+                    else
+                        varEnvRec.SetMutableBinding(fn, fo, false);
+                }
+            }
+            foreach (var vn in declaredVarNames)
+            {
+                if (varEnvRec is GlobalEnvironmentRecord g)
+                {
+                    var comp = g.CreateGlobalVarBinding(vn, true);
+                    if (comp.IsAbrupt()) return comp;
+                }
+                else
+                {
+                    var bindingExists = varEnvRec.HasBinding(vn);
+                    if (!bindingExists.Other)
+                    {
+                        var status = varEnvRec.CreateMutableBinding(vn, true);
+                        if (status.IsAbrupt())
+                            throw new InvalidOperationException("Spec 18.2.1.3 Step 16bii2");
+                        varEnvRec.InitializeBinding(vn, UndefinedValue.Instance);
+                    }
+                }
+            }
+            return Completion.NormalCompletion();
+        }
+
         public static Completion isFinite(IValue @this, IReadOnlyList<IValue> arguments)
         {
             var argComp = Utils.CheckArguments(arguments, 1);

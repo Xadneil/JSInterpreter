@@ -262,6 +262,11 @@ namespace JSInterpreter.AST
         {
             return interpreter.ResolveBinding(name);
         }
+
+        public IReadOnlyList<string> BoundNames()
+        {
+            return new List<string>(1) { name };
+        }
     }
 
     public class DoWhileIterationStatement : IterationStatement

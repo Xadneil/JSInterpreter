@@ -34,7 +34,19 @@ namespace JSInterpreter.AST
 
             if (@ref.value is ReferenceValue referenceValue && !referenceValue.baseValue.IsPrimitive() && referenceValue.referencedName == "eval")
             {
-                throw new NotImplementedException("MemberCallExpression.Evaluate: eval is not implemented.");
+                if (func == interpreter.CurrentRealm().Intrinsics.Eval)
+                {
+                    var argList = arguments.ArgumentListEvaluation();
+                    if (argList.IsAbrupt()) return argList;
+                    if (!argList.Other.Any())
+                        return Completion.NormalCompletion(UndefinedValue.Instance);
+                    var evalText = argList.Other[0];
+                    //TODO detect strict mode
+                    var strictCaller = false;
+                    var evalRealm = interpreter.CurrentRealm();
+                    //TODO HostEnsureCanCompileStrings
+                    return GlobalObjectProperties.PerformEval(evalText, evalRealm, strictCaller, true);
+                }
             }
             //TODO: support tail calls
             return Utils.EvaluateCall(func, @ref.value, arguments, tailCall: false);

@@ -31,6 +31,8 @@ namespace JSInterpreter
             Intrinsics.ObjectPrototype.DefineDeferredProperties(this);
             Intrinsics.FunctionPrototype.DefineDeferredProperties(this);
 
+            Intrinsics.Eval = DefineEval();
+
             Intrinsics.ArrayConstructor = new ArrayConstructor(Intrinsics.FunctionPrototype);
             Intrinsics.ArrayPrototype = new ArrayPrototype(Intrinsics.ArrayConstructor, this);
             Intrinsics.ArrayConstructor.InitPrototypeProperty(Intrinsics.ArrayPrototype);
@@ -83,6 +85,11 @@ namespace JSInterpreter
             return env;
         }
 
+        public Callable DefineEval()
+        {
+            return Utils.CreateBuiltinFunction(GlobalObjectProperties.eval, Utils.EmptyList<string>(), this);
+        }
+
         public Completion SetDefaultGlobalBindings()
         {
             Completion comp;
@@ -91,6 +98,8 @@ namespace JSInterpreter
             comp = GlobalObject.DefinePropertyOrThrow("NaN", new PropertyDescriptor(new NumberValue(double.NaN), false, false, false));
             if (comp.IsAbrupt()) return comp;
             comp = GlobalObject.DefinePropertyOrThrow("undefined", new PropertyDescriptor(UndefinedValue.Instance, false, false, false));
+            if (comp.IsAbrupt()) return comp;
+            comp = GlobalObject.DefinePropertyOrThrow("eval", new PropertyDescriptor(Intrinsics.Eval, true, false, true));
             if (comp.IsAbrupt()) return comp;
             comp = GlobalObject.DefinePropertyOrThrow("isFinite", new PropertyDescriptor(Utils.CreateBuiltinFunction(GlobalObjectProperties.isFinite, Utils.EmptyList<string>(), this), true, false, true));
             if (comp.IsAbrupt()) return comp;
@@ -145,6 +154,8 @@ namespace JSInterpreter
         public ObjectPrototype ObjectPrototype;
         public FunctionConstructor FunctionConstructor;
         public FunctionPrototype FunctionPrototype;
+
+        public Callable Eval;
 
         public ArrayConstructor ArrayConstructor;
         public ArrayIteratorPrototype ArrayIteratorPrototype;

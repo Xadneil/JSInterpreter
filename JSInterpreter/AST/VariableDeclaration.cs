@@ -31,6 +31,11 @@ namespace JSInterpreter.AST
             if (value.IsAbrupt()) return value;
             return referenceValue.PutValue(value.value);
         }
+
+        public IReadOnlyList<string> BoundNames()
+        {
+            return new List<string>(1) { name };
+        }
     }
 
     public class VariableDeclarationList : List<VariableDeclaration>
