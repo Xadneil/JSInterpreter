@@ -186,6 +186,14 @@ namespace JSInterpreter
         {
             if (string.IsNullOrWhiteSpace(@string))
                 return Completion.NormalCompletion(NumberValue.PositiveZero);
+            var trimmed = @string.Trim().ToUpperInvariant();
+            if (trimmed.StartsWith("0X", StringComparison.InvariantCulture) &&
+                int.TryParse(
+                    trimmed.Substring(2),
+                    System.Globalization.NumberStyles.HexNumber,
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    out int hexResult))
+                return Completion.NormalCompletion(new NumberValue(hexResult));
             if (!double.TryParse(@string.Trim(), out double result))
                 return Completion.NormalCompletion(NumberValue.DoubleNaN);
             return Completion.NormalCompletion(new NumberValue(result));
