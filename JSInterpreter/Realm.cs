@@ -58,7 +58,7 @@ namespace JSInterpreter
             Intrinsics.NumberConstructor = new NumberConstructor(Intrinsics.FunctionPrototype);
             Intrinsics.NumberPrototype = new NumberPrototype(Intrinsics.NumberConstructor, this);
 
-            Intrinsics.StringConstructor = new StringConstructor(Intrinsics.FunctionPrototype);
+            Intrinsics.StringConstructor = new StringConstructor(Intrinsics.FunctionPrototype, this);
             Intrinsics.StringPrototype = new StringPrototype(Intrinsics.StringConstructor, this);
 
         }
