@@ -115,7 +115,7 @@ namespace JSInterpreter.AST
     public class ContinueStatement : Statement
     {
         public readonly bool hasLabel;
-        public readonly string label;
+        public readonly string? label;
 
         public ContinueStatement()
         {
@@ -154,7 +154,7 @@ namespace JSInterpreter.AST
     public class BreakStatement : Statement
     {
         public readonly bool hasLabel;
-        public readonly string label;
+        public readonly string? label;
 
         public BreakStatement()
         {
@@ -192,7 +192,7 @@ namespace JSInterpreter.AST
 
     public class ReturnStatement : Statement
     {
-        public readonly IExpression expression;
+        public readonly IExpression? expression;
 
         public ReturnStatement() { }
         public ReturnStatement(IExpression expression)

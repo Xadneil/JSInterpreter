@@ -75,7 +75,7 @@ namespace JSInterpreter.AST
             return false;
         }
 
-        protected static Completion ForBodyEvaluation(IExpression test, IExpression increment, Statement stmt, IEnumerable<string> perIterationBindings, List<string> labelSet)
+        protected static Completion ForBodyEvaluation(IExpression? test, IExpression? increment, Statement stmt, IEnumerable<string> perIterationBindings, List<string> labelSet)
         {
             IValue V = UndefinedValue.Instance;
             var comp = CreatePerIterationEnvironment(perIterationBindings);
@@ -361,11 +361,11 @@ namespace JSInterpreter.AST
     public class ForExpressionIterationStatement : IterationStatement
     {
         public readonly Statement doStatement;
-        public readonly IExpression forExpression;
-        public readonly IExpression conditionExpression;
-        public readonly IExpression endExpression;
+        public readonly IExpression? forExpression;
+        public readonly IExpression? conditionExpression;
+        public readonly IExpression? endExpression;
 
-        public ForExpressionIterationStatement(IExpression forExpression, IExpression conditionExpression, IExpression endExpression, Statement doStatement)
+        public ForExpressionIterationStatement(IExpression? forExpression, IExpression? conditionExpression, IExpression? endExpression, Statement doStatement)
         {
             this.doStatement = doStatement;
             this.forExpression = forExpression;
@@ -403,10 +403,10 @@ namespace JSInterpreter.AST
     {
         public readonly Statement doStatement;
         public readonly VariableDeclarationList variableDeclarations;
-        public readonly IExpression conditionExpression;
-        public readonly IExpression endExpression;
+        public readonly IExpression? conditionExpression;
+        public readonly IExpression? endExpression;
 
-        public ForVarIterationStatement(VariableDeclarationList variableDeclarations, IExpression conditionExpression, IExpression endExpression, Statement doStatement)
+        public ForVarIterationStatement(VariableDeclarationList variableDeclarations, IExpression? conditionExpression, IExpression? endExpression, Statement doStatement)
         {
             this.doStatement = doStatement;
             this.variableDeclarations = variableDeclarations;

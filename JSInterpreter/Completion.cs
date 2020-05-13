@@ -16,17 +16,17 @@ namespace JSInterpreter
     public class Completion
     {
         public readonly CompletionType completionType;
-        public readonly IValue value;
-        public readonly string target;
+        public readonly IValue? value;
+        public readonly string? target;
 
-        public Completion(CompletionType completionType, IValue value, string target)
+        public Completion(CompletionType completionType, IValue? value, string? target)
         {
             this.completionType = completionType;
             this.value = value;
             this.target = target;
         }
 
-        public static Completion NormalCompletion(IValue value)
+        public static Completion NormalCompletion(IValue? value)
         {
             return new Completion(CompletionType.Normal, value, null);
         }
@@ -64,7 +64,7 @@ namespace JSInterpreter
             return Throw(errorInstance.value);
         }
 
-        private static Completion Throw(IValue error)
+        private static Completion Throw(IValue? error)
         {
             return new Completion(CompletionType.Throw, error, null);
         }
@@ -84,12 +84,12 @@ namespace JSInterpreter
                 var sb = new StringBuilder();
                 foreach (var frame in st.GetFrames())
                 {
-                    if (!System.IO.File.Exists(frame.GetFileName()))
+                    if (frame == null || !System.IO.File.Exists(frame.GetFileName()))
                         break;
                     sb.Append("   at ");
-                    sb.Append(frame.GetMethod().DeclaringType);
+                    sb.Append(frame.GetMethod()?.DeclaringType);
                     sb.Append(".");
-                    sb.Append(frame.GetMethod().Name);
+                    sb.Append(frame.GetMethod()?.Name);
                     sb.Append(": ");
                     sb.AppendLine(frame.GetFileLineNumber().ToString(System.Globalization.CultureInfo.InvariantCulture));
                 }
@@ -123,10 +123,10 @@ namespace JSInterpreter
             {
                 if (reference.HasPrimitiveBase())
                 {
-                    @base = (@base as IValue).ToObject().value;
+                    @base = (@base as IValue)!.ToObject().value!;
                 }
                 var obj = @base as Object;
-                return obj.InternalGet(reference.referencedName, reference.GetThisValue());
+                return obj!.InternalGet(reference.referencedName, reference.GetThisValue());
             }
             if (!(@base is EnvironmentRecord envRec))
                 throw new InvalidOperationException("Completion.GetValue: baseValue is not a recognized IReferenceable");
@@ -140,7 +140,9 @@ namespace JSInterpreter
 
         public CompletionOr<T> WithEmpty<T>()
         {
-            return new CompletionOr<T>(completionType, value, target);
+#pragma warning disable CS8653 // A default expression introduces a null value for a type parameter.
+            return new CompletionOr<T>(completionType, value, target, default);
+#pragma warning restore CS8653 // A default expression introduces a null value for a type parameter.
         }
 
         public BooleanCompletion WithEmptyBool()
@@ -153,11 +155,7 @@ namespace JSInterpreter
     {
         public readonly T Other;
 
-        public CompletionOr(CompletionType completionType, IValue value, string target) : base(completionType, value, target)
-        {
-        }
-
-        public CompletionOr(CompletionType completionType, IValue value, string target, T other) : base(completionType, value, target)
+        public CompletionOr(CompletionType completionType, IValue? value, string? target, T other) : base(completionType, value, target)
         {
             Other = other;
         }
@@ -165,11 +163,7 @@ namespace JSInterpreter
 
     public class BooleanCompletion : CompletionOr<bool>
     {
-        public BooleanCompletion(CompletionType completionType, IValue value, string target) : base(completionType, value, target)
-        {
-        }
-
-        public BooleanCompletion(CompletionType completionType, IValue value, string target, bool other) : base(completionType, value, target, other)
+        public BooleanCompletion(CompletionType completionType, IValue? value, string? target, bool other) : base(completionType, value, target, other)
         {
         }
 

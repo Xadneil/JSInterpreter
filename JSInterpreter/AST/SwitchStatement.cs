@@ -62,15 +62,16 @@ namespace JSInterpreter.AST
     public class CaseBlock : IHasLexicallyScopedDeclarations
     {
         public readonly IReadOnlyList<CaseClause> firstCaseClauses;
-        public readonly DefaultClause defaultClause;
+        public readonly DefaultClause? defaultClause;
         public readonly IReadOnlyList<CaseClause> secondCaseClauses;
 
         public CaseBlock(IReadOnlyList<CaseClause> caseClauses)
         {
             firstCaseClauses = caseClauses;
+            secondCaseClauses = new List<CaseClause>();
         }
 
-        public CaseBlock(IReadOnlyList<CaseClause> firstCaseClauses, DefaultClause defaultClause, IReadOnlyList<CaseClause> secondCaseClauses)
+        public CaseBlock(IReadOnlyList<CaseClause> firstCaseClauses, DefaultClause? defaultClause, IReadOnlyList<CaseClause> secondCaseClauses)
         {
             this.firstCaseClauses = firstCaseClauses;
             this.defaultClause = defaultClause;

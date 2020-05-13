@@ -80,9 +80,9 @@ namespace JSInterpreter.AST
     {
         private readonly LexicalDeclarationType lexicalDeclarationType;
         public readonly string name;
-        public readonly IAssignmentExpression assignmentExpression;
+        public readonly IAssignmentExpression? assignmentExpression;
 
-        public LexicalDeclarationItem(LexicalDeclarationType lexicalDeclarationType, string name, IAssignmentExpression assignmentExpression)
+        public LexicalDeclarationItem(LexicalDeclarationType lexicalDeclarationType, string name, IAssignmentExpression? assignmentExpression)
         {
             this.lexicalDeclarationType = lexicalDeclarationType;
             this.name = name;

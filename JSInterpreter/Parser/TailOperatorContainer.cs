@@ -6,9 +6,9 @@ namespace JSInterpreter.Parser
     {
         public TRHS RHS { get; private set; }
         public TOp Op { get; private set; }
-        public TailOperatorContainer<TRHS, TOp> Tail { get; private set; }
+        public TailOperatorContainer<TRHS, TOp>? Tail { get; private set; }
 
-        public TailOperatorContainer(TRHS rhs, TOp op, TailOperatorContainer<TRHS, TOp> tail)
+        public TailOperatorContainer(TRHS rhs, TOp op, TailOperatorContainer<TRHS, TOp>? tail)
         {
             RHS = rhs;
             Op = op;

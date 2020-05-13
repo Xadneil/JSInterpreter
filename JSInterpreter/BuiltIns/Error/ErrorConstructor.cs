@@ -33,7 +33,7 @@ namespace JSInterpreter
             return InternalConstruct(arguments, thisValue as Object);
         }
 
-        public override Completion InternalConstruct(IReadOnlyList<IValue> arguments, Object newTarget)
+        public override Completion InternalConstruct(IReadOnlyList<IValue> arguments, Object? newTarget)
         {
             var OComp = Utils.OrdinaryCreateFromConstructor(newTarget ?? this, dispatchPrototype);
             if (OComp.IsAbrupt()) return OComp;
