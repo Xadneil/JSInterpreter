@@ -55,6 +55,7 @@ namespace JSInterpreter.Parser
         {
             if (!success)
             {
+                exception = null;
                 Expected(message);
             }
             return this;
@@ -1693,13 +1694,8 @@ namespace JSInterpreter.Parser
                         identifier = propertyName.DoubleValue().ToString(System.Globalization.CultureInfo.InvariantCulture);
                     else if (propertyName.Type == TokenType.StringLiteral)
                         identifier = propertyName.StringValue();
-                    else if (propertyName.Type == TokenType.Identifier)
-                        identifier = propertyName.Value;
                     else
-                    {
-                        Expected("number or string property name");
-                        return;
-                    }
+                        identifier = propertyName.Value;
                     Consume(TokenType.Colon);
                     propertyDefinition = new PropertyDefinition(identifier, ParseAssignmentExpression());
                 }).Or(() =>
@@ -1710,13 +1706,8 @@ namespace JSInterpreter.Parser
                         identifier = propertyName.DoubleValue().ToString(System.Globalization.CultureInfo.InvariantCulture);
                     else if (propertyName.Type == TokenType.StringLiteral)
                         identifier = propertyName.StringValue();
-                    else if (propertyName.Type == TokenType.Identifier)
-                        identifier = propertyName.Value;
                     else
-                    {
-                        Expected("number or string property name");
-                        return;
-                    }
+                        identifier = propertyName.Value;
                     var initializer = ParseInitializer();
                     propertyDefinition = new PropertyDefinition(identifier, initializer);
                 }).Or(() =>

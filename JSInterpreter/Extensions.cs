@@ -16,5 +16,8 @@ namespace JSInterpreter
             }
             return Completion.NormalCompletion(arguments[index]);
         }
+
+        public static bool IsHexDigit(this char c) => char.IsDigit(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+        public static int ToHexValue(this char c) => char.IsDigit(c) ? c - '0' : (char.ToUpperInvariant(c) - 'A' + 10);
     }
 }

@@ -171,7 +171,7 @@ namespace JSInterpreter.Lexer
             if (position >= source.Length)
             {
                 position = source.Length + 1;
-                currentChar = '\0';
+                //currentChar = '\0';
                 return;
             }
 
@@ -192,9 +192,9 @@ namespace JSInterpreter.Lexer
         private void ConsumeExponent()
         {
             Consume();
-            if (currentChar == '-' || currentChar == '+')
+            if (!IsEOF() && (currentChar == '-' || currentChar == '+'))
                 Consume();
-            while (char.IsDigit(currentChar))
+            while (!IsEOF() && char.IsDigit(currentChar))
             {
                 Consume();
             }
@@ -232,17 +232,17 @@ namespace JSInterpreter.Lexer
 
         private bool IsEOF()
         {
-            return currentChar == '\0';
+            return position == source.Length + 1;
         }
 
         private bool IsIdentifierStart()
         {
-            return char.IsLetter(currentChar) || currentChar == '_' || currentChar == '$';
+            return !IsEOF() && (char.IsLetter(currentChar) || currentChar == '_' || currentChar == '$');
         }
 
         private bool IsIdentifierMiddle()
         {
-            return IsIdentifierStart() || char.IsDigit(currentChar);
+            return !IsEOF() && (IsIdentifierStart() || char.IsDigit(currentChar));
         }
 
         private bool IsLineCommentStart()
@@ -262,7 +262,7 @@ namespace JSInterpreter.Lexer
 
         private bool IsNumericLiteralStart()
         {
-            return char.IsDigit(currentChar) || (currentChar == '.' && position < source.Length && char.IsDigit(source[position]));
+            return !IsEOF() && (char.IsDigit(currentChar) || (currentChar == '.' && position < source.Length && char.IsDigit(source[position])));
         }
 
         private void SyntaxError(string msg)
@@ -281,7 +281,11 @@ namespace JSInterpreter.Lexer
             int value_start = position;
             var token_type = TokenType.Invalid;
 
-            if (IsIdentifierStart())
+            if (IsEOF())
+            {
+                token_type = TokenType.Eof;
+            }
+            else if (IsIdentifierStart())
             {
                 // identifier or keyword
                 do
@@ -305,7 +309,7 @@ namespace JSInterpreter.Lexer
                     {
                         // decimal
                         Consume();
-                        while (char.IsDigit(currentChar))
+                        while (!IsEOF() && char.IsDigit(currentChar))
                         {
                             Consume();
                         }
@@ -322,7 +326,7 @@ namespace JSInterpreter.Lexer
                     {
                         // octal
                         Consume();
-                        while (currentChar >= '0' && currentChar <= '7')
+                        while (!IsEOF() && currentChar >= '0' && currentChar <= '7')
                         {
                             Consume();
                         }
@@ -331,7 +335,7 @@ namespace JSInterpreter.Lexer
                     {
                         // binary
                         Consume();
-                        while (currentChar == '0' || currentChar == '1')
+                        while (!IsEOF() && (currentChar == '0' || currentChar == '1'))
                         {
                             Consume();
                         }
@@ -345,27 +349,27 @@ namespace JSInterpreter.Lexer
                             Consume();
                         }
                     }
-                    else if (char.IsDigit(currentChar))
+                    else if (!IsEOF() && char.IsDigit(currentChar))
                     {
                         // octal without 'O' prefix. Forbidden in 'strict mode'
                         // FIXME: We need to make sure this produces a syntax error when in strict mode
                         do
                         {
                             Consume();
-                        } while (char.IsDigit(currentChar));
+                        } while (!IsEOF() && char.IsDigit(currentChar));
                     }
                 }
                 else
                 {
                     // 1...9 or period
-                    while (char.IsDigit(currentChar))
+                    while (!IsEOF() && char.IsDigit(currentChar))
                     {
                         Consume();
                     }
                     if (currentChar == '.')
                     {
                         Consume();
-                        while (char.IsDigit(currentChar))
+                        while (!IsEOF() && char.IsDigit(currentChar))
                         {
                             Consume();
                         }
@@ -399,10 +403,6 @@ namespace JSInterpreter.Lexer
                     Consume();
                     token_type = TokenType.StringLiteral;
                 }
-            }
-            else if (currentChar == '\0')
-            {
-                token_type = TokenType.Eof;
             }
             else
             {
@@ -482,14 +482,14 @@ namespace JSInterpreter.Lexer
         public Token NextRegex(Token regexStart)
         {
             if (IsLineTerminator() || currentChar == '*' || currentChar == '/')
-                return null;
+                throw new InvalidOperationException("invalid regex");
 
             int value_start = position;
 
-            while (currentChar != '/' && currentChar != '\0')
+            while (currentChar != '/' && !IsEOF())
             {
                 if (IsLineTerminator())
-                    return null;
+                    throw new InvalidOperationException("unterminated regular expression literal");
                 if (currentChar == '\\')
                 {
                     Consume();
@@ -497,7 +497,7 @@ namespace JSInterpreter.Lexer
                 Consume();
             }
             if (currentChar != '/')
-                return null;
+                throw new InvalidOperationException("unterminated regular expression literal");
             // trailing /
             Consume();
             // flags
@@ -519,19 +519,19 @@ namespace JSInterpreter.Lexer
 
         private bool IsLineTerminator()
         {
-            return currentChar == '\n' || currentChar == '\r';
+            return currentChar == '\n' || currentChar == '\r' || currentChar == '\u2028' || currentChar == '\u2029';
         }
 
         private void ConsumeWhitespaceAndComments()
         {
-            while (true)
+            while (!IsEOF())
             {
                 if (char.IsWhiteSpace(currentChar))
                 {
                     do
                     {
                         Consume();
-                    } while (char.IsWhiteSpace(currentChar));
+                    } while (!IsEOF() && char.IsWhiteSpace(currentChar));
                 }
                 else if (IsLineCommentStart())
                 {
@@ -539,7 +539,7 @@ namespace JSInterpreter.Lexer
                     do
                     {
                         Consume();
-                    } while (!IsEOF() && currentChar != '\n');
+                    } while (!IsEOF() && currentChar != '\n' && currentChar != '\r' && currentChar != '\u2028' && currentChar != '\u2029');
                 }
                 else if (IsBlockCommentStart())
                 {
@@ -558,11 +558,11 @@ namespace JSInterpreter.Lexer
             }
         }
 
-        private static bool IsHexDigit(char c)
+        private bool IsHexDigit(char c)
         {
-            return (c >= '0' && c <= '9') ||
+            return !IsEOF() && ((c >= '0' && c <= '9') ||
                (c >= 'a' && c <= 'f') ||
-               (c >= 'A' && c <= 'F');
+               (c >= 'A' && c <= 'F'));
         }
 
         public void SaveState()

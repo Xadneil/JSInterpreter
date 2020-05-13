@@ -116,6 +116,15 @@ namespace JSInterpreter.Lexer
             return double.Parse(Value, System.Globalization.CultureInfo.InvariantCulture);
         }
 
+        private enum StringLexState
+        {
+            Normal,
+            EscapeCharacter,
+            HexEscape,
+            UnicodeEscape,
+            UnicodeBrace
+        }
+
         public string StringValue()
         {
             if (Type != TokenType.StringLiteral)
@@ -123,53 +132,118 @@ namespace JSInterpreter.Lexer
                 throw new InvalidOperationException("StringValue can only be used on a string literal.");
             }
             StringBuilder builder = new StringBuilder();
+            var state = StringLexState.Normal;
+            int hexCount = 0, unicodeCount = 0;
+            var hexChars = new char[2];
+            var unicodeChars = new char[4];
             for (int i = 1; i < Value.Length - 1; ++i)
             {
-                if (Value[i] == '\\' && i + 1 < Value.Length - 1)
+                switch (state)
                 {
-                    i++;
-                    switch (Value[i])
-                    {
-                        case 'b':
-                            builder.Append('\b');
+                    case StringLexState.Normal:
+                        if (Value[i] == '\\')
+                        {
+                            state = StringLexState.EscapeCharacter;
                             break;
-                        case 'f':
-                            builder.Append('\f');
+                        }
+                        builder.Append(Value[i]);
+                        break;
+                    case StringLexState.EscapeCharacter:
+                        switch (Value[i])
+                        {
+                            case 'b':
+                                builder.Append('\b');
+                                break;
+                            case 'f':
+                                builder.Append('\f');
+                                break;
+                            case 'n':
+                                builder.Append('\n');
+                                break;
+                            case 'r':
+                                builder.Append('\r');
+                                break;
+                            case 't':
+                                builder.Append('\t');
+                                break;
+                            case 'v':
+                                builder.Append('\v');
+                                break;
+                            case '0':
+                                if (i + 1 < Value.Length && !char.IsDigit(Value[i + 1]))
+                                    builder.Append((char)0);
+                                else
+                                    throw new NotImplementedException("\\0 may not appear before more digits");
+                                break;
+                            case '\'':
+                                builder.Append('\'');
+                                break;
+                            case '"':
+                                builder.Append('"');
+                                break;
+                            case '\\':
+                                builder.Append('\\');
+                                break;
+                            case 'x':
+                                state = StringLexState.HexEscape;
+                                hexCount = 0;
+                                break;
+                            case 'u':
+                                state = StringLexState.UnicodeEscape;
+                                unicodeCount = 0;
+                                break;
+                            default:
+                                throw new NotImplementedException($"Invalid escape sequence \\{Value[i]}");
+                                // FIXME: Also parse octal, hex and unicode sequences
+                                // should anything else generate a syntax error?
+                                //builder.Append(Value[i]);
+                                //break;
+                        }
+                        if (state == StringLexState.EscapeCharacter)
+                            state = StringLexState.Normal;
+                        break;
+                    case StringLexState.HexEscape:
+                        if (!Value[i].IsHexDigit())
+                            throw new InvalidOperationException("Only hex characters are allowed in \\x escape sequences");
+                        hexChars[hexCount] = Value[i];
+                        hexCount++;
+                        if (hexCount == 2)
+                        {
+                            builder.Append((char)(hexChars[0].ToHexValue() << 4) + hexChars[1].ToHexValue());
+                            state = StringLexState.Normal;
+                        }
+                        break;
+                    case StringLexState.UnicodeEscape:
+                        if (unicodeCount == 0 && Value[i] == '{')
+                        {
+                            state = StringLexState.UnicodeBrace;
                             break;
-                        case 'n':
-                            builder.Append('\n');
-                            break;
-                        case 'r':
-                            builder.Append('\r');
-                            break;
-                        case 't':
-                            builder.Append('\t');
-                            break;
-                        case 'v':
-                            builder.Append('\v');
-                            break;
-                        case '0':
-                            builder.Append((char)0);
-                            break;
-                        case '\'':
-                            builder.Append('\'');
-                            break;
-                        case '"':
-                            builder.Append('"');
-                            break;
-                        case '\\':
-                            builder.Append('\\');
-                            break;
-                        default:
-                            // FIXME: Also parse octal, hex and unicode sequences
-                            // should anything else generate a syntax error?
-                            builder.Append(Value[i]);
-                            break;
-                    }
-                }
-                else
-                {
-                    builder.Append(Value[i]);
+                        }
+                        if (!Value[i].IsHexDigit())
+                            throw new InvalidOperationException("Only hex characters are allowed in \\u escape sequences");
+                        unicodeChars[unicodeCount] = Value[i];
+                        unicodeCount++;
+                        if (unicodeCount == 4)
+                        {
+                            builder.Append((char)(
+                                (unicodeChars[0].ToHexValue() << 12) +
+                                (unicodeChars[1].ToHexValue() << 8) +
+                                (unicodeChars[2].ToHexValue() << 4) +
+                                (unicodeChars[3].ToHexValue())
+                                ));
+                            state = StringLexState.Normal;
+                        }
+                        break;
+                    case StringLexState.UnicodeBrace:
+                        builder.Append(Value[i]);
+                        if (i + 1 < Value.Length || Value[i + 1] != '}')
+                            throw new InvalidOperationException("Escape sequence starting with \\u{ must end with }");
+                        // consume the }
+                        i++;
+                        state = StringLexState.Normal;
+                        break;
+                    default:
+                        throw new InvalidOperationException("Invalid StringLexState");
                 }
             }
             return builder.ToString();
