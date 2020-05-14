@@ -64,6 +64,7 @@ namespace JSInterpreter.Lexer
         DoubleQuestionMark,
         Ellipsis,
         Else,
+        Enum,
         Eof,
         Equals,
         EqualsEquals,
@@ -71,6 +72,8 @@ namespace JSInterpreter.Lexer
         ExclamationMark,
         ExclamationMarkEquals,
         ExclamationMarkEqualsEquals,
+        Export,
+        Extends,
         Finally,
         For,
         Function,
@@ -78,6 +81,7 @@ namespace JSInterpreter.Lexer
         GreaterThanEquals,
         Identifier,
         If,
+        Import,
         In,
         Instanceof,
         Interface,
@@ -127,6 +131,7 @@ namespace JSInterpreter.Lexer
         Var,
         Void,
         While,
+        With,
         Yield,
     }
 }

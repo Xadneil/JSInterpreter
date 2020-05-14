@@ -73,11 +73,15 @@ namespace JSInterpreter.Lexer
                 keywords["delete"] = TokenType.Delete;
                 keywords["do"] = TokenType.Do;
                 keywords["else"] = TokenType.Else;
+                keywords["enum"] = TokenType.Enum;
                 keywords["false"] = TokenType.BoolLiteral;
+                keywords["export"] = TokenType.Export;
+                keywords["extends"] = TokenType.Extends;
                 keywords["finally"] = TokenType.Finally;
                 keywords["for"] = TokenType.For;
                 keywords["function"] = TokenType.Function;
                 keywords["if"] = TokenType.If;
+                keywords["import"] = TokenType.Import;
                 keywords["in"] = TokenType.In;
                 keywords["instanceof"] = TokenType.Instanceof;
                 keywords["interface"] = TokenType.Interface;
@@ -96,6 +100,7 @@ namespace JSInterpreter.Lexer
                 keywords["var"] = TokenType.Var;
                 keywords["void"] = TokenType.Void;
                 keywords["while"] = TokenType.While;
+                keywords["with"] = TokenType.With;
                 keywords["yield"] = TokenType.Yield;
             }
 
