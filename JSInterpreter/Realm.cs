@@ -6,7 +6,9 @@ namespace JSInterpreter
 {
     public class Realm
     {
+#pragma warning disable CS8618 // Non-nullable field is uninitialized. Consider declaring as nullable.
         private Realm() { }
+#pragma warning restore CS8618 // Non-nullable field is uninitialized. Consider declaring as nullable.
 
         public static Realm CreateRealm()
         {
@@ -23,9 +25,9 @@ namespace JSInterpreter
         {
             Intrinsics = new Intrinsics();
             Intrinsics.ObjectConstructor = new ObjectConstructor();
-            Intrinsics.ObjectPrototype = Intrinsics.ObjectConstructor.prototype as ObjectPrototype;
+            Intrinsics.ObjectPrototype = (Intrinsics.ObjectConstructor.prototype as ObjectPrototype)!;
             Intrinsics.FunctionConstructor = new FunctionConstructor(Intrinsics.ObjectPrototype);
-            Intrinsics.FunctionPrototype = Intrinsics.FunctionConstructor.prototype as FunctionPrototype;
+            Intrinsics.FunctionPrototype = (Intrinsics.FunctionConstructor.prototype as FunctionPrototype)!;
 
             Intrinsics.ObjectConstructor.DefineDeferredProperties(this);
             Intrinsics.ObjectPrototype.DefineDeferredProperties(this);
@@ -63,7 +65,7 @@ namespace JSInterpreter
 
         }
 
-        public Realm SetRealmGlobalObject(Object globalObj, Object thisValue)
+        public Realm SetRealmGlobalObject(Object? globalObj, Object? thisValue)
         {
             if (globalObj == null)
                 globalObj = Utils.ObjectCreate(Intrinsics.ObjectPrototype);
@@ -150,6 +152,7 @@ namespace JSInterpreter
 
     public class Intrinsics
     {
+#pragma warning disable CS8618 // Non-nullable field is uninitialized. Consider declaring as nullable.
         public ObjectConstructor ObjectConstructor;
         public ObjectPrototype ObjectPrototype;
         public FunctionConstructor FunctionConstructor;
@@ -181,5 +184,6 @@ namespace JSInterpreter
         public NumberPrototype NumberPrototype;
         public StringConstructor StringConstructor;
         public StringPrototype StringPrototype;
+#pragma warning restore CS8618 // Non-nullable field is uninitialized. Consider declaring as nullable.
     }
 }

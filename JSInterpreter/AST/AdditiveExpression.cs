@@ -31,11 +31,11 @@ namespace JSInterpreter.AST
         {
             var left = additiveExpression.Evaluate(interpreter).GetValue();
             if (left.IsAbrupt()) return left;
-            var leftValue = left.value;
+            var leftValue = left.value!;
 
             var right = multiplicativeExpression.Evaluate(interpreter).GetValue();
             if (right.IsAbrupt()) return right;
-            var rightValue = right.value;
+            var rightValue = right.value!;
 
             return Calculate(leftValue, additiveOperator, rightValue);
         }
@@ -52,14 +52,14 @@ namespace JSInterpreter.AST
 
                 if (lprim.value is StringValue || rprim.value is StringValue)
                 {
-                    var lstr = lprim.value.ToJsString();
+                    var lstr = lprim.value!.ToJsString();
                     if (lstr.IsAbrupt()) return lstr;
-                    var rstr = rprim.value.ToJsString();
+                    var rstr = rprim.value!.ToJsString();
                     if (rstr.IsAbrupt()) return rstr;
-                    return Completion.NormalCompletion(new StringValue((lstr.value as StringValue).@string + (rstr.value as StringValue).@string));
+                    return Completion.NormalCompletion(new StringValue((lstr.value! as StringValue)!.@string + (rstr.value! as StringValue)!.@string));
                 }
-                leftForToNumber = lprim.value;
-                rightForToNumber = rprim.value;
+                leftForToNumber = lprim.value!;
+                rightForToNumber = rprim.value!;
             }
             else
             {
@@ -73,11 +73,11 @@ namespace JSInterpreter.AST
             if (rnum.IsAbrupt()) return rnum;
             if (additiveOperator == AdditiveOperator.Add)
             {
-                return Completion.NormalCompletion(new NumberValue((lnum.value as NumberValue).number + (rnum.value as NumberValue).number));
+                return Completion.NormalCompletion(new NumberValue((lnum.value! as NumberValue)!.number + (rnum.value! as NumberValue)!.number));
             }
             else
             {
-                return Completion.NormalCompletion(new NumberValue((lnum.value as NumberValue).number - (rnum.value as NumberValue).number));
+                return Completion.NormalCompletion(new NumberValue((lnum.value! as NumberValue)!.number - (rnum.value! as NumberValue)!.number));
             }
         }
     }

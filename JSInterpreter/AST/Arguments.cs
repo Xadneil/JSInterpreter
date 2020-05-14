@@ -12,7 +12,7 @@ namespace JSInterpreter.AST
             this.argumentItems = argumentItems;
         }
 
-        public CompletionOr<List<IValue>> ArgumentListEvaluation()
+        public CompletionOr<List<IValue>?> ArgumentListEvaluation()
         {
             var argListEnumerable = argumentItems.Select(a => Utils.EvaluateArgument(Interpreter.Instance(), a));
             var argList = new List<IValue>();

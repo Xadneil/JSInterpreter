@@ -24,16 +24,16 @@ namespace JSInterpreter.AST
         {
             var baseValueComp = indexedMemberExpression.Evaluate(interpreter).GetValue();
             if (baseValueComp.IsAbrupt()) return baseValueComp;
-            var baseValue = baseValueComp.value;
+            var baseValue = baseValueComp.value!;
             var propertyNameComp = indexerExpression.Evaluate(interpreter).GetValue();
             if (propertyNameComp.IsAbrupt()) return propertyNameComp;
-            var propertyNameValue = propertyNameComp.value;
+            var propertyNameValue = propertyNameComp.value!;
             var coercible = baseValue.RequireObjectCoercible();
             if (coercible.IsAbrupt()) return coercible;
             var propertyKey = propertyNameValue.ToPropertyKey();
             if (propertyKey.IsAbrupt()) return propertyKey;
             //TODO detect strict mode
-            return Completion.NormalCompletion(new ReferenceValue(baseValue, propertyKey.Other, strict: false));
+            return Completion.NormalCompletion(new ReferenceValue(baseValue, propertyKey.Other!, strict: false));
         }
     }
 
@@ -52,7 +52,7 @@ namespace JSInterpreter.AST
         {
             var baseValueComp = dotMemberExpression.Evaluate(interpreter).GetValue();
             if (baseValueComp.IsAbrupt()) return baseValueComp;
-            var baseValue = baseValueComp.value;
+            var baseValue = baseValueComp.value!;
             var coercible = baseValue.RequireObjectCoercible();
             if (coercible.IsAbrupt()) return coercible;
             //TODO detect strict mode
@@ -69,7 +69,7 @@ namespace JSInterpreter.AST
                 throw new InvalidOperationException("SuperHelper.MakeSuperPropertyReference: Interpreter.GetThisEnvironment has no super binding");
             var baseValueComp = ((FunctionEnvironmentRecord)env).GetSuperBase();
             if (baseValueComp.IsAbrupt()) return baseValueComp;
-            var baseValue = baseValueComp.value;
+            var baseValue = baseValueComp.value!;
             var coercible = baseValue.RequireObjectCoercible();
             if (coercible.IsAbrupt()) return coercible;
             return Completion.NormalCompletion(new SuperReferenceValue(baseValue, propertyKey, strict, actualThis));
@@ -93,16 +93,16 @@ namespace JSInterpreter.AST
 
             var actualThisComp = env.GetThisBinding();
             if (actualThisComp.IsAbrupt()) return actualThisComp;
-            var actualThis = actualThisComp.value;
+            var actualThis = actualThisComp.value!;
 
             var propertyNameComp = superIndexerExpression.Evaluate(interpreter).GetValue();
             if (propertyNameComp.IsAbrupt()) return propertyNameComp;
-            var propertyNameValue = propertyNameComp.value;
+            var propertyNameValue = propertyNameComp.value!;
 
             var propertyKey = propertyNameValue.ToPropertyKey();
             if (propertyKey.IsAbrupt()) return propertyKey;
             //TODO detect strict mode
-            return SuperHelper.MakeSuperPropertyReference(actualThis, propertyKey.Other, false);
+            return SuperHelper.MakeSuperPropertyReference(actualThis, propertyKey.Other!, false);
         }
     }
 
@@ -123,7 +123,7 @@ namespace JSInterpreter.AST
 
             var actualThisComp = env.GetThisBinding();
             if (actualThisComp.IsAbrupt()) return actualThisComp;
-            var actualThis = actualThisComp.value;
+            var actualThis = actualThisComp.value!;
 
             //TODO detect strict mode
             return SuperHelper.MakeSuperPropertyReference(actualThis, superDotIdentifierName, false);

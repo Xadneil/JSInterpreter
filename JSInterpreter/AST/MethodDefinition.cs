@@ -31,7 +31,7 @@ namespace JSInterpreter.AST
             return @object.DefinePropertyOrThrow(methodDef.Key, desc);
         }
 
-        private CompletionOr<(string Key, FunctionObject Closure)> DefineMethod(Object @object, IValue functionPrototype = null)
+        private CompletionOr<(string Key, FunctionObject Closure)> DefineMethod(Object @object, IValue? functionPrototype = null)
         {
             //TODO get strict mode
             var strict = false;
@@ -50,7 +50,7 @@ namespace JSInterpreter.AST
             }
             var closure = FunctionObject.FunctionCreate(kind, formalParameters, functionBody, scope, strict, prototype);
             closure.MakeMethod(@object);
-            return Completion.NormalWith((propertyName, closure));
+            return Completion.NormalWithStruct((propertyName, closure));
         }
     }
 

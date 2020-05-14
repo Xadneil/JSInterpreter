@@ -38,7 +38,7 @@ namespace JSInterpreter
             if (P.IsAbrupt()) return P;
             var O = @this.ToObject();
             if (O.IsAbrupt()) return O;
-            return (O.value as Object).HasOwnProperty(P.Other);
+            return (O.value as Object)!.HasOwnProperty(P.Other!);
         }
 
         private Completion isPrototypeOf(IValue @this, IReadOnlyList<IValue> arguments)
@@ -58,7 +58,7 @@ namespace JSInterpreter
                     return Completion.NormalCompletion(BooleanValue.False);
                 if (O == comp.value)
                     return Completion.NormalCompletion(BooleanValue.True);
-                V = comp.value as Object;
+                V = (comp.value as Object)!;
             }
         }
 
@@ -68,7 +68,7 @@ namespace JSInterpreter
                 return Completion.NormalCompletion(new StringValue("[object Undefined]"));
             if (@this == NullValue.Instance)
                 return Completion.NormalCompletion(new StringValue("[object Null]"));
-            var O = @this.ToObject().value as Object;
+            var O = (@this.ToObject().value as Object)!;
             string builtinTag;
             if (O is ArrayObject)
                 builtinTag = "Array";

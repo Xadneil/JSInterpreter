@@ -25,7 +25,7 @@ namespace JSInterpreter.AST
             var @ref = memberExpression.Evaluate(interpreter);
             var funcComp = @ref.GetValue();
             if (funcComp.IsAbrupt()) return funcComp;
-            var func = funcComp.value;
+            var func = funcComp.value!;
 
             if (func == UndefinedValue.Instance && @ref.value is ReferenceValue r)
             {
@@ -40,7 +40,7 @@ namespace JSInterpreter.AST
                     if (argList.IsAbrupt()) return argList;
                     if (!argList.Other.Any())
                         return Completion.NormalCompletion(UndefinedValue.Instance);
-                    var evalText = argList.Other[0];
+                    var evalText = argList.Other![0];
                     //TODO detect strict mode
                     var strictCaller = false;
                     var evalRealm = interpreter.CurrentRealm();
@@ -49,7 +49,7 @@ namespace JSInterpreter.AST
                 }
             }
             //TODO: support tail calls
-            return Utils.EvaluateCall(func, @ref.value, arguments, tailCall: false);
+            return Utils.EvaluateCall(func, @ref.value!, arguments, tailCall: false);
         }
     }
 
@@ -74,12 +74,12 @@ namespace JSInterpreter.AST
             var argList = arguments.ArgumentListEvaluation();
             if (argList.IsAbrupt()) return argList;
 
-            var result = func.Construct(argList.Other, newTarget);
+            var result = func!.Construct(argList.Other, newTarget);
             if (result.IsAbrupt()) return result;
             var thisERBase = interpreter.GetThisEnvironment();
             if (!(thisERBase is FunctionEnvironmentRecord thisER))
                 throw new InvalidOperationException("Invalid This Environment type for Super");
-            return thisER.BindThisValue(result.value);
+            return thisER.BindThisValue(result.value!);
         }
 
         private Completion GetSuperConstructor(Interpreter interpreter)
@@ -111,13 +111,13 @@ namespace JSInterpreter.AST
             var @ref = callExpression.Evaluate(interpreter);
             var funcComp = @ref.GetValue();
             if (funcComp.IsAbrupt()) return funcComp;
-            var func = funcComp.value;
+            var func = funcComp.value!;
 
             if (func == UndefinedValue.Instance && @ref.value is ReferenceValue r)
                 return Completion.ThrowReferenceError($"Cannot call undefined method {r.referencedName } on a {r.baseValue.GetType().Name}");
 
             //TODO: support tail calls
-            return Utils.EvaluateCall(func, @ref.value, arguments, tailCall: false);
+            return Utils.EvaluateCall(func, @ref.value!, arguments, tailCall: false);
         }
     }
 
@@ -136,16 +136,16 @@ namespace JSInterpreter.AST
         {
             var baseValueComp = callExpression.Evaluate(interpreter).GetValue();
             if (baseValueComp.IsAbrupt()) return baseValueComp;
-            var baseValue = baseValueComp.value;
+            var baseValue = baseValueComp.value!;
             var propertyNameComp = indexerExpression.Evaluate(interpreter).GetValue();
             if (propertyNameComp.IsAbrupt()) return propertyNameComp;
-            var propertyNameValue = propertyNameComp.value;
+            var propertyNameValue = propertyNameComp.value!;
             var coercible = baseValue.RequireObjectCoercible();
             if (coercible.IsAbrupt()) return coercible;
             var propertyKey = propertyNameValue.ToPropertyKey();
             if (propertyKey.IsAbrupt()) return propertyKey;
             //TODO detect strict mode
-            return Completion.NormalCompletion(new ReferenceValue(baseValue, propertyKey.Other, strict: false));
+            return Completion.NormalCompletion(new ReferenceValue(baseValue, propertyKey.Other!, strict: false));
         }
     }
 
@@ -164,7 +164,7 @@ namespace JSInterpreter.AST
         {
             var baseValueComp = callExpression.Evaluate(interpreter).GetValue();
             if (baseValueComp.IsAbrupt()) return baseValueComp;
-            var baseValue = baseValueComp.value;
+            var baseValue = baseValueComp.value!;
             var coercible = baseValue.RequireObjectCoercible();
             if (coercible.IsAbrupt()) return coercible;
             //TODO detect strict mode

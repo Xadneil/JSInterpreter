@@ -35,10 +35,10 @@ namespace JSInterpreter.AST
         {
             var leftValueComp = relationalExpression.Evaluate(interpreter).GetValue();
             if (leftValueComp.IsAbrupt()) return leftValueComp;
-            var leftValue = leftValueComp.value;
+            var leftValue = leftValueComp.value!;
             var rightValueComp = shiftExpression.Evaluate(interpreter).GetValue();
             if (rightValueComp.IsAbrupt()) return rightValueComp;
-            var rightValue = rightValueComp.value;
+            var rightValue = rightValueComp.value!;
 
             Completion r;
             switch (relationalOperator)
@@ -70,7 +70,7 @@ namespace JSInterpreter.AST
                         return Completion.ThrowTypeError("in operator applied to non-object");
                     var propertyKey = leftValue.ToPropertyKey();
                     if (propertyKey.IsAbrupt()) return propertyKey;
-                    return o.HasProperty(propertyKey.Other);
+                    return o.HasProperty(propertyKey.Other!);
                 default:
                     throw new InvalidOperationException($"RelationalExpression.Evaluate: unknown RelationalOperator enum value {(int)relationalOperator}");
             }
@@ -83,19 +83,19 @@ namespace JSInterpreter.AST
             {
                 var xComp = x.ToPrimitive();
                 if (xComp.IsAbrupt()) return xComp;
-                px = xComp.value;
+                px = xComp.value!;
                 var yComp = y.ToPrimitive();
                 if (yComp.IsAbrupt()) return yComp;
-                py = yComp.value;
+                py = yComp.value!;
             }
             else
             {
                 var yComp = y.ToPrimitive();
                 if (yComp.IsAbrupt()) return yComp;
-                py = yComp.value;
+                py = yComp.value!;
                 var xComp = x.ToPrimitive();
                 if (xComp.IsAbrupt()) return xComp;
-                px = xComp.value;
+                px = xComp.value!;
             }
             if (px is StringValue sx && py is StringValue sy)
             {
@@ -110,7 +110,7 @@ namespace JSInterpreter.AST
                 if (nyComp.IsAbrupt()) return nyComp;
                 var ny = nyComp.value as NumberValue;
 
-                if (double.IsNaN(nx.number) || double.IsNaN(ny.number))
+                if (double.IsNaN(nx!.number) || double.IsNaN(ny!.number))
                     return Completion.NormalCompletion(UndefinedValue.Instance);
                 return Completion.NormalCompletion((nx.number < ny.number) ? BooleanValue.True : BooleanValue.False);
             }

@@ -16,7 +16,7 @@ namespace JSInterpreter
             DefineOwnProperty("length", new PropertyDescriptor(new NumberValue(value.@string.Length), false, false, false));
         }
 
-        public override CompletionOr<PropertyDescriptor> GetOwnProperty(string P)
+        public override CompletionOr<PropertyDescriptor?> GetOwnProperty(string P)
         {
             var desc = OrdinaryGetOwnProperty(P);
             if (desc != null)
@@ -60,16 +60,16 @@ namespace JSInterpreter
             return keys;
         }
 
-        private CompletionOr<PropertyDescriptor> StringGetOwnProperty(string P)
+        private CompletionOr<PropertyDescriptor?> StringGetOwnProperty(string P)
         {
             if (!double.TryParse(P, out double index))
-                return Completion.NormalCompletion().WithEmpty<PropertyDescriptor>();
+                return Completion.NormalCompletion().WithEmpty<PropertyDescriptor?>();
             if (index != (int)index)
-                return Completion.NormalCompletion().WithEmpty<PropertyDescriptor>();
+                return Completion.NormalCompletion().WithEmpty<PropertyDescriptor?>();
             if (index == 0d && BitConverter.GetBytes(index)[7] == 128) // negative zero
-                return Completion.NormalCompletion().WithEmpty<PropertyDescriptor>();
+                return Completion.NormalCompletion().WithEmpty<PropertyDescriptor?>();
             if (index < 0 || value.@string.Length <= index)
-                return Completion.NormalCompletion().WithEmpty<PropertyDescriptor>();
+                return Completion.NormalCompletion().WithEmpty<PropertyDescriptor?>();
             return Completion.NormalWith(new PropertyDescriptor(new StringValue(value.@string[(int)index].ToString(System.Globalization.CultureInfo.InvariantCulture)), false, true, false));
         }
     }

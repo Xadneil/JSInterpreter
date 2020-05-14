@@ -28,7 +28,7 @@ namespace JSInterpreter.AST
             var lhsComp = Interpreter.Instance().ResolveBinding(name);
             if (lhsComp.IsAbrupt()) return lhsComp;
             var lhs = lhsComp.value as ReferenceValue;
-            return lhs.PutValue(value);
+            return lhs!.PutValue(value);
         }
     }
     public class IdentifierReference : IPrimaryExpression, IPropertyDefinition
@@ -49,7 +49,7 @@ namespace JSInterpreter.AST
         {
             var valueComp = Evaluate(Interpreter.Instance()).GetValue();
             if (valueComp.IsAbrupt()) return valueComp;
-            var value = valueComp.value;
+            var value = valueComp.value!;
             if (Utils.CreateDataPropertyOrThrow(@object, identifier.name, value).IsAbrupt())
                 throw new InvalidOperationException("Spec ! 12.2.6.8 IdentifierReference, step 6");
             return Completion.NormalCompletion();

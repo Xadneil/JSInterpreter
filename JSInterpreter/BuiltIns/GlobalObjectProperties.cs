@@ -73,9 +73,8 @@ namespace JSInterpreter
             }
             if (strictEval)
                 varEnv = lexEnv;
-            var evalCtx = new ExecutionContext()
+            var evalCtx = new ExecutionContext(evalRealm)
             {
-                Realm = evalRealm,
                 VariableEnvironment = varEnv,
                 LexicalEnvironment = lexEnv
             };
@@ -105,7 +104,7 @@ namespace JSInterpreter
                             return Completion.ThrowSyntaxError("Spec 18.2.1.3 step 5ai1");
                     }
                 }
-                var thisLex = lexEnv;
+                LexicalEnvironment? thisLex = lexEnv;
                 while (thisLex != varEnv)
                 {
                     var thisEnvRec = thisLex.EnvironmentRecord;
@@ -150,7 +149,7 @@ namespace JSInterpreter
             var declaredVarNames = new List<string>();
             foreach (var d in varDeclarations)
             {
-                IReadOnlyList<string> boundNames = null;
+                IReadOnlyList<string>? boundNames = null;
                 if (d is VariableDeclaration v)
                     boundNames = v.BoundNames();
                 if (d is ForBinding f)
@@ -238,7 +237,7 @@ namespace JSInterpreter
             if (argComp.IsAbrupt()) return argComp;
             var numComp = arguments[0].ToNumber();
             if (numComp.IsAbrupt()) return numComp;
-            var num = (numComp.value as NumberValue).number;
+            var num = (numComp.value as NumberValue)!.number;
             if (double.IsNaN(num) || double.IsInfinity(num))
                 return Completion.NormalCompletion(BooleanValue.False);
             return Completion.NormalCompletion(BooleanValue.True);
@@ -250,7 +249,7 @@ namespace JSInterpreter
             if (argComp.IsAbrupt()) return argComp;
             var numComp = arguments[0].ToNumber();
             if (numComp.IsAbrupt()) return numComp;
-            var num = (numComp.value as NumberValue).number;
+            var num = (numComp.value as NumberValue)!.number;
             if (double.IsNaN(num))
                 return Completion.NormalCompletion(BooleanValue.True);
             return Completion.NormalCompletion(BooleanValue.False);
@@ -262,7 +261,7 @@ namespace JSInterpreter
             if (argComp.IsAbrupt()) return argComp;
             var inputStringComp = arguments[0].ToJsString();
             if (inputStringComp.IsAbrupt()) return inputStringComp;
-            var inputString = (inputStringComp.value as StringValue).@string;
+            var inputString = (inputStringComp.value as StringValue)!.@string;
             var trimmedString = inputString.TrimStart();
 
             var sign = 1;
@@ -415,7 +414,7 @@ namespace JSInterpreter
             if (argComp.IsAbrupt()) return argComp;
             var inputStringComp = arguments[0].ToJsString();
             if (inputStringComp.IsAbrupt()) return inputStringComp;
-            var inputString = (inputStringComp.value as StringValue).@string;
+            var inputString = (inputStringComp.value as StringValue)!.@string;
             var s = inputString.Trim();
 
             int R = 0;
@@ -423,7 +422,7 @@ namespace JSInterpreter
             {
                 var radixComp = arguments[1].ToNumber();
                 if (radixComp.IsAbrupt()) return radixComp;
-                R = (int)(radixComp.value as NumberValue).number;
+                R = (int)(radixComp.value as NumberValue)!.number;
             }
 
             var sign = 1;

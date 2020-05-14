@@ -59,9 +59,9 @@ namespace JSInterpreter
         {
             var argComp = arguments.At(0);
             if (argComp.IsAbrupt()) return argComp;
-            var dateComp = argComp.value.ToJsString();
+            var dateComp = argComp.value!.ToJsString();
             if (dateComp.IsAbrupt()) return dateComp;
-            var date = (dateComp.value as StringValue).@string;
+            var date = (dateComp.value as StringValue)!.@string;
 
             if (!DateTime.TryParseExact(date, DefaultFormats, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal, out var result))
             {
@@ -83,10 +83,10 @@ namespace JSInterpreter
 
         public override Completion InternalCall(IValue thisValue, IReadOnlyList<IValue> arguments)
         {
-            return DatePrototype.toString(InternalConstruct(Utils.EmptyList<IValue>(), thisValue as Object).value, Utils.EmptyList<IValue>());
+            return DatePrototype.toString(InternalConstruct(Utils.EmptyList<IValue>(), (thisValue as Object)!).value!, Utils.EmptyList<IValue>());
         }
 
-        public override Completion InternalConstruct(IReadOnlyList<IValue> arguments, Object newTarget)
+        public override Completion InternalConstruct(IReadOnlyList<IValue> arguments, Object? newTarget)
         {
             if (arguments.Count == 0)
             {
@@ -101,16 +101,16 @@ namespace JSInterpreter
 
                 var vComp = arguments[0].ToPrimitive();
                 if (vComp.IsAbrupt()) return vComp;
-                var v = vComp.value;
+                var v = vComp.value!;
                 if (v is StringValue)
                 {
                     var parse = Parse(UndefinedValue.Instance, new[] { v });
-                    return Completion.NormalCompletion(Construct(((NumberValue)parse.value).number));
+                    return Completion.NormalCompletion(Construct(((NumberValue)parse.value!).number));
                 }
 
                 var number = v.ToNumber();
                 if (number.IsAbrupt()) return number;
-                var numberValue = (number.value as NumberValue).number;
+                var numberValue = (number.value as NumberValue)!.number;
 
                 return Completion.NormalCompletion(Construct(TimeClip(numberValue)));
             }
@@ -118,45 +118,45 @@ namespace JSInterpreter
             {
                 var yComp = arguments.At(0);
                 if (yComp.IsAbrupt()) return yComp;
-                yComp = yComp.value.ToNumber();
+                yComp = yComp.value!.ToNumber();
                 if (yComp.IsAbrupt()) return yComp;
-                var y = (yComp.value as NumberValue).number;
+                var y = (yComp.value as NumberValue)!.number;
 
                 var mComp = arguments.At(1);
                 if (mComp.IsAbrupt()) return mComp;
-                mComp = mComp.value.ToNumber();
+                mComp = mComp.value!.ToNumber();
                 if (mComp.IsAbrupt()) return mComp;
-                var m = (mComp.value as NumberValue).number;
+                var m = (mComp.value as NumberValue)!.number;
 
                 var dtComp = arguments.At(2, NumberValue.One);
                 if (dtComp.IsAbrupt()) return dtComp;
-                dtComp = dtComp.value.ToNumber();
+                dtComp = dtComp.value!.ToNumber();
                 if (dtComp.IsAbrupt()) return dtComp;
-                var dt = (dtComp.value as NumberValue).number;
+                var dt = (dtComp.value as NumberValue)!.number;
 
                 var hComp = arguments.At(3, NumberValue.PositiveZero);
                 if (hComp.IsAbrupt()) return hComp;
-                hComp = hComp.value.ToNumber();
+                hComp = hComp.value!.ToNumber();
                 if (hComp.IsAbrupt()) return hComp;
-                var h = (hComp.value as NumberValue).number;
+                var h = (hComp.value as NumberValue)!.number;
 
                 var minComp = arguments.At(4, NumberValue.PositiveZero);
                 if (minComp.IsAbrupt()) return minComp;
-                minComp = minComp.value.ToNumber();
+                minComp = minComp.value!.ToNumber();
                 if (minComp.IsAbrupt()) return minComp;
-                var min = (minComp.value as NumberValue).number;
+                var min = (minComp.value as NumberValue)!.number;
 
                 var sComp = arguments.At(5, NumberValue.PositiveZero);
                 if (sComp.IsAbrupt()) return sComp;
-                sComp = sComp.value.ToNumber();
+                sComp = sComp.value!.ToNumber();
                 if (sComp.IsAbrupt()) return sComp;
-                var s = (sComp.value as NumberValue).number;
+                var s = (sComp.value as NumberValue)!.number;
 
                 var milliComp = arguments.At(6, NumberValue.PositiveZero);
                 if (milliComp.IsAbrupt()) return milliComp;
-                milliComp = milliComp.value.ToNumber();
+                milliComp = milliComp.value!.ToNumber();
                 if (milliComp.IsAbrupt()) return milliComp;
-                var milli = (milliComp.value as NumberValue).number;
+                var milli = (milliComp.value as NumberValue)!.number;
 
                 var yInteger = (int)y;
                 if (!double.IsNaN(y) && 0 <= yInteger && yInteger <= 99)

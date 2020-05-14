@@ -19,9 +19,9 @@ namespace JSInterpreter
             if (OComp.IsAbrupt()) return OComp;
             var O = OComp.value as Object;
 
-            var lenComp = O.Get("length");
+            var lenComp = O!.Get("length");
             if (lenComp.IsAbrupt()) return lenComp;
-            var toLenComp = ToLength(lenComp.value);
+            var toLenComp = ToLength(lenComp.value!);
             if (toLenComp.IsAbrupt()) return toLenComp;
             long len = toLenComp.Other;
 
@@ -44,7 +44,7 @@ namespace JSInterpreter
         {
             var O = @this.ToObject();
             if (O.IsAbrupt()) return O;
-            return Completion.NormalCompletion(CreateArrayIterator(O.value as Object, "value"));
+            return Completion.NormalCompletion(CreateArrayIterator((O.value as Object)!, "value"));
         }
 
         private static Object CreateArrayIterator(Object array, string kind)
@@ -60,10 +60,10 @@ namespace JSInterpreter
         {
             var lenComp = value.ToNumber();
             if (lenComp.IsAbrupt()) return lenComp.WithEmpty<long>();
-            var len = (long)(lenComp.value as NumberValue).number;
+            var len = (long)(lenComp.value as NumberValue)!.number;
             if (len < 0)
-                return Completion.NormalWith(0L);
-            return Completion.NormalWith(Math.Min(len, (1L << 53) - 1));
+                return Completion.NormalWithStruct(0L);
+            return Completion.NormalWithStruct(Math.Min(len, (1L << 53) - 1));
         }
 
     }

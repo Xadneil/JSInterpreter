@@ -14,7 +14,7 @@ namespace JSInterpreter
             AddCustomInternalSlots(new[] { "ParameterMap" });
         }
 
-        public override CompletionOr<PropertyDescriptor> GetOwnProperty(string P)
+        public override CompletionOr<PropertyDescriptor?> GetOwnProperty(string P)
         {
             var desc = OrdinaryGetOwnProperty(P);
             if (desc == null)

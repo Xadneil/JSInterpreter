@@ -21,12 +21,12 @@ namespace JSInterpreter
 
             var O = @this.RequireObjectCoercible();
             if (O.IsAbrupt()) return O;
-            var SComp = O.value.ToJsString();
+            var SComp = O.value!.ToJsString();
             if (SComp.IsAbrupt()) return SComp;
-            var S = (SComp.value as StringValue).@string;
+            var S = (SComp.value as StringValue)!.@string;
             var positionComp = arguments[0].ToNumber();
             if (positionComp.IsAbrupt()) return positionComp;
-            var position = (int)(positionComp.value as NumberValue).number;
+            var position = (int)(positionComp.value as NumberValue)!.number;
             if (position < 0 || position >= S.Length)
                 return Completion.NormalCompletion(NumberValue.DoubleNaN);
             return Completion.NormalCompletion(new NumberValue(S[position]));

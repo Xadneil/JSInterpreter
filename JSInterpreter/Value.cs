@@ -10,11 +10,11 @@ namespace JSInterpreter
         Completion ToNumber();
         Completion ToJsString();
 
-        public CompletionOr<string> ToPropertyKey()
+        public CompletionOr<string?> ToPropertyKey()
         {
             var key = ToPrimitive(PrimitiveHint.String);
-            if (key.IsAbrupt()) return key.WithEmpty<string>();
-            return Completion.NormalWith((key.value.ToJsString().value as StringValue).@string);
+            if (key.IsAbrupt()) return key.WithEmpty<string?>();
+            return Completion.NormalWith((key.value!.ToJsString().value as StringValue)!.@string);
         }
 
         public BooleanValue ToBoolean()
@@ -327,9 +327,9 @@ namespace JSInterpreter
             {
                 if (HasPrimitiveBase())
                 {
-                    @base = (@base as IValue).ToObject().value;
+                    @base = (@base as IValue)!.ToObject().value!;
                 }
-                var obj = @base as Object;
+                var obj = (@base as Object)!;
                 var success = obj.InternalSet(referencedName, W, GetThisValue());
                 if (success.IsAbrupt()) return success;
                 if (success.Other == false && strict)
@@ -345,7 +345,7 @@ namespace JSInterpreter
         {
             if (!IsPropertyReference())
                 throw new InvalidOperationException("ReferenceValue.GetThisValue: only allowed on property references");
-            return baseValue as IValue;
+            return (baseValue as IValue)!;
         }
 
         public Completion InitializeReferencedBinding(IValue W)

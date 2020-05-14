@@ -8,7 +8,7 @@ namespace JSInterpreter
     {
         public abstract Completion InternalCall(IValue thisValue, IReadOnlyList<IValue> arguments);
 
-        public Completion Call(IValue thisValue, IReadOnlyList<IValue> arguments = null)
+        public Completion Call(IValue thisValue, IReadOnlyList<IValue>? arguments = null)
         {
             return InternalCall(thisValue, arguments ?? Utils.EmptyList<IValue>());
         }
@@ -26,7 +26,7 @@ namespace JSInterpreter
             {
                 var objComp = obj.GetPrototypeOf();
                 if (objComp.IsAbrupt()) return objComp;
-                obj = objComp.value as Object;
+                obj = (objComp.value as Object)!;
                 if (obj == null)
                     return Completion.NormalCompletion(BooleanValue.False);
                 if (obj == protoObj)

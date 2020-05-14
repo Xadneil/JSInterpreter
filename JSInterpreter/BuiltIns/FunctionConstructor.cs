@@ -18,12 +18,12 @@ namespace JSInterpreter
             return CreateDynamicFunction(null, FunctionKind.Normal, arguments);
         }
 
-        public override Completion InternalConstruct(IReadOnlyList<IValue> arguments, Object newTarget)
+        public override Completion InternalConstruct(IReadOnlyList<IValue> arguments, Object? newTarget)
         {
             return CreateDynamicFunction(newTarget, FunctionKind.Normal, arguments);
         }
 
-        private Completion CreateDynamicFunction(Object newTarget, FunctionKind kind, IReadOnlyList<IValue> arguments)
+        private Completion CreateDynamicFunction(Object? newTarget, FunctionKind kind, IReadOnlyList<IValue> arguments)
         {
             if (Interpreter.Instance().ExecutionContextStackSize() < 2)
                 throw new InvalidOperationException("Spec 19.2.1.1.1 step 1");
@@ -53,32 +53,32 @@ namespace JSInterpreter
             {
                 var bodyComp = arguments[0].ToJsString();
                 if (bodyComp.IsAbrupt()) return bodyComp;
-                bodyText = (bodyComp.value as StringValue).@string;
+                bodyText = (bodyComp.value as StringValue)!.@string;
             }
             else
             {
                 var firstArg = arguments[0];
                 var pComp = firstArg.ToJsString();
                 if (pComp.IsAbrupt()) return pComp;
-                P = (pComp.value as StringValue).@string;
+                P = (pComp.value as StringValue)!.@string;
                 int k = 1;
                 for (; k < argCount - 1; k++)
                 {
                     var nextArg = arguments[k];
                     var nextArgStringComp = nextArg.ToJsString();
                     if (nextArgStringComp.IsAbrupt()) return nextArgStringComp;
-                    var nextArgString = (nextArgStringComp.value as StringValue).@string;
+                    var nextArgString = (nextArgStringComp.value as StringValue)!.@string;
                     P += "," + nextArgString;
                 }
                 var bodyComp = arguments[k].ToJsString();
                 if (bodyComp.IsAbrupt()) return bodyComp;
-                bodyText = (bodyComp.value as StringValue).@string;
+                bodyText = (bodyComp.value as StringValue)!.@string;
             }
             AST.FormalParameters parameters = new AST.FormalParameters();
             try
             {
                 if (!string.IsNullOrEmpty(P))
-                    parameters = new Parser.Parser(P).ParseFormalParameters();
+                    parameters = new Parser.Parser(P).ParseFormalParameters()!;
             }
             catch (Parser.ParseFailureException e)
             {
@@ -102,7 +102,7 @@ namespace JSInterpreter
             var protoComp = Utils.GetPrototypeFromConstructor(newTarget, fallbackProto);
             if (protoComp.IsAbrupt()) return protoComp;
             var proto = protoComp.value;
-            var F = FunctionObject.FunctionAllocate(proto, strict, kind);
+            var F = FunctionObject.FunctionAllocate(proto!, strict, kind);
             var realmF = F.Realm;
             var scope = realmF.GlobalEnv;
             FunctionObject.FunctionInitialize(F, FunctionCreateKind.Normal, parameters, body, scope);

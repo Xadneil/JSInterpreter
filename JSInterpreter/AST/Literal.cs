@@ -18,13 +18,17 @@ namespace JSInterpreter.AST
         public readonly bool boolean;
         public readonly string @string;
 
+#pragma warning disable CS8618 // Non-nullable field is uninitialized. Consider declaring as nullable.
         public Literal(double number)
+#pragma warning restore CS8618 // Non-nullable field is uninitialized. Consider declaring as nullable.
         {
             literalType = LiteralType.Number;
             this.number = number;
         }
 
+#pragma warning disable CS8618 // Non-nullable field is uninitialized. Consider declaring as nullable.
         public Literal(bool boolean)
+#pragma warning restore CS8618 // Non-nullable field is uninitialized. Consider declaring as nullable.
         {
             literalType = LiteralType.Boolean;
             this.boolean = boolean;
@@ -36,7 +40,9 @@ namespace JSInterpreter.AST
             this.@string = @string;
         }
 
+#pragma warning disable CS8618 // Non-nullable field is uninitialized. Consider declaring as nullable.
         private Literal(LiteralType literalType)
+#pragma warning restore CS8618 // Non-nullable field is uninitialized. Consider declaring as nullable.
         {
             this.literalType = literalType;
         }

@@ -53,7 +53,7 @@ namespace JSInterpreter.AST
             var blockEnv = oldEnv.NewDeclarativeEnvironment();
             Block.BlockDeclarationInstantiation(caseBlock, blockEnv);
             interpreter.RunningExecutionContext().LexicalEnvironment = blockEnv;
-            var R = caseBlock.CaseBlockEvaluation(switchValue);
+            var R = caseBlock.CaseBlockEvaluation(switchValue!);
             interpreter.RunningExecutionContext().LexicalEnvironment = oldEnv;
             return R;
         }
@@ -195,7 +195,7 @@ namespace JSInterpreter.AST
         {
             var selector = c.Evaluate(Interpreter.Instance()).GetValue();
             if (selector.IsAbrupt()) return selector.WithEmptyBool();
-            return EqualityExpression.StrictAbstractEquality(selector.value, input);
+            return EqualityExpression.StrictAbstractEquality(selector.value!, input);
         }
     }
 

@@ -87,7 +87,7 @@ namespace JSInterpreter.AST
                     var testComp = test.Evaluate(Interpreter.Instance());
                     var testValueComp = testComp.GetValue();
                     if (testValueComp.IsAbrupt()) return testValueComp;
-                    if (!testValueComp.value.ToBoolean().boolean) return Completion.NormalCompletion(V);
+                    if (!testValueComp.value!.ToBoolean().boolean) return Completion.NormalCompletion(V);
                 }
                 var result = stmt.Evaluate(Interpreter.Instance());
                 if (!LoopContinues(result, labelSet))
@@ -120,14 +120,14 @@ namespace JSInterpreter.AST
                     thisIterationEnvRec.CreateMutableBinding(bn, false);
                     var lastValue = lastIterationEnvRec.GetBindingValue(bn, true);
                     if (lastValue.IsAbrupt()) return lastValue;
-                    thisIterationEnvRec.InitializeBinding(bn, lastValue.value);
+                    thisIterationEnvRec.InitializeBinding(bn, lastValue.value!);
                 }
                 Interpreter.Instance().RunningExecutionContext().LexicalEnvironment = thisIterationEnv;
             }
             return Completion.NormalCompletion(UndefinedValue.Instance);
         }
 
-        protected static CompletionOr<IteratorRecord> ForInOfHeadEvaluation(IEnumerable<string> TDZNames, IExpression expr, IterationKind iterationKind)
+        protected static CompletionOr<IteratorRecord?> ForInOfHeadEvaluation(IEnumerable<string> TDZNames, IExpression expr, IterationKind iterationKind)
         {
             var oldEnv = Interpreter.Instance().RunningExecutionContext().LexicalEnvironment;
             if (TDZNames.Any())
@@ -145,17 +145,17 @@ namespace JSInterpreter.AST
             var exprRef = expr.Evaluate(Interpreter.Instance());
             Interpreter.Instance().RunningExecutionContext().LexicalEnvironment = oldEnv;
             var exprValue = exprRef.GetValue();
-            if (exprValue.IsAbrupt()) return exprValue.WithEmpty<IteratorRecord>();
+            if (exprValue.IsAbrupt()) return exprValue.WithEmpty<IteratorRecord?>();
             if (iterationKind == IterationKind.Enumerate)
             {
                 if (exprValue.value == UndefinedValue.Instance || exprValue.value == NullValue.Instance)
-                    return new Completion(CompletionType.Break, null, null).WithEmpty<IteratorRecord>();
-                var obj = exprValue.value.ToObject().value as Object;
-                return obj.EnumerateObjectProperties();
+                    return new Completion(CompletionType.Break, null, null).WithEmpty<IteratorRecord?>();
+                var obj = exprValue.value!.ToObject().value as Object;
+                return obj!.EnumerateObjectProperties();
             }
             else
             {
-                return (exprValue.value.ToObject().value as Object).GetIterator();
+                return (exprValue.value!.ToObject().value as Object)!.GetIterator();
             }
         }
 
@@ -177,12 +177,12 @@ namespace JSInterpreter.AST
                     return Completion.ThrowTypeError("iterator next did not return an object.");
                 var doneComp = IteratorRecord.IteratorComplete(nextResultObject);
                 if (doneComp.IsAbrupt()) return doneComp;
-                var done = (doneComp.value as BooleanValue).boolean;
+                var done = (doneComp.value as BooleanValue)!.boolean;
                 if (done)
                     return Completion.NormalCompletion(V);
                 var nextValueComp = IteratorRecord.IteratorValue(nextResultObject);
                 if (nextValueComp.IsAbrupt()) return nextValueComp;
-                var nextValue = nextValueComp.value;
+                var nextValue = nextValueComp.value!;
                 Completion lhsRef = Completion.NormalCompletion();
                 if (lhsKind == LHSKind.Assignment || lhsKind == LHSKind.VarBinding)
                 {
@@ -207,9 +207,9 @@ namespace JSInterpreter.AST
                     if (lhsRef.IsAbrupt())
                         status = lhsRef;
                     else if (lhsKind == LHSKind.LexicalBinding)
-                        status = (lhsRef.value as ReferenceValue).InitializeReferencedBinding(nextValue);
+                        status = (lhsRef.value as ReferenceValue)!.InitializeReferencedBinding(nextValue);
                     else
-                        status = (lhsRef.value as ReferenceValue).PutValue(nextValue);
+                        status = (lhsRef.value as ReferenceValue)!.PutValue(nextValue);
                 }
                 else
                 {
@@ -308,7 +308,7 @@ namespace JSInterpreter.AST
                 var conditionComp = whileExpression.Evaluate(interpreter);
                 var condition = conditionComp.GetValue();
                 if (condition.IsAbrupt()) return condition;
-                if (!condition.value.ToBoolean().boolean) return Completion.NormalCompletion(V);
+                if (!condition.value!.ToBoolean().boolean) return Completion.NormalCompletion(V);
             }
         }
     }
@@ -347,7 +347,7 @@ namespace JSInterpreter.AST
                 var conditionComp = whileExpression.Evaluate(interpreter);
                 var condition = conditionComp.GetValue();
                 if (condition.IsAbrupt()) return condition;
-                if (!condition.value.ToBoolean().boolean) return Completion.NormalCompletion(V);
+                if (!condition.value!.ToBoolean().boolean) return Completion.NormalCompletion(V);
 
                 var stmtResult = doStatement.Evaluate(interpreter);
                 if (!LoopContinues(stmtResult, labels))
@@ -527,7 +527,7 @@ namespace JSInterpreter.AST
         {
             var keyResult = ForInOfHeadEvaluation(Utils.EmptyList<string>(), inExpression, IterationKind.Enumerate);
             if (keyResult.IsAbrupt()) return keyResult;
-            return ForInOfBodyEvaluation(leftHandSideExpression, doStatement, keyResult.Other, IterationKind.Enumerate, LHSKind.Assignment, labels);
+            return ForInOfBodyEvaluation(leftHandSideExpression, doStatement, keyResult.Other!, IterationKind.Enumerate, LHSKind.Assignment, labels);
         }
     }
 
@@ -563,7 +563,7 @@ namespace JSInterpreter.AST
         {
             var keyResult = ForInOfHeadEvaluation(Utils.EmptyList<string>(), forInExpression, IterationKind.Enumerate);
             if (keyResult.IsAbrupt()) return keyResult;
-            return ForInOfBodyEvaluation(forVar, doStatement, keyResult.Other, IterationKind.Enumerate, LHSKind.VarBinding, labels);
+            return ForInOfBodyEvaluation(forVar, doStatement, keyResult.Other!, IterationKind.Enumerate, LHSKind.VarBinding, labels);
         }
     }
 
@@ -599,7 +599,7 @@ namespace JSInterpreter.AST
         {
             var keyResult = ForInOfHeadEvaluation(Utils.EmptyList<string>(), forInExpression, IterationKind.Enumerate);
             if (keyResult.IsAbrupt()) return keyResult;
-            return ForInOfBodyEvaluation(forDeclaration, doStatement, keyResult.Other, IterationKind.Enumerate, LHSKind.LexicalBinding, labels);
+            return ForInOfBodyEvaluation(forDeclaration, doStatement, keyResult.Other!, IterationKind.Enumerate, LHSKind.LexicalBinding, labels);
         }
     }
 
@@ -635,7 +635,7 @@ namespace JSInterpreter.AST
         {
             var keyResult = ForInOfHeadEvaluation(Utils.EmptyList<string>(), ofExpression, IterationKind.Iterate);
             if (keyResult.IsAbrupt()) return keyResult;
-            return ForInOfBodyEvaluation(leftHandSideExpression, doStatement, keyResult.Other, IterationKind.Iterate, LHSKind.Assignment, labels);
+            return ForInOfBodyEvaluation(leftHandSideExpression, doStatement, keyResult.Other!, IterationKind.Iterate, LHSKind.Assignment, labels);
         }
     }
 
@@ -671,7 +671,7 @@ namespace JSInterpreter.AST
         {
             var keyResult = ForInOfHeadEvaluation(Utils.EmptyList<string>(), forOfExpression, IterationKind.Iterate);
             if (keyResult.IsAbrupt()) return keyResult;
-            return ForInOfBodyEvaluation(forVar, doStatement, keyResult.Other, IterationKind.Iterate, LHSKind.VarBinding, labels);
+            return ForInOfBodyEvaluation(forVar, doStatement, keyResult.Other!, IterationKind.Iterate, LHSKind.VarBinding, labels);
         }
     }
 
@@ -707,7 +707,7 @@ namespace JSInterpreter.AST
         {
             var keyResult = ForInOfHeadEvaluation(Utils.EmptyList<string>(), forOfExpression, IterationKind.Iterate);
             if (keyResult.IsAbrupt()) return keyResult;
-            return ForInOfBodyEvaluation(forDeclaration, doStatement, keyResult.Other, IterationKind.Iterate, LHSKind.LexicalBinding, labels);
+            return ForInOfBodyEvaluation(forDeclaration, doStatement, keyResult.Other!, IterationKind.Iterate, LHSKind.LexicalBinding, labels);
         }
     }
 }

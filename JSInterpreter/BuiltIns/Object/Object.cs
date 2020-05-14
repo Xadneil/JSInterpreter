@@ -11,14 +11,14 @@ namespace JSInterpreter
         protected readonly SortedDictionary<int, PropertyDescriptor> properties;
         protected int lastAddedIndex = -1;
         protected readonly Dictionary<string, int> propertyNames;
-        public Object prototype;
-        private readonly Dictionary<string, object> customInternalSlots;
+        public Object? prototype;
+        private readonly Dictionary<string, object?> customInternalSlots;
 
         public Object()
         {
             properties = new SortedDictionary<int, PropertyDescriptor>();
             propertyNames = new Dictionary<string, int>();
-            customInternalSlots = new Dictionary<string, object>();
+            customInternalSlots = new Dictionary<string, object?>();
         }
 
         public bool IsPrimitive()
@@ -32,7 +32,7 @@ namespace JSInterpreter
         {
             var prim = ((IValue)this).ToPrimitive(IValue.PrimitiveHint.String);
             if (prim.IsAbrupt()) return prim;
-            return prim.value.ToJsString();
+            return prim.value!.ToJsString();
         }
 
         internal void AddCustomInternalSlots(IEnumerable<string> names)
@@ -45,7 +45,7 @@ namespace JSInterpreter
         {
             var prim = ((IValue)this).ToPrimitive(IValue.PrimitiveHint.Number);
             if (prim.IsAbrupt()) return prim;
-            return prim.value.ToNumber();
+            return prim.value!.ToNumber();
         }
 
         internal bool HasInternalSlot(string name)
@@ -53,7 +53,7 @@ namespace JSInterpreter
             return customInternalSlots.ContainsKey(name);
         }
 
-        internal object GetCustomInternalSlot(string name)
+        internal object? GetCustomInternalSlot(string name)
         {
             return customInternalSlots[name];
         }
@@ -81,7 +81,7 @@ namespace JSInterpreter
             return true;
         }
 
-        public Completion GetPrototypeOf() => Completion.NormalCompletion((IValue)prototype ?? NullValue.Instance);
+        public Completion GetPrototypeOf() => Completion.NormalCompletion(prototype as IValue ?? NullValue.Instance);
 
         public virtual BooleanCompletion SetPrototypeOf(IValue value)
         {
@@ -96,7 +96,7 @@ namespace JSInterpreter
                 return true;
             if (!IsExtensible)
                 return false;
-            var p = value;
+            IValue? p = value;
             bool done = false;
             // ensure no prototype loops
             while (!done)
@@ -112,18 +112,18 @@ namespace JSInterpreter
             return true;
         }
 
-        public virtual CompletionOr<PropertyDescriptor> GetOwnProperty(string P)
+        public virtual CompletionOr<PropertyDescriptor?> GetOwnProperty(string P)
         {
             return Completion.NormalWith(OrdinaryGetOwnProperty(P));
         }
 
-        public PropertyDescriptor OrdinaryGetOwnProperty(string name)
+        public PropertyDescriptor? OrdinaryGetOwnProperty(string name)
         {
             if (!propertyNames.TryGetValue(name, out int propertyIndex))
                 return null;
-            properties.TryGetValue(propertyIndex, out PropertyDescriptor X);
+            properties.TryGetValue(propertyIndex, out PropertyDescriptor? X);
             var D = new PropertyDescriptor();
-            if (X.IsDataDescriptor())
+            if (X!.IsDataDescriptor())
             {
                 D.Value = X.Value;
                 D.Writable = X.Writable;
@@ -153,7 +153,7 @@ namespace JSInterpreter
             return ValidateAndApplyPropertyDescriptor(this, P, IsExtensible, Desc, current);
         }
 
-        public static bool ValidateAndApplyPropertyDescriptor(Object O, string name, bool extensible, PropertyDescriptor Desc, PropertyDescriptor current)
+        public static bool ValidateAndApplyPropertyDescriptor(Object? O, string? name, bool extensible, PropertyDescriptor Desc, PropertyDescriptor? current)
         {
             if (current == null)
             {
@@ -163,7 +163,7 @@ namespace JSInterpreter
                 if (O != null)
                 {
                     O.lastAddedIndex++;
-                    O.propertyNames[name] = O.lastAddedIndex;
+                    O.propertyNames[name!] = O.lastAddedIndex;
                     O.properties[O.lastAddedIndex] = Desc;
                 }
 
@@ -199,7 +199,7 @@ namespace JSInterpreter
                     return false;
             }
 
-            var index = (O?.propertyNames[name]).GetValueOrDefault();
+            var index = (O?.propertyNames[name!]).GetValueOrDefault();
 
             if (Desc.IsGenericDescriptor())
             {
@@ -308,7 +308,7 @@ namespace JSInterpreter
             {
                 var parentComp = GetPrototypeOf();
                 if (parentComp.IsAbrupt()) return parentComp;
-                var parent = parentComp.value;
+                var parent = parentComp.value!;
                 if (parent == NullValue.Instance)
                     return Completion.NormalCompletion(UndefinedValue.Instance);
                 return ((Object)parent).InternalGet(name, receiver);
@@ -344,7 +344,7 @@ namespace JSInterpreter
             return OrdinarySetWithOwnDescriptor(name, value, receiver, ownDesc.Other);
         }
 
-        private BooleanCompletion OrdinarySetWithOwnDescriptor(string name, IValue value, IValue receiver, PropertyDescriptor ownDesc)
+        private BooleanCompletion OrdinarySetWithOwnDescriptor(string name, IValue value, IValue receiver, PropertyDescriptor? ownDesc)
         {
             if (ownDesc == null)
             {
@@ -361,7 +361,7 @@ namespace JSInterpreter
             }
             if (ownDesc.IsDataDescriptor())
             {
-                if (!ownDesc.Writable.Value)
+                if (!ownDesc.Writable!.Value)
                     return false;
                 if (!(receiver is Object @object))
                     return false;
@@ -372,7 +372,7 @@ namespace JSInterpreter
                 {
                     if (!existingDescriptor.IsDataDescriptor())
                         return false;
-                    if (!existingDescriptor.Writable.Value)
+                    if (!existingDescriptor.Writable!.Value)
                         return false;
                     return @object.DefineOwnProperty(name, new PropertyDescriptor(value, null, null, null));
                 }
@@ -435,7 +435,7 @@ namespace JSInterpreter
             {
                 var key = propertyNames.FirstOrDefault(p => p.Value == prop.Key).Key;
                 visited.Add(key);
-                if (prop.Value.Enumerable.Value)
+                if (prop.Value.Enumerable!.Value)
                     yield return Completion.NormalCompletion(new StringValue(key));
             }
             var protoComp = GetPrototypeOf();
@@ -447,7 +447,7 @@ namespace JSInterpreter
             var proto = protoComp.value;
             if (proto == NullValue.Instance)
                 yield break;
-            foreach (var protoKeyComp in (proto as Object).AllPropertyKeys())
+            foreach (var protoKeyComp in (proto as Object)!.AllPropertyKeys())
             {
                 if (protoKeyComp.IsAbrupt())
                 {
@@ -455,12 +455,12 @@ namespace JSInterpreter
                     yield break;
                 }
                 var protoKey = protoKeyComp.value as StringValue;
-                if (!visited.Contains(protoKey.@string))
+                if (!visited.Contains(protoKey!.@string))
                     yield return Completion.NormalCompletion(protoKey);
             }
         }
 
-        public CompletionOr<IteratorRecord> EnumerateObjectProperties()
+        public CompletionOr<IteratorRecord?> EnumerateObjectProperties()
         {
             return Completion.NormalWith(IteratorRecord.FromEnumerable(AllPropertyKeys()));
         }
@@ -477,21 +477,21 @@ namespace JSInterpreter
             return Completion.NormalCompletion(func);
         }
 
-        public CompletionOr<IteratorRecord> GetIterator()
+        public CompletionOr<IteratorRecord?> GetIterator()
         {
             // assuming hint is sync
             var methodComp = GetMethod("@@iterator");
-            if (methodComp.IsAbrupt()) return methodComp.WithEmpty<IteratorRecord>();
+            if (methodComp.IsAbrupt()) return methodComp.WithEmpty<IteratorRecord?>();
             var method = methodComp.value as Callable;
-            var iteratorComp = method.Call(this);
-            if (iteratorComp.IsAbrupt()) return iteratorComp.WithEmpty<IteratorRecord>();
+            var iteratorComp = method!.Call(this);
+            if (iteratorComp.IsAbrupt()) return iteratorComp.WithEmpty<IteratorRecord?>();
             var iterator = iteratorComp.value;
             if (!(iterator is Object o))
-                return Completion.ThrowTypeError("@@iterator method did not return an object").WithEmpty<IteratorRecord>();
+                return Completion.ThrowTypeError("@@iterator method did not return an object").WithEmpty<IteratorRecord?>();
             var nextMethodComp = o.Get("next");
-            if (nextMethodComp.IsAbrupt()) return nextMethodComp.WithEmpty<IteratorRecord>();
+            if (nextMethodComp.IsAbrupt()) return nextMethodComp.WithEmpty<IteratorRecord?>();
             if (!(nextMethodComp.value is Callable c))
-                return Completion.ThrowTypeError("iterator next is not callable").WithEmpty<IteratorRecord>();
+                return Completion.ThrowTypeError("iterator next is not callable").WithEmpty<IteratorRecord?>();
             return Completion.NormalWith<IteratorRecord>(new IteratorRecord(o, c, false));
         }
     }

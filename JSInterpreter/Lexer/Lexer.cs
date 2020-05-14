@@ -57,7 +57,7 @@ namespace JSInterpreter.Lexer
         {
             this.source = source;
             stateStack = new Stack<LexerState>();
-            currentState = new LexerState(0, default, 1, 1, false, default);
+            currentState = new LexerState(0, default, 1, 1, false, new Token(TokenType.Eof, "", "", 0, 0, 0, 0, false));
 
             if (!keywords.Any())
             {

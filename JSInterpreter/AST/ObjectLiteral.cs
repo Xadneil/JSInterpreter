@@ -48,13 +48,13 @@ namespace JSInterpreter.AST
             Completion valueComp;
             if (assignmentExpression is FunctionExpression functionExpression && functionExpression.isAnonymous)
             {
-                value = functionExpression.NamedEvaluate(Interpreter.Instance(), propertyName).value;
+                value = functionExpression.NamedEvaluate(Interpreter.Instance(), propertyName).value!;
             }
             else
             {
                 valueComp = assignmentExpression.Evaluate(Interpreter.Instance()).GetValue();
                 if (valueComp.IsAbrupt()) return valueComp;
-                value = valueComp.value;
+                value = valueComp.value!;
             }
             if (Utils.CreateDataPropertyOrThrow(@object, propertyName, value).IsAbrupt())
                 throw new InvalidOperationException("Spec ! 12.2.6.8 Assignment, step 7");

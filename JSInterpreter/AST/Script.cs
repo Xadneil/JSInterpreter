@@ -40,11 +40,10 @@ namespace JSInterpreter.AST
         {
             //TODO get realm from script record
             var globalEnv = interpreter.CurrentRealm().GlobalEnv;
-            var scriptCxt = new ExecutionContext
+            var scriptCxt = new ExecutionContext(interpreter.CurrentRealm())
             {
                 VariableEnvironment = globalEnv,
-                LexicalEnvironment = globalEnv,
-                Realm = interpreter.CurrentRealm()
+                LexicalEnvironment = globalEnv
             };
             interpreter.PushExecutionStack(scriptCxt);
             var result = GlobalDeclarationInstantiation(globalEnv);

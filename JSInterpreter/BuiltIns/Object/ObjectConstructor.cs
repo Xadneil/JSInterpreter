@@ -43,7 +43,7 @@ namespace JSInterpreter
             return InternalConstruct(arguments, this);
         }
 
-        public override Completion InternalConstruct(IReadOnlyList<IValue> arguments, Object newTarget)
+        public override Completion InternalConstruct(IReadOnlyList<IValue> arguments, Object? newTarget)
         {
             if (arguments.Count == 0)
             {
@@ -77,12 +77,12 @@ namespace JSInterpreter
 
             var keyComp = P.ToPropertyKey();
             if (keyComp.IsAbrupt()) return keyComp;
-            var key = keyComp.Other;
+            var key = keyComp.Other!;
 
-            var desc = PropertyDescriptor.FromObject(Attributes);
+            var desc = PropertyDescriptor.FromObject(Attributes!);
             if (desc.IsAbrupt()) return desc;
 
-            var comp = O.DefinePropertyOrThrow(key, desc.Other);
+            var comp = O!.DefinePropertyOrThrow(key, desc.Other!);
             if (comp.IsAbrupt()) return comp;
 
             return Completion.NormalCompletion(O);
@@ -97,9 +97,9 @@ namespace JSInterpreter
             if (obj.IsAbrupt()) return obj;
             var key = arguments[1].ToPropertyKey();
             if (key.IsAbrupt()) return key;
-            var desc = (obj.value as Object).GetOwnProperty(key.Other);
+            var desc = (obj.value as Object)!.GetOwnProperty(key.Other!);
             if (desc.IsAbrupt()) return desc;
-            return Completion.NormalCompletion((IValue)desc.Other?.ToObject() ?? UndefinedValue.Instance);
+            return Completion.NormalCompletion(desc.Other?.ToObject() as IValue ?? UndefinedValue.Instance);
         }
 
         private static Completion getPrototypeOf(IValue @this, IReadOnlyList<IValue> arguments)
@@ -108,7 +108,7 @@ namespace JSInterpreter
             if (argCheck.IsAbrupt()) return argCheck;
             var O = arguments[0].ToObject();
             if (O.IsAbrupt()) return O;
-            return (O.value as Object).GetPrototypeOf();
+            return (O.value as Object)!.GetPrototypeOf();
         }
 
         private static Completion preventExtensions(IValue @this, IReadOnlyList<IValue> arguments)
@@ -128,7 +128,7 @@ namespace JSInterpreter
             var propsComp = Properties.ToObject();
             if (propsComp.IsAbrupt()) return propsComp;
             var props = propsComp.value as Object;
-            var keys = props.OwnPropertyKeys();
+            var keys = props!.OwnPropertyKeys();
             var descriptors = new List<(string, PropertyDescriptor)>();
             foreach (var nextKey in keys)
             {
@@ -142,7 +142,7 @@ namespace JSInterpreter
                         return Completion.ThrowTypeError("properties of the property argument must be objects.");
                     var desc = PropertyDescriptor.FromObject(o);
                     if (desc.IsAbrupt()) return desc;
-                    descriptors.Add((nextKey, desc.Other));
+                    descriptors.Add((nextKey, desc.Other!));
                 }
             }
             foreach (var (P, desc) in descriptors)

@@ -16,12 +16,12 @@ namespace JSInterpreter.AST
     {
         public readonly TryStatementType tryStatementType;
         public readonly Block tryBlock;
-        public readonly Block catchBlock;
-        public readonly Block finallyBlock;
+        public readonly Block? catchBlock;
+        public readonly Block? finallyBlock;
         public bool hasCatchParameter;
-        public readonly Identifier catchParameter;
+        public readonly Identifier? catchParameter;
 
-        private TryStatement(TryStatementType tryStatementType, Block tryBlock, Block catchBlock, Block finallyBlock, Identifier catchParameter = null)
+        private TryStatement(TryStatementType tryStatementType, Block tryBlock, Block? catchBlock, Block? finallyBlock, Identifier? catchParameter = null)
         {
             this.tryStatementType = tryStatementType;
             this.tryBlock = tryBlock;
@@ -61,11 +61,11 @@ namespace JSInterpreter.AST
             switch (tryStatementType)
             {
                 case TryStatementType.TryCatch:
-                    return tryBlock.VarDeclaredNames().Concat(catchBlock.VarDeclaredNames()).ToList();
+                    return tryBlock.VarDeclaredNames().Concat(catchBlock!.VarDeclaredNames()).ToList();
                 case TryStatementType.TryFinally:
-                    return tryBlock.VarDeclaredNames().Concat(finallyBlock.VarDeclaredNames()).ToList();
+                    return tryBlock.VarDeclaredNames().Concat(finallyBlock!.VarDeclaredNames()).ToList();
                 case TryStatementType.TryCatchFinally:
-                    return tryBlock.VarDeclaredNames().Concat(catchBlock.VarDeclaredNames()).Concat(finallyBlock.VarDeclaredNames()).ToList();
+                    return tryBlock.VarDeclaredNames().Concat(catchBlock!.VarDeclaredNames()).Concat(finallyBlock!.VarDeclaredNames()).ToList();
                 default:
                     throw new InvalidOperationException($"TryStatement: tryStatementType is invalid enum with value {(int)tryStatementType}");
             }
@@ -76,11 +76,11 @@ namespace JSInterpreter.AST
             switch (tryStatementType)
             {
                 case TryStatementType.TryCatch:
-                    return tryBlock.VarScopedDeclarations().Concat(catchBlock.VarScopedDeclarations()).ToList();
+                    return tryBlock.VarScopedDeclarations().Concat(catchBlock!.VarScopedDeclarations()).ToList();
                 case TryStatementType.TryFinally:
-                    return tryBlock.VarScopedDeclarations().Concat(finallyBlock.VarScopedDeclarations()).ToList();
+                    return tryBlock.VarScopedDeclarations().Concat(finallyBlock!.VarScopedDeclarations()).ToList();
                 case TryStatementType.TryCatchFinally:
-                    return tryBlock.VarScopedDeclarations().Concat(catchBlock.VarScopedDeclarations()).Concat(finallyBlock.VarScopedDeclarations()).ToList();
+                    return tryBlock.VarScopedDeclarations().Concat(catchBlock!.VarScopedDeclarations()).Concat(finallyBlock!.VarScopedDeclarations()).ToList();
                 default:
                     throw new InvalidOperationException($"TryStatement: tryStatementType is invalid enum with value {(int)tryStatementType}");
             }
@@ -98,7 +98,7 @@ namespace JSInterpreter.AST
                 var B = tryBlock.Evaluate(interpreter);
                 Completion C;
                 if (B.completionType == CompletionType.Throw)
-                    C = CatchClauseEvaluate(interpreter, B.value);
+                    C = CatchClauseEvaluate(interpreter, B.value!);
                 else
                     C = B;
                 return C.UpdateEmpty(UndefinedValue.Instance);
@@ -116,10 +116,10 @@ namespace JSInterpreter.AST
                 var B = tryBlock.Evaluate(interpreter);
                 Completion C;
                 if (B.completionType == CompletionType.Throw)
-                    C = CatchClauseEvaluate(interpreter, B.value);
+                    C = CatchClauseEvaluate(interpreter, B.value!);
                 else
                     C = B;
-                var F = finallyBlock.Evaluate(interpreter);
+                var F = finallyBlock!.Evaluate(interpreter);
                 if (F.completionType == CompletionType.Normal)
                     F = C;
                 return F.UpdateEmpty(UndefinedValue.Instance);
@@ -130,12 +130,12 @@ namespace JSInterpreter.AST
         {
             if (!hasCatchParameter)
             {
-                return catchBlock.Evaluate(interpreter);
+                return catchBlock!.Evaluate(interpreter);
             }
             var oldEnv = interpreter.RunningExecutionContext().LexicalEnvironment;
             var catchEnv = oldEnv.NewDeclarativeEnvironment();
             var catchEnvRec = catchEnv.EnvironmentRecord;
-            foreach (var argName in catchParameter.BoundNames())
+            foreach (var argName in catchParameter!.BoundNames())
             {
                 catchEnvRec.CreateMutableBinding(argName, false);
             }
@@ -146,7 +146,7 @@ namespace JSInterpreter.AST
                 interpreter.RunningExecutionContext().LexicalEnvironment = oldEnv;
                 return status;
             }
-            var B = catchBlock.Evaluate(interpreter);
+            var B = catchBlock!.Evaluate(interpreter);
             interpreter.RunningExecutionContext().LexicalEnvironment = oldEnv;
             return B;
         }

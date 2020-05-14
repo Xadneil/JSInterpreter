@@ -33,11 +33,11 @@ namespace JSInterpreter.AST
         {
             var leftComp = equalityExpression.Evaluate(interpreter).GetValue();
             if (leftComp.IsAbrupt()) return leftComp;
-            var left = leftComp.value;
+            var left = leftComp.value!;
 
             var rightComp = relationalExpression.Evaluate(interpreter).GetValue();
             if (rightComp.IsAbrupt()) return rightComp;
-            var right = rightComp.value;
+            var right = rightComp.value!;
 
             return Completion.NormalCompletion(equalityOperator switch
             {
@@ -55,12 +55,12 @@ namespace JSInterpreter.AST
                 return StrictAbstractEquality(x, y);
             if ((x == NullValue.Instance && y == UndefinedValue.Instance) || (x == UndefinedValue.Instance && y == NullValue.Instance))
                 return true;
-            if (x is NumberValue && y is StringValue) return AbstractEquality(x, y.ToNumber().value);
-            if (x is StringValue && y is NumberValue) return AbstractEquality(x.ToNumber().value, y);
-            if (x is BooleanValue) return AbstractEquality(x.ToNumber().value, y);
-            if (y is BooleanValue) return AbstractEquality(x, y.ToNumber().value);
-            if ((x is StringValue || x is NumberValue) && y is Object) return AbstractEquality(x, y.ToPrimitive().value);
-            if (x is Object && (y is StringValue || y is NumberValue)) return AbstractEquality(x.ToPrimitive().value, y);
+            if (x is NumberValue && y is StringValue) return AbstractEquality(x, y.ToNumber().value!);
+            if (x is StringValue && y is NumberValue) return AbstractEquality(x.ToNumber().value!, y);
+            if (x is BooleanValue) return AbstractEquality(x.ToNumber().value!, y);
+            if (y is BooleanValue) return AbstractEquality(x, y.ToNumber().value!);
+            if ((x is StringValue || x is NumberValue) && y is Object) return AbstractEquality(x, y.ToPrimitive().value!);
+            if (x is Object && (y is StringValue || y is NumberValue)) return AbstractEquality(x.ToPrimitive().value!, y);
             return false;
         }
 
@@ -70,7 +70,7 @@ namespace JSInterpreter.AST
             if (x is NumberValue nX)
             {
                 var nY = y as NumberValue;
-                if (double.IsNaN(nX.number) || double.IsNaN(nY.number))
+                if (double.IsNaN(nX.number) || double.IsNaN(nY!.number))
                     return false;
                 return nX.number == nY.number;
             }
@@ -81,7 +81,7 @@ namespace JSInterpreter.AST
         {
             if (x is UndefinedValue) return true;
             if (x is NullValue) return true;
-            if (x is StringValue xs) return xs.@string == (y as StringValue).@string;
+            if (x is StringValue xs) return xs.@string == (y as StringValue)!.@string;
             if (x is BooleanValue) return x == y; // BooleanValues are two singletons, reference equality should work
             return x == y;
         }

@@ -10,7 +10,7 @@ namespace JSInterpreter.AST
         public readonly bool hasElse;
         public readonly IExpression conditionExpression;
         public readonly Statement trueStatement;
-        public readonly Statement falseStatement;
+        public readonly Statement? falseStatement;
 
         public IfStatement(IExpression conditionExpression, Statement trueStatement)
         {
@@ -33,7 +33,7 @@ namespace JSInterpreter.AST
             {
                 var conditionComp = conditionExpression.Evaluate(interpreter).GetValue();
                 if (conditionComp.IsAbrupt()) return conditionComp;
-                var condition = conditionComp.value.ToBoolean();
+                var condition = conditionComp.value!.ToBoolean();
                 Completion stmtCompletion;
                 if (condition.boolean)
                 {
@@ -41,7 +41,7 @@ namespace JSInterpreter.AST
                 }
                 else
                 {
-                    stmtCompletion = falseStatement.Evaluate(interpreter);
+                    stmtCompletion = falseStatement!.Evaluate(interpreter);
                 }
                 return stmtCompletion.UpdateEmpty(UndefinedValue.Instance);
             }
@@ -49,7 +49,7 @@ namespace JSInterpreter.AST
             {
                 var conditionComp = conditionExpression.Evaluate(interpreter).GetValue();
                 if (conditionComp.IsAbrupt()) return conditionComp;
-                var condition = conditionComp.value.ToBoolean();
+                var condition = conditionComp.value!.ToBoolean();
                 if (!condition.boolean)
                 {
                     return Completion.NormalCompletion(UndefinedValue.Instance);
@@ -70,7 +70,7 @@ namespace JSInterpreter.AST
         public override IReadOnlyList<string> VarDeclaredNames()
         {
             if (hasElse)
-                return trueStatement.VarDeclaredNames().Concat(falseStatement.VarDeclaredNames()).ToList();
+                return trueStatement.VarDeclaredNames().Concat(falseStatement!.VarDeclaredNames()).ToList();
             return trueStatement.VarDeclaredNames();
 
         }
@@ -78,7 +78,7 @@ namespace JSInterpreter.AST
         public override IReadOnlyList<IScopedDeclaration> VarScopedDeclarations()
         {
             if (hasElse)
-                return trueStatement.VarScopedDeclarations().Concat(falseStatement.VarScopedDeclarations()).ToList();
+                return trueStatement.VarScopedDeclarations().Concat(falseStatement!.VarScopedDeclarations()).ToList();
             return trueStatement.VarScopedDeclarations();
         }
     }

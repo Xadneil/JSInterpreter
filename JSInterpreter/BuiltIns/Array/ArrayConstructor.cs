@@ -22,7 +22,7 @@ namespace JSInterpreter
             throw new NotImplementedException();
         }
 
-        public override Completion InternalConstruct(IReadOnlyList<IValue> arguments, Object newTarget)
+        public override Completion InternalConstruct(IReadOnlyList<IValue> arguments, Object? newTarget)
         {
             if (newTarget == null)
                 newTarget = this;
@@ -49,8 +49,8 @@ namespace JSInterpreter
                 }
                 else
                 {
-                    intLen = (int)(arguments[0] as NumberValue).number;
-                    if (intLen != (arguments[0] as NumberValue).number || intLen < 0)
+                    intLen = (int)(arguments[0] as NumberValue)!.number;
+                    if (intLen != (arguments[0] as NumberValue)!.number || intLen < 0)
                         return Completion.ThrowRangeError("length argument cannot be used as a length");
                 }
                 array.Set("length", new NumberValue(intLen), true);
@@ -67,7 +67,7 @@ namespace JSInterpreter
                         throw new InvalidOperationException("CreateDataProperty in array constructor failed. Spec 22.1.1.3 step 8d");
                     k++;
                 }
-                if ((array.Get("length").value as NumberValue).number != arguments.Count)
+                if ((array.Get("length").value as NumberValue)!.number != arguments.Count)
                     throw new InvalidOperationException("array length is invalid. Spec 22.1.1.3 step 9");
                 return Completion.NormalCompletion(array);
             }

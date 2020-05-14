@@ -29,7 +29,7 @@ namespace JSInterpreter.AST
             else
                 value = assignmentExpression.Evaluate(interpreter).GetValue();
             if (value.IsAbrupt()) return value;
-            return referenceValue.PutValue(value.value);
+            return referenceValue.PutValue(value.value!);
         }
 
         public IReadOnlyList<string> BoundNames()

@@ -19,11 +19,11 @@ namespace JSInterpreter.AST
         {
             var left = Left.Evaluate(interpreter).GetValue();
             if (left.IsAbrupt()) return left;
-            var leftValue = left.value;
+            var leftValue = left.value!;
 
             var right = Right.Evaluate(interpreter).GetValue();
             if (right.IsAbrupt()) return right;
-            var rightValue = right.value;
+            var rightValue = right.value!;
 
             return Calculate(leftValue, BitwiseOperator, rightValue);
         }
@@ -35,8 +35,8 @@ namespace JSInterpreter.AST
             var rightComp = rightValue.ToNumber();
             if (rightComp.IsAbrupt()) return rightComp;
 
-            int left = (int)(leftComp.value as NumberValue).number;
-            int right = (int)(rightComp.value as NumberValue).number;
+            int left = (int)(leftComp.value as NumberValue)!.number;
+            int right = (int)(rightComp.value as NumberValue)!.number;
 
             return Completion.NormalCompletion(new NumberValue(bitwiseOperator switch
             {

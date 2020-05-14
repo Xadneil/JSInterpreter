@@ -6,7 +6,7 @@ namespace JSInterpreter
 {
     static class Extensions
     {
-        public static Completion At(this IReadOnlyList<IValue> arguments, int index, IValue defaultValue = null)
+        public static Completion At(this IReadOnlyList<IValue> arguments, int index, IValue? defaultValue = null)
         {
             if (arguments.Count <= index)
             {

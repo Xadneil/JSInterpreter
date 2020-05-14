@@ -24,7 +24,7 @@ namespace JSInterpreter.AST
         {
             var conditionComp = logicalOrExpression.Evaluate(interpreter).GetValue();
             if (conditionComp.IsAbrupt()) return conditionComp;
-            var condition = conditionComp.value.ToBoolean();
+            var condition = conditionComp.value!.ToBoolean();
 
             if (condition.boolean)
             {

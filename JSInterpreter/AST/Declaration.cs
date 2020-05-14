@@ -108,7 +108,7 @@ namespace JSInterpreter.AST
             else
                 value = assignmentExpression.Evaluate(interpreter).GetValue();
             if (value.IsAbrupt()) return value;
-            return referenceValue.InitializeReferencedBinding(value.value);
+            return referenceValue.InitializeReferencedBinding(value.value!);
         }
     }
 }

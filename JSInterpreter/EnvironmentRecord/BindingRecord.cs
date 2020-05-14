@@ -5,7 +5,7 @@
         public readonly bool mutable;
         public readonly bool? canDelete;
         public readonly bool? strict;
-        public IValue Value;
+        public IValue? Value;
 
         public static BindingRecord Mutable(bool canDelete)
         {

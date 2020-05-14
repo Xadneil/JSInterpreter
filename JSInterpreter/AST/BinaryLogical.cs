@@ -23,7 +23,7 @@ namespace JSInterpreter.AST
         {
             var left = logicalAndExpression.Evaluate(interpreter).GetValue();
             if (left.IsAbrupt()) return left;
-            var leftValue = left.value;
+            var leftValue = left.value!;
             if (!leftValue.ToBoolean().boolean)
                 return Completion.NormalCompletion(leftValue);
             return bitwiseOrExpression.Evaluate(interpreter).GetValue();
@@ -49,7 +49,7 @@ namespace JSInterpreter.AST
         {
             var left = logicalOrExpression.Evaluate(interpreter).GetValue();
             if (left.IsAbrupt()) return left;
-            var leftValue = left.value;
+            var leftValue = left.value!;
             if (leftValue.ToBoolean().boolean)
                 return Completion.NormalCompletion(leftValue);
             return logicalAndExpression.Evaluate(interpreter).GetValue();

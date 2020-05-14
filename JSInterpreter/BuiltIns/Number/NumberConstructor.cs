@@ -23,7 +23,7 @@ namespace JSInterpreter
             return arguments[0].ToNumber();
         }
 
-        public override Completion InternalConstruct(IReadOnlyList<IValue> arguments, Object newTarget)
+        public override Completion InternalConstruct(IReadOnlyList<IValue> arguments, Object? newTarget)
         {
             NumberValue value;
             if (arguments.Count == 0)
@@ -32,7 +32,7 @@ namespace JSInterpreter
             {
                 var comp = arguments[0].ToNumber();
                 if (comp.IsAbrupt()) return comp;
-                value = comp.value as NumberValue;
+                value = (comp.value as NumberValue)!;
             }
             return Completion.NormalCompletion(new NumberObject(value)
             {

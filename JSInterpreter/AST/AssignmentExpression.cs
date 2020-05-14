@@ -51,7 +51,7 @@ namespace JSInterpreter.AST
                     rval = assignmentExpression.Evaluate(interpreter).GetValue();
                 if (rval.IsAbrupt())
                     return rval;
-                referenceValue.PutValue(rval.value);
+                referenceValue.PutValue(rval.value!);
                 return rval;
             }
             throw new NotImplementedException("Assignment to object or array literals is not implemented.");
@@ -79,11 +79,11 @@ namespace JSInterpreter.AST
 
             var lvalComp = lref.GetValue();
             if (lvalComp.IsAbrupt()) return lvalComp;
-            var lval = lvalComp.value;
+            var lval = lvalComp.value!;
 
             var rvalComp = assignmentExpression.Evaluate(interpreter).GetValue();
             if (rvalComp.IsAbrupt()) return rvalComp;
-            var rval = rvalComp.value;
+            var rval = rvalComp.value!;
 
             Completion result = assignmentOperator switch
             {
@@ -104,7 +104,7 @@ namespace JSInterpreter.AST
 
             if (result.IsAbrupt()) return result;
 
-            referenceValue.PutValue(result.value);
+            referenceValue.PutValue(result.value!);
             return result;
         }
     }

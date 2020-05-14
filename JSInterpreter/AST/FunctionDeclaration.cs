@@ -8,7 +8,7 @@ namespace JSInterpreter.AST
     public class FunctionDeclaration : HoistableDeclaration, ILabelledItem, IScopedDeclaration
     {
         public readonly bool isAnonymous;
-        public readonly Identifier identifier;
+        public readonly Identifier? identifier;
         public readonly FormalParameters formalParameters;
         public readonly FunctionStatementList functionBody;
 
@@ -35,7 +35,7 @@ namespace JSInterpreter.AST
             }
             else
             {
-                return new List<string>(1) { identifier.name };
+                return new List<string>(1) { identifier!.name };
             }
         }
 
@@ -61,12 +61,22 @@ namespace JSInterpreter.AST
 
         internal FunctionObject InstantiateFunctionObject(LexicalEnvironment scope)
         {
-            //TODO: scan body code for strict directive
-            bool strict = false;
-            var F = FunctionObject.FunctionCreate(FunctionObject.FunctionCreateKind.Normal, formalParameters, functionBody, scope, strict);
-            F.MakeConstructor();
-            F.SetFunctionName(identifier.name);
-            return F;
+            if (!isAnonymous)
+            {
+                //TODO: scan body code for strict directive
+                bool strict = false;
+                var F = FunctionObject.FunctionCreate(FunctionObject.FunctionCreateKind.Normal, formalParameters, functionBody, scope, strict);
+                F.MakeConstructor();
+                F.SetFunctionName(identifier!.name);
+                return F;
+            }
+            else
+            {
+                var F = FunctionObject.FunctionCreate(FunctionObject.FunctionCreateKind.Normal, formalParameters, functionBody, scope, true);
+                F.MakeConstructor();
+                F.SetFunctionName("default");
+                return F;
+            }
         }
 
     }
@@ -74,7 +84,7 @@ namespace JSInterpreter.AST
     public class FunctionExpression : IPrimaryExpression
     {
         public readonly bool isAnonymous;
-        public readonly Identifier identifier;
+        public readonly Identifier? identifier;
         public readonly FormalParameters formalParameters;
         public readonly FunctionStatementList functionBody;
 
@@ -111,7 +121,7 @@ namespace JSInterpreter.AST
                 var scope = interpreter.RunningExecutionContext().LexicalEnvironment;
                 var funcEnv = scope.NewDeclarativeEnvironment();
                 var envRec = funcEnv.EnvironmentRecord;
-                envRec.CreateImmutableBinding(identifier.name, false);
+                envRec.CreateImmutableBinding(identifier!.name, false);
                 var closure = FunctionObject.FunctionCreate(FunctionObject.FunctionCreateKind.Normal, formalParameters, functionBody, funcEnv, strict: false);
                 closure.MakeConstructor();
                 closure.SetFunctionName(identifier.name);
@@ -124,7 +134,7 @@ namespace JSInterpreter.AST
         public Completion NamedEvaluate(Interpreter interpreter, string name)
         {
             var closure = Evaluate(interpreter).value as FunctionObject;
-            closure.SetFunctionName(name);
+            closure!.SetFunctionName(name);
             return Completion.NormalCompletion(closure);
         }
     }
@@ -133,7 +143,7 @@ namespace JSInterpreter.AST
     {
         public readonly IReadOnlyList<FormalParameter> formalParameters;
         public bool hasRestParameter;
-        public readonly Identifier restParameterIdentifier;
+        public readonly Identifier? restParameterIdentifier;
 
         public FormalParameters()
         {
@@ -159,7 +169,7 @@ namespace JSInterpreter.AST
             var names = formalParameters.Select(p => p.identifier.name).ToList();
             if (hasRestParameter)
             {
-                names.Add(restParameterIdentifier.name);
+                names.Add(restParameterIdentifier!.name);
             }
             return names;
         }
@@ -174,7 +184,7 @@ namespace JSInterpreter.AST
             return formalParameters.Count(p => !p.hasInitializer);
         }
 
-        public Completion IteratorBindingInitialization(LexicalEnvironment env, ArgumentIterator arguments)
+        public Completion IteratorBindingInitialization(LexicalEnvironment? env, ArgumentIterator arguments)
         {
             foreach (var param in formalParameters)
             {
@@ -182,7 +192,7 @@ namespace JSInterpreter.AST
                 if (comp.IsAbrupt()) return comp;
             }
             if (hasRestParameter)
-                return Utils.IteratorBindingInitializationBindingRestIdentifier(restParameterIdentifier, env, arguments);
+                return Utils.IteratorBindingInitializationBindingRestIdentifier(restParameterIdentifier!, env, arguments);
             return Completion.NormalCompletion();
         }
     }
@@ -191,7 +201,7 @@ namespace JSInterpreter.AST
     {
         public readonly Identifier identifier;
         public readonly bool hasInitializer;
-        public readonly IAssignmentExpression initializerAssignmentExpression;
+        public readonly IAssignmentExpression? initializerAssignmentExpression;
 
         public FormalParameter(Identifier identifier)
         {
@@ -206,7 +216,7 @@ namespace JSInterpreter.AST
             this.initializerAssignmentExpression = initializerAssignmentExpression;
         }
 
-        public Completion IteratorBindingInitialization(LexicalEnvironment env, ArgumentIterator arguments)
+        public Completion IteratorBindingInitialization(LexicalEnvironment? env, ArgumentIterator arguments)
         {
             if (!hasInitializer)
                 return Utils.IteratorBindingInitializationSingleNameBinding(identifier, initializerAssignmentExpression, env, arguments);

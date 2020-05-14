@@ -32,7 +32,7 @@ namespace JSInterpreter
         {
             if (source is UndefinedValue || source is NullValue)
                 return Completion.NormalCompletion(target);
-            var from = source.ToObject().value as Object;
+            var from = (source.ToObject().value as Object)!;
             IReadOnlyList<string> keys = from.OwnPropertyKeys();
             foreach (var nextKey in keys)
             {
@@ -46,14 +46,14 @@ namespace JSInterpreter
                     {
                         var propValue = from.Get(nextKey);
                         if (propValue.IsAbrupt()) return propValue;
-                        CreateDataProperty(target, nextKey, propValue.value);
+                        CreateDataProperty(target, nextKey, propValue.value!);
                     }
                 }
             }
             return Completion.NormalCompletion(target);
         }
 
-        public static Object ObjectCreate(IValue proto, IEnumerable<string> internalSlotsList = null)
+        public static Object ObjectCreate(IValue? proto, IEnumerable<string>? internalSlotsList = null)
         {
             var obj = new Object();
             if (proto is Object o)
@@ -65,7 +65,7 @@ namespace JSInterpreter
             return obj;
         }
 
-        public static CompletionOr<List<IValue>> EvaluateArgument(Interpreter interpreter, IArgumentItem a)
+        public static CompletionOr<List<IValue>?> EvaluateArgument(Interpreter interpreter, IArgumentItem a)
         {
             List<IValue> ret = new List<IValue>();
             Completion valueComp;
@@ -74,28 +74,28 @@ namespace JSInterpreter
             {
                 case SpreadElement spreadElement:
                     valueComp = spreadElement.assignmentExpression.Evaluate(interpreter).GetValue();
-                    if (valueComp.IsAbrupt()) return valueComp.WithEmpty<List<IValue>>();
-                    value = valueComp.value;
+                    if (valueComp.IsAbrupt()) return valueComp.WithEmpty<List<IValue>?>();
+                    value = valueComp.value!;
                     if (!(value is Object @object))
                         throw new InvalidOperationException($"NewMemberExpression: tried to create an argument list using a spread on a non-object");
                     var iteratorRecordComp = @object.GetIterator();
-                    if (iteratorRecordComp.IsAbrupt()) return iteratorRecordComp.WithEmpty<List<IValue>>();
-                    var iteratorRecord = iteratorRecordComp.Other;
+                    if (iteratorRecordComp.IsAbrupt()) return iteratorRecordComp.WithEmpty<List<IValue>?>();
+                    var iteratorRecord = iteratorRecordComp.Other!;
                     while (true)
                     {
                         var next = iteratorRecord.IteratorStep();
-                        if (next.IsAbrupt()) return next.WithEmpty<List<IValue>>();
+                        if (next.IsAbrupt()) return next.WithEmpty<List<IValue>?>();
                         if (next.value == BooleanValue.False)
                             break;
-                        var nextArg = IteratorRecord.IteratorValue(next.value);
-                        if (nextArg.IsAbrupt()) return nextArg.WithEmpty<List<IValue>>();
-                        ret.Add(nextArg.value);
+                        var nextArg = IteratorRecord.IteratorValue(next.value!);
+                        if (nextArg.IsAbrupt()) return nextArg.WithEmpty<List<IValue>?>();
+                        ret.Add(nextArg.value!);
                     }
                     break;
                 case IAssignmentExpression assignmentExpression:
                     valueComp = assignmentExpression.Evaluate(interpreter).GetValue();
-                    if (valueComp.IsAbrupt()) return valueComp.WithEmpty<List<IValue>>();
-                    value = valueComp.value;
+                    if (valueComp.IsAbrupt()) return valueComp.WithEmpty<List<IValue>?>();
+                    value = valueComp.value!;
                     ret.Add(value);
                     break;
                 default:
@@ -135,15 +135,15 @@ namespace JSInterpreter
             return functionObject.Call(thisValue, argList.Other);
         }
 
-        internal static Completion OrdinaryCreateFromConstructor(Object constructor, Func<Intrinsics, Object> intrinsicDefaultProto, IEnumerable<string> internalSlotsList = null)
+        internal static Completion OrdinaryCreateFromConstructor(Object? constructor, Func<Intrinsics, Object> intrinsicDefaultProto, IEnumerable<string>? internalSlotsList = null)
         {
             var protoComp = GetPrototypeFromConstructor(constructor, intrinsicDefaultProto);
             if (protoComp.IsAbrupt()) return protoComp;
-            var proto = protoComp.value;
+            var proto = protoComp.value!;
             return Completion.NormalCompletion(ObjectCreate(proto, internalSlotsList));
         }
 
-        public static Completion GetPrototypeFromConstructor(Object constructor, Func<Intrinsics, Object> intrinsicDefaultProto)
+        public static Completion GetPrototypeFromConstructor(Object? constructor, Func<Intrinsics, Object> intrinsicDefaultProto)
         {
             if (!(constructor is Callable))
                 throw new InvalidOperationException("GetPrototypeFromConstructor: constructor is not callable");
@@ -152,7 +152,7 @@ namespace JSInterpreter
             var proto = protoComp.value;
             if (!(proto is Object))
             {
-                Realm realm = GetFunctionRealm(constructor as Callable);
+                Realm realm = GetFunctionRealm((constructor as Callable)!);
                 proto = intrinsicDefaultProto(realm.Intrinsics);
             }
             return Completion.NormalCompletion(proto);
@@ -166,11 +166,11 @@ namespace JSInterpreter
             return Interpreter.Instance().CurrentRealm();
         }
 
-        internal static Completion IteratorBindingInitializationBindingRestIdentifier(Identifier restParameterIdentifier, LexicalEnvironment env, ArgumentIterator arguments)
+        internal static Completion IteratorBindingInitializationBindingRestIdentifier(Identifier restParameterIdentifier, LexicalEnvironment? env, ArgumentIterator arguments)
         {
             var lhsComp = Interpreter.Instance().ResolveBinding(restParameterIdentifier.name, env);
             if (lhsComp.IsAbrupt()) return lhsComp;
-            var lhs = lhsComp.value as ReferenceValue;
+            var lhs = (lhsComp.value as ReferenceValue)!;
             var A = ArrayObject.ArrayCreate(0);
             int n = 0;
             for (; ; n++)
@@ -188,11 +188,11 @@ namespace JSInterpreter
             }
         }
 
-        internal static Completion IteratorBindingInitializationSingleNameBinding(Identifier identifier, IAssignmentExpression initializer, LexicalEnvironment env, ArgumentIterator arguments)
+        internal static Completion IteratorBindingInitializationSingleNameBinding(Identifier identifier, IAssignmentExpression? initializer, LexicalEnvironment? env, ArgumentIterator arguments)
         {
             var lhsComp = Interpreter.Instance().ResolveBinding(identifier.name, env);
             if (lhsComp.IsAbrupt()) return lhsComp;
-            var lhs = lhsComp.value as ReferenceValue;
+            var lhs = (lhsComp.value as ReferenceValue)!;
             IValue v;
             if (!arguments.Done)
                 v = arguments.Next();
@@ -204,13 +204,13 @@ namespace JSInterpreter
                 {
                     var comp = f.NamedEvaluate(Interpreter.Instance(), identifier.name);
                     if (comp.IsAbrupt()) return comp;
-                    v = comp.value;
+                    v = comp.value!;
                 }
                 else
                 {
                     var comp = initializer.Evaluate(Interpreter.Instance()).GetValue();
                     if (comp.IsAbrupt()) return comp;
-                    v = comp.value;
+                    v = comp.value!;
                 }
             }
             if (env == null)
@@ -218,7 +218,7 @@ namespace JSInterpreter
             return lhs.InitializeReferencedBinding(v);
         }
 
-        public static FunctionObject CreateBuiltinFunction(Func<IValue, IReadOnlyList<IValue>, Completion> steps, IEnumerable<string> internalSlotsList, Realm realm = null, Object prototype = null)
+        public static FunctionObject CreateBuiltinFunction(Func<IValue, IReadOnlyList<IValue>, Completion> steps, IEnumerable<string> internalSlotsList, Realm? realm = null, Object? prototype = null)
         {
             if (realm == null)
                 realm = Interpreter.Instance().CurrentRealm();

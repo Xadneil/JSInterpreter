@@ -32,11 +32,11 @@ namespace JSInterpreter.AST
         {
             var left = multiplicativeExpression.Evaluate(interpreter).GetValue();
             if (left.IsAbrupt()) return left;
-            var leftValue = left.value;
+            var leftValue = left.value!;
 
             var right = exponentiationExpression.Evaluate(interpreter).GetValue();
             if (right.IsAbrupt()) return right;
-            var rightValue = right.value;
+            var rightValue = right.value!;
 
             return Calculate(leftValue, multiplicativeOperator, rightValue);
         }
@@ -48,8 +48,8 @@ namespace JSInterpreter.AST
             var rnumComp = rightValue.ToNumber();
             if (rnumComp.IsAbrupt()) return rnumComp;
 
-            double lnum = (lnumComp.value as NumberValue).number;
-            double rnum = (rnumComp.value as NumberValue).number;
+            double lnum = (lnumComp.value as NumberValue)!.number;
+            double rnum = (rnumComp.value as NumberValue)!.number;
 
             return Completion.NormalCompletion(new NumberValue(multiplicativeOperator switch
             {

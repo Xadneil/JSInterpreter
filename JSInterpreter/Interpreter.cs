@@ -8,11 +8,11 @@ namespace JSInterpreter
 {
     public class Interpreter : IDisposable
     {
-        private static Script staScript;
+        private static Script? staScript;
         public static bool staCached { get; private set; } = false;
 
         [ThreadStatic]
-        private static Interpreter interpreter;
+        private static Interpreter? interpreter;
         public static Interpreter Instance()
         {
             if (interpreter == null)
@@ -22,11 +22,13 @@ namespace JSInterpreter
 
         private readonly Stack<ExecutionContext> executionContextStack = new Stack<ExecutionContext>();
 
+#pragma warning disable CS8618 // Non-nullable field is uninitialized. Consider declaring as nullable.
         private Interpreter()
+#pragma warning restore CS8618 // Non-nullable field is uninitialized. Consider declaring as nullable.
         {
         }
 
-        public Completion ResolveBinding(string name, LexicalEnvironment env = null)
+        public Completion ResolveBinding(string name, LexicalEnvironment? env = null)
         {
             if (env == null)
                 env = RunningExecutionContext().LexicalEnvironment;
@@ -128,9 +130,8 @@ namespace JSInterpreter
             PopExecutionStack();
             if (executionContextStack.Count != 0)
                 throw new InvalidOperationException("execution stack should be empty.");
-            var newContext = new ExecutionContext();
+            var newContext = new ExecutionContext(oldRealm);
             //TODO store realm in job queue
-            newContext.Realm = oldRealm;
             PushExecutionStack(newContext);
             queue();
 
@@ -139,9 +140,8 @@ namespace JSInterpreter
             PopExecutionStack();
             if (executionContextStack.Count != 0)
                 throw new InvalidOperationException("execution stack should be empty.");
-            newContext = new ExecutionContext();
+            newContext = new ExecutionContext(oldRealm);
             //TODO store realm in job queue
-            newContext.Realm = oldRealm;
             PushExecutionStack(newContext);
             queue();
         }
@@ -156,9 +156,8 @@ namespace JSInterpreter
             PopExecutionStack();
             if (executionContextStack.Count != 0)
                 throw new InvalidOperationException("execution stack should be empty.");
-            var newContext = new ExecutionContext();
+            var newContext = new ExecutionContext(oldRealm);
             //TODO store realm in job queue
-            newContext.Realm = oldRealm;
             PushExecutionStack(newContext);
             queue();
         }
@@ -166,8 +165,7 @@ namespace JSInterpreter
         private Completion InitializeHostDefinedRealm()
         {
             var realm = JSInterpreter.Realm.CreateRealm();
-            var newContext = new ExecutionContext();
-            newContext.Realm = realm;
+            var newContext = new ExecutionContext(realm);
             PushExecutionStack(newContext);
             realm.SetRealmGlobalObject(null, null);
             Completion globalObj = realm.SetDefaultGlobalBindings();
@@ -215,15 +213,24 @@ namespace JSInterpreter
 
     public class ExecutionContext
     {
-        public LexicalEnvironment LexicalEnvironment;
-        public LexicalEnvironment VariableEnvironment;
-        public Realm Realm;
+        public LexicalEnvironment LexicalEnvironment { get; set; }
+        public LexicalEnvironment VariableEnvironment { get; set; }
+        public readonly Realm Realm;
+
+#pragma warning disable CS8618 // Non-nullable field is uninitialized. Consider declaring as nullable.
+        public ExecutionContext(Realm realm)
+#pragma warning restore CS8618 // Non-nullable field is uninitialized. Consider declaring as nullable.
+        {
+            Realm = realm;
+        }
     }
 
     public class LexicalEnvironment
     {
+#pragma warning disable CS8618 // Non-nullable field is uninitialized. Consider declaring as nullable.
         public EnvironmentRecord EnvironmentRecord { get; set; }
-        public LexicalEnvironment Outer { get; private set; }
+#pragma warning restore CS8618 // Non-nullable field is uninitialized. Consider declaring as nullable.
+        public LexicalEnvironment? Outer { get; private set; }
 
         public LexicalEnvironment NewDeclarativeEnvironment()
         {

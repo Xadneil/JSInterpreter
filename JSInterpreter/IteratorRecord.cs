@@ -17,7 +17,7 @@ namespace JSInterpreter
             Done = done;
         }
 
-        public Completion IteratorNext(IValue value = null)
+        public Completion IteratorNext(IValue? value = null)
         {
             Completion result;
             if (value == null)
@@ -36,7 +36,7 @@ namespace JSInterpreter
                 throw new InvalidOperationException("Spec 7.4.3 step 1");
             var comp = o.Get("done");
             if (comp.IsAbrupt()) return comp;
-            return Completion.NormalCompletion(comp.value.ToBoolean());
+            return Completion.NormalCompletion(comp.value!.ToBoolean());
         }
 
         public static Completion IteratorValue(IValue iterResult)
@@ -50,7 +50,7 @@ namespace JSInterpreter
         {
             var result = IteratorNext();
             if (result.IsAbrupt()) return result;
-            var done = IteratorComplete(result.value);
+            var done = IteratorComplete(result.value!);
             if (done.IsAbrupt()) return done;
             if (done.value == BooleanValue.True)
                 return Completion.NormalCompletion(BooleanValue.False);
@@ -63,7 +63,7 @@ namespace JSInterpreter
             if (@return.IsAbrupt()) return @return;
             if (@return.value == UndefinedValue.Instance)
                 return completion;
-            var innerResult = (@return.value as Callable).Call(Iterator);
+            var innerResult = (@return.value as Callable)!.Call(Iterator);
             if (completion.completionType == CompletionType.Throw)
                 return completion;
             if (innerResult.completionType == CompletionType.Throw)
@@ -76,7 +76,7 @@ namespace JSInterpreter
         public static IteratorRecord FromEnumerable(IEnumerable<Completion> values)
         {
             var iterator = new EnumerableIteratorObject(values);
-            return new IteratorRecord(iterator, iterator.GetMethod("next").value as Callable, false);
+            return new IteratorRecord(iterator, (iterator.GetMethod("next").value as Callable)!, false);
         }
 
         private class EnumerableIteratorObject : Object
@@ -101,7 +101,7 @@ namespace JSInterpreter
                 if (values.Current.IsAbrupt())
                     return values.Current;
                 var ret = Utils.ObjectCreate(null);
-                ret.DefineOwnProperty("value", new PropertyDescriptor(values.Current.value, false, false, false));
+                ret.DefineOwnProperty("value", new PropertyDescriptor(values.Current.value!, false, false, false));
                 ret.DefineOwnProperty("done", new PropertyDescriptor(BooleanValue.False, false, false, false));
                 return Completion.NormalCompletion(ret);
             }

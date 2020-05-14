@@ -27,13 +27,13 @@ namespace JSInterpreter
             return Completion.NormalCompletion(arg.value);
         }
 
-        public override Completion InternalConstruct(IReadOnlyList<IValue> arguments, Object newTarget)
+        public override Completion InternalConstruct(IReadOnlyList<IValue> arguments, Object? newTarget)
         {
             var comp = InternalCall(this, arguments);
             if (comp.IsAbrupt()) return comp;
             if (newTarget == null)
                 return comp;
-            return Completion.NormalCompletion(new StringObject(comp.value as StringValue));
+            return Completion.NormalCompletion(new StringObject((comp.value as StringValue)!));
         }
 
         private Completion fromCharCode(IValue @this, IReadOnlyList<IValue> arguments)
@@ -43,7 +43,7 @@ namespace JSInterpreter
             {
                 var num = arg.ToNumber();
                 if (num.IsAbrupt()) return num;
-                var numValue = (num.value as NumberValue).number;
+                var numValue = (num.value as NumberValue)!.number;
                 if (double.IsNaN(numValue) || double.IsInfinity(numValue))
                     stringBuilder.Append('\0');
                 stringBuilder.Append((char)numValue);

@@ -24,7 +24,7 @@ namespace JSInterpreter
         public CompletionOr<DateTime> ToDateTime()
         {
             return DateTimeRangeValid
-                ? Completion.NormalWith(DateConstructor.Epoch.AddMilliseconds(PrimitiveValue))
+                ? Completion.NormalWithStruct(DateConstructor.Epoch.AddMilliseconds(PrimitiveValue))
                 : Completion.ThrowRangeError("Date is out of range").WithEmpty<DateTime>();
         }
     }

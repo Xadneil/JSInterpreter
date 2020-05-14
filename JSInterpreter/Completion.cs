@@ -133,7 +133,12 @@ namespace JSInterpreter
             return envRec.GetBindingValue(reference.referencedName, reference.strict);
         }
 
-        public static CompletionOr<T> NormalWith<T>(T other)
+        public static CompletionOr<T?> NormalWith<T>(T? other) where T : class
+        {
+            return new CompletionOr<T?>(CompletionType.Normal, null, null, other);
+        }
+
+        public static CompletionOr<T> NormalWithStruct<T>(T other) where T : struct
         {
             return new CompletionOr<T>(CompletionType.Normal, null, null, other);
         }

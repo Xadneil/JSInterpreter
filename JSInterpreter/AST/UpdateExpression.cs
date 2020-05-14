@@ -33,7 +33,7 @@ namespace JSInterpreter.AST
             var lhsValue = lhs.GetValue();
             if (lhsValue.IsAbrupt()) return lhsValue;
 
-            var oldValueComp = lhsValue.value.ToNumber();
+            var oldValueComp = lhsValue.value!.ToNumber();
             if (oldValueComp.IsAbrupt()) return oldValueComp;
             var oldValue = oldValueComp.value as NumberValue;
 
@@ -42,9 +42,9 @@ namespace JSInterpreter.AST
 
             NumberValue newValue;
             if (updateOperation == UpdateOperator.Decrement)
-                newValue = new NumberValue(oldValue.number - 1);
+                newValue = new NumberValue(oldValue!.number - 1);
             else
-                newValue = new NumberValue(oldValue.number + 1);
+                newValue = new NumberValue(oldValue!.number + 1);
 
             var putComp = reference.PutValue(newValue);
             if (putComp.IsAbrupt()) return putComp;
@@ -72,7 +72,7 @@ namespace JSInterpreter.AST
             var lhsValue = lhs.GetValue();
             if (lhsValue.IsAbrupt()) return lhsValue;
 
-            var oldValueComp = lhsValue.value.ToNumber();
+            var oldValueComp = lhsValue.value!.ToNumber();
             if (oldValueComp.IsAbrupt()) return oldValueComp;
             var oldValue = oldValueComp.value as NumberValue;
 
@@ -81,9 +81,9 @@ namespace JSInterpreter.AST
 
             NumberValue newValue;
             if (updateOperation == UpdateOperator.Decrement)
-                newValue = new NumberValue(oldValue.number - 1);
+                newValue = new NumberValue(oldValue!.number - 1);
             else
-                newValue = new NumberValue(oldValue.number + 1);
+                newValue = new NumberValue(oldValue!.number + 1);
 
             var putComp = reference.PutValue(newValue);
             if (putComp.IsAbrupt()) return putComp;

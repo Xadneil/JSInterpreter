@@ -23,7 +23,7 @@ namespace JSInterpreter.AST
             {
                 var comp = expression.Evaluate(interpreter).GetValue();
                 if (comp.IsAbrupt()) return comp;
-                lastValue = comp.value;
+                lastValue = comp.value!;
             }
             return Completion.NormalCompletion(lastValue);
         }

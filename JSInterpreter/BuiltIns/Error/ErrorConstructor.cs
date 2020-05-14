@@ -42,7 +42,7 @@ namespace JSInterpreter
             {
                 var msg = arguments[0].ToJsString();
                 if (msg.IsAbrupt()) return msg;
-                O.DefinePropertyOrThrow("message", new PropertyDescriptor(msg.value, true, false, true));
+                O!.DefinePropertyOrThrow("message", new PropertyDescriptor(msg.value!, true, false, true));
             }
             return Completion.NormalCompletion(O);
         }

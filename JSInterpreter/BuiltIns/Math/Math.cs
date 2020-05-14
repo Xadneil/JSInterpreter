@@ -25,9 +25,9 @@ namespace JSInterpreter.BuiltIns.Math
         {
             var xComp = arguments.At(0);
             if (xComp.IsAbrupt()) return xComp;
-            xComp = xComp.value.ToNumber();
+            xComp = xComp.value!.ToNumber();
             if (xComp.IsAbrupt()) return xComp;
-            var x = (xComp.value as NumberValue).number;
+            var x = (xComp.value as NumberValue)!.number;
             return Completion.NormalCompletion(new NumberValue(System.Math.Abs(x)));
         }
 
@@ -35,9 +35,9 @@ namespace JSInterpreter.BuiltIns.Math
         {
             var xComp = arguments.At(0);
             if (xComp.IsAbrupt()) return xComp;
-            xComp = xComp.value.ToNumber();
+            xComp = xComp.value!.ToNumber();
             if (xComp.IsAbrupt()) return xComp;
-            var x = (xComp.value as NumberValue).number;
+            var x = (xComp.value as NumberValue)!.number;
             return Completion.NormalCompletion(new NumberValue(System.Math.Ceiling(x)));
         }
 
@@ -45,9 +45,9 @@ namespace JSInterpreter.BuiltIns.Math
         {
             var xComp = arguments.At(0);
             if (xComp.IsAbrupt()) return xComp;
-            xComp = xComp.value.ToNumber();
+            xComp = xComp.value!.ToNumber();
             if (xComp.IsAbrupt()) return xComp;
-            var x = (xComp.value as NumberValue).number;
+            var x = (xComp.value as NumberValue)!.number;
             return Completion.NormalCompletion(new NumberValue(System.Math.Floor(x)));
         }
 
@@ -55,9 +55,9 @@ namespace JSInterpreter.BuiltIns.Math
         {
             var xComp = arguments.At(0);
             if (xComp.IsAbrupt()) return xComp;
-            xComp = xComp.value.ToNumber();
+            xComp = xComp.value!.ToNumber();
             if (xComp.IsAbrupt()) return xComp;
-            var x = (xComp.value as NumberValue).number;
+            var x = (xComp.value as NumberValue)!.number;
             return Completion.NormalCompletion(new NumberValue(System.Math.Log(x)));
         }
 
@@ -68,9 +68,9 @@ namespace JSInterpreter.BuiltIns.Math
             {
                 var xComp = arguments.At(0);
                 if (xComp.IsAbrupt()) return xComp;
-                xComp = xComp.value.ToNumber();
+                xComp = xComp.value!.ToNumber();
                 if (xComp.IsAbrupt()) return xComp;
-                var x = (xComp.value as NumberValue).number;
+                var x = (xComp.value as NumberValue)!.number;
 
                 if (double.IsNaN(x))
                     return Completion.NormalCompletion(NumberValue.DoubleNaN);
@@ -89,15 +89,15 @@ namespace JSInterpreter.BuiltIns.Math
 
             var xComp = arguments.At(0);
             if (xComp.IsAbrupt()) return xComp;
-            xComp = xComp.value.ToNumber();
+            xComp = xComp.value!.ToNumber();
             if (xComp.IsAbrupt()) return xComp;
-            var x = (xComp.value as NumberValue).number;
+            var x = (xComp.value as NumberValue)!.number;
 
             var yComp = arguments.At(1);
             if (yComp.IsAbrupt()) return yComp;
-            yComp = yComp.value.ToNumber();
+            yComp = yComp.value!.ToNumber();
             if (yComp.IsAbrupt()) return yComp;
-            var y = (yComp.value as NumberValue).number;
+            var y = (yComp.value as NumberValue)!.number;
 
             return Completion.NormalCompletion(new NumberValue(System.Math.Pow(x, y)));
         }

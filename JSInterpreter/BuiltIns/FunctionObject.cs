@@ -25,20 +25,27 @@ namespace JSInterpreter
     }
     public class FunctionObject : Constructor
     {
+#pragma warning disable CS8618 // Non-nullable field is uninitialized. Consider declaring as nullable.
         public LexicalEnvironment Environment { get; private set; }
         public FormalParameters FormalParameters { get; private set; }
+#pragma warning restore CS8618 // Non-nullable field is uninitialized. Consider declaring as nullable.
         public FunctionKind FunctionKind { get; private set; }
+
+#pragma warning disable CS8618 // Non-nullable field is uninitialized. Consider declaring as nullable.
         public FunctionStatementList Code { get; private set; }
+#pragma warning restore CS8618 // Non-nullable field is uninitialized. Consider declaring as nullable.
         public ConstructorKind ConstructorKind { get; private set; }
+#pragma warning disable CS8618 // Non-nullable field is uninitialized. Consider declaring as nullable.
         public Realm Realm { get; set; }
+#pragma warning restore CS8618 // Non-nullable field is uninitialized. Consider declaring as nullable.
         public ThisMode ThisMode { get; private set; }
         public bool Strict { get; private set; }
-        public IValue HomeObject { get; internal set; }
+        public IValue? HomeObject { get; internal set; }
 
-        public override Completion InternalConstruct(IReadOnlyList<IValue> arguments, Object newTarget)
+        public override Completion InternalConstruct(IReadOnlyList<IValue> arguments, Object? newTarget)
         {
             var callerContext = Interpreter.Instance().RunningExecutionContext();
-            IValue thisArgument = null;
+            IValue? thisArgument = null;
             if (ConstructorKind == ConstructorKind.Base)
             {
                 var thisComp = Utils.OrdinaryCreateFromConstructor(newTarget, i => i.ObjectPrototype);
@@ -51,7 +58,7 @@ namespace JSInterpreter
             if (ConstructorKind == ConstructorKind.Base)
                 OrdinaryCallBindThis(calleeContext, thisArgument);
             var constructorEnv = calleeContext.LexicalEnvironment;
-            var envRec = constructorEnv.EnvironmentRecord as FunctionEnvironmentRecord;
+            var envRec = (constructorEnv.EnvironmentRecord as FunctionEnvironmentRecord)!;
             var result = OrdinaryCallEvaluateBody(arguments);
             Interpreter.Instance().PopExecutionStack(calleeContext);
             if (callerContext != Interpreter.Instance().RunningExecutionContext())
@@ -88,13 +95,12 @@ namespace JSInterpreter
             return Completion.NormalCompletion(UndefinedValue.Instance);
         }
 
-        private ExecutionContext PrepareForOrdinaryCall(IValue newTarget)
+        private ExecutionContext PrepareForOrdinaryCall(IValue? newTarget)
         {
             if (!(newTarget is UndefinedValue) && !(newTarget is Object))
                 throw new InvalidOperationException("Spec 9.2.1.1 Step 1");
             var callerContext = Interpreter.Instance().RunningExecutionContext();
-            var calleeContext = new ExecutionContext();
-            calleeContext.Realm = Realm;
+            var calleeContext = new ExecutionContext(Realm);
             //TODO ScriptOrModule
             var localEnv = LexicalEnvironment.NewFunctionalEnvironment(this, newTarget);
             calleeContext.LexicalEnvironment = localEnv;
@@ -104,7 +110,7 @@ namespace JSInterpreter
             return calleeContext;
         }
 
-        private Completion OrdinaryCallBindThis(ExecutionContext calleeContext, IValue thisArgument)
+        private Completion OrdinaryCallBindThis(ExecutionContext calleeContext, IValue? thisArgument)
         {
             if (ThisMode == ThisMode.Lexical)
                 return Completion.NormalCompletion(UndefinedValue.Instance);
@@ -112,7 +118,7 @@ namespace JSInterpreter
             var localEnv = calleeContext.LexicalEnvironment;
             IValue thisValue;
             if (ThisMode == ThisMode.Strict)
-                thisValue = thisArgument;
+                thisValue = thisArgument!;
             else
             {
                 if (thisArgument == UndefinedValue.Instance || thisArgument == NullValue.Instance)
@@ -124,7 +130,7 @@ namespace JSInterpreter
                 }
                 else
                 {
-                    thisValue = thisArgument.ToObject().value;
+                    thisValue = thisArgument!.ToObject().value!;
                 }
             }
             var envRec = localEnv.EnvironmentRecord;
@@ -262,7 +268,7 @@ namespace JSInterpreter
                         }
                         else
                         {
-                            initialValue = envRec.GetBindingValue(n, false).value;
+                            initialValue = envRec.GetBindingValue(n, false).value!;
                         }
                         varEnvRec.InitializeBinding(n, initialValue);
                     }
@@ -328,9 +334,9 @@ namespace JSInterpreter
             var getter = Utils.CreateBuiltinFunction((@this, arguments) =>
             {
                 var thisObj = @this as Object;
-                var name = thisObj.GetCustomInternalSlot("Name") as string;
+                var name = thisObj!.GetCustomInternalSlot("Name") as string;
                 var env = thisObj.GetCustomInternalSlot("Env") as EnvironmentRecord;
-                return env.GetBindingValue(name, false);
+                return env!.GetBindingValue(name!, false);
             }, new[] { "Name", "Env" });
             getter.SetCustomInternalSlot("Name", name);
             getter.SetCustomInternalSlot("Env", env);
@@ -342,10 +348,10 @@ namespace JSInterpreter
             var setter = Utils.CreateBuiltinFunction((@this, arguments) =>
             {
                 var thisObj = @this as Object;
-                var name = thisObj.GetCustomInternalSlot("Name") as string;
+                var name = thisObj!.GetCustomInternalSlot("Name") as string;
                 var env = thisObj.GetCustomInternalSlot("Env") as EnvironmentRecord;
                 var value = arguments[0];
-                return env.SetMutableBinding(name, value, false);
+                return env!.SetMutableBinding(name!, value, false);
             }, new[] { "Name", "Env" });
             setter.SetCustomInternalSlot("Name", name);
             setter.SetCustomInternalSlot("Env", env);
@@ -369,7 +375,7 @@ namespace JSInterpreter
             Normal, Method, Arrow
         }
 
-        public void MakeConstructor(bool writablePrototype = true, Object prototype = null)
+        public void MakeConstructor(bool writablePrototype = true, Object? prototype = null)
         {
             if (prototype == null)
             {
@@ -385,13 +391,13 @@ namespace JSInterpreter
             return Completion.NormalCompletion(UndefinedValue.Instance);
         }
 
-        public bool SetFunctionName(string name, string prefix = null)
+        public bool SetFunctionName(string name, string? prefix = null)
         {
             //TODO: allow symbol for prefix, use brackets on symbol description
             return DefinePropertyOrThrow("name", new PropertyDescriptor(new StringValue(name + (prefix ?? "")), false, false, true)).Other;
         }
 
-        public static FunctionObject FunctionCreate(FunctionCreateKind kind, FormalParameters parameters, FunctionStatementList body, LexicalEnvironment scope, bool strict, IValue prototype = null)
+        public static FunctionObject FunctionCreate(FunctionCreateKind kind, FormalParameters parameters, FunctionStatementList body, LexicalEnvironment scope, bool strict, IValue? prototype = null)
         {
             if (prototype == null)
             {

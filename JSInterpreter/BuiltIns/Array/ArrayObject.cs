@@ -6,7 +6,7 @@ namespace JSInterpreter
 {
     public class ArrayObject : Object
     {
-        public static ArrayObject ArrayCreate(double lengthInteger, Object proto = null)
+        public static ArrayObject ArrayCreate(double lengthInteger, Object? proto = null)
         {
             var length = (int)lengthInteger;
             if (proto == null)
@@ -27,7 +27,7 @@ namespace JSInterpreter
                 var oldLenDesc = OrdinaryGetOwnProperty("length");
                 if (oldLenDesc == null || !(oldLenDesc.Value is NumberValue))
                     throw new InvalidOperationException("Spec 9.4.2.1 Step 3b");
-                var oldLen = (int)(oldLenDesc.Value as NumberValue).number;
+                var oldLen = (int)(oldLenDesc.Value as NumberValue)!.number;
 
                 if (index >= oldLen && !oldLenDesc.Writable.GetValueOrDefault())
                     return false;
@@ -53,11 +53,11 @@ namespace JSInterpreter
                 return OrdinaryDefineOwnProperty("length", Desc);
             }
             var newLenDesc = new PropertyDescriptor(Desc.Value, Desc.Writable, Desc.Enumerable, Desc.Configurable);
-            var newLen = (int)(Desc.Value as NumberValue).number;
+            var newLen = (int)(Desc.Value as NumberValue)!.number;
             var oldLenDesc = OrdinaryGetOwnProperty("length");
             if (oldLenDesc == null || !(oldLenDesc.Value is NumberValue))
                 throw new InvalidOperationException("Spec 9.4.2.4 Step 8");
-            var oldLen = (int)(oldLenDesc.Value as NumberValue).number;
+            var oldLen = (int)(oldLenDesc.Value as NumberValue)!.number;
             if (oldLen >= newLen)
                 return OrdinaryDefineOwnProperty("length", newLenDesc);
             if (oldLenDesc.Writable.HasValue && !oldLenDesc.Writable.Value)

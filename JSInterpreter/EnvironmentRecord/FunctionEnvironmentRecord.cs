@@ -11,7 +11,7 @@ namespace JSInterpreter
 
     public class FunctionEnvironmentRecord : DeclarativeEnvironmentRecord
     {
-        public IValue ThisValue { get; private set; }
+        public IValue? ThisValue { get; private set; }
         public ThisBindingStatus ThisBindingStatus { get; private set; }
         public FunctionObject FunctionObject { get; private set; }
         public IValue HomeObject { get; private set; } = UndefinedValue.Instance;
@@ -24,7 +24,7 @@ namespace JSInterpreter
                 ThisBindingStatus = ThisBindingStatus.Lexical;
             else
                 ThisBindingStatus = ThisBindingStatus.Uninitialized;
-            HomeObject = F.HomeObject;
+            HomeObject = F.HomeObject ?? UndefinedValue.Instance;
             NewTarget = newTarget;
         }
 

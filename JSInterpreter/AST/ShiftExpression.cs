@@ -32,11 +32,11 @@ namespace JSInterpreter.AST
         {
             var left = shiftExpression.Evaluate(interpreter).GetValue();
             if (left.IsAbrupt()) return left;
-            var leftValue = left.value;
+            var leftValue = left.value!;
 
             var right = additiveExpression.Evaluate(interpreter).GetValue();
             if (right.IsAbrupt()) return right;
-            var rightValue = right.value;
+            var rightValue = right.value!;
 
             return Calculate(leftValue, shiftOperator, rightValue);
         }
@@ -48,8 +48,8 @@ namespace JSInterpreter.AST
             var rnumComp = rightValue.ToNumber();
             if (rnumComp.IsAbrupt()) return rnumComp;
 
-            int lnum = (int)(lnumComp.value as NumberValue).number;
-            uint rnum = (uint)(rnumComp.value as NumberValue).number;
+            int lnum = (int)(lnumComp.value as NumberValue)!.number;
+            uint rnum = (uint)(rnumComp.value as NumberValue)!.number;
 
             var shiftCount = (int)(rnum & 0x1F);
             return Completion.NormalCompletion(new NumberValue(shiftOperator switch

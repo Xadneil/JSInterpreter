@@ -47,23 +47,23 @@ namespace JSInterpreter.AST
                 case UnaryOperator.Plus:
                     comp = unaryExpression.Evaluate(interpreter).GetValue();
                     if (comp.IsAbrupt()) return comp;
-                    return comp.value.ToNumber();
+                    return comp.value!.ToNumber();
                 case UnaryOperator.Negate:
                     comp = unaryExpression.Evaluate(interpreter).GetValue();
                     if (comp.IsAbrupt()) return comp;
-                    comp2 = comp.value.ToNumber();
+                    comp2 = comp.value!.ToNumber();
                     if (comp2.IsAbrupt()) return comp2;
-                    return Completion.NormalCompletion(new NumberValue(-(comp2.value as NumberValue).number));
+                    return Completion.NormalCompletion(new NumberValue(-(comp2.value as NumberValue)!.number));
                 case UnaryOperator.BitwiseNot:
                     comp = unaryExpression.Evaluate(interpreter).GetValue();
                     if (comp.IsAbrupt()) return comp;
-                    comp2 = comp.value.ToNumber();
+                    comp2 = comp.value!.ToNumber();
                     if (comp2.IsAbrupt()) return comp2;
-                    return Completion.NormalCompletion(new NumberValue(~(int)(comp2.value as NumberValue).number));
+                    return Completion.NormalCompletion(new NumberValue(~(int)(comp2.value as NumberValue)!.number));
                 case UnaryOperator.LogicalNot:
                     comp = unaryExpression.Evaluate(interpreter).GetValue();
                     if (comp.IsAbrupt()) return comp;
-                    return Completion.NormalCompletion(comp.value.ToBoolean().boolean ? BooleanValue.False : BooleanValue.True);
+                    return Completion.NormalCompletion(comp.value!.ToBoolean().boolean ? BooleanValue.False : BooleanValue.True);
                 default:
                     throw new InvalidOperationException($"OperatorUnaryExpression.Evaluate: Unknown UnaryOperator enum value {(int)unaryOperator}");
             }
@@ -87,7 +87,7 @@ namespace JSInterpreter.AST
                 if (reference is SuperReferenceValue)
                     return Completion.ThrowReferenceError("OperatorUnaryExpression.EvaluateDelete: cannot delete from super").WithEmptyBool();
                 var baseObj = ((IValue)reference.baseValue).ToObject().value as Object;
-                var deleteStatus = baseObj.InternalDelete(reference.referencedName);
+                var deleteStatus = baseObj!.InternalDelete(reference.referencedName);
                 if (deleteStatus.IsAbrupt()) return deleteStatus;
                 var success = deleteStatus.Other;
                 if (success == false && reference.strict)
