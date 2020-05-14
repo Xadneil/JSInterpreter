@@ -242,7 +242,7 @@ namespace JSInterpreter.Lexer
 
         private bool IsIdentifierStart()
         {
-            return !IsEOF() && (char.IsLetter(currentChar) || currentChar == '_' || currentChar == '$');
+            return !IsEOF() && (char.IsLetter(currentChar) || currentChar == '_' || currentChar == '$' || currentChar == '\\');
         }
 
         private bool IsIdentifierMiddle()
@@ -272,8 +272,7 @@ namespace JSInterpreter.Lexer
 
         private void SyntaxError(string msg)
         {
-            if (logErrors)
-                Console.WriteLine($"Syntax Error: {msg} (line: {lineNumber}, column: {lineColumn})");
+            throw new Exception($"Syntax Error: {msg} (line: {lineNumber}, column: {lineColumn})");
         }
 
         public Token Next()
@@ -284,7 +283,8 @@ namespace JSInterpreter.Lexer
             ConsumeWhitespaceAndComments();
 
             int value_start = position;
-            var token_type = TokenType.Invalid;
+            TokenType token_type;
+            string? overrideValue = null;
 
             if (IsEOF())
             {
@@ -293,14 +293,74 @@ namespace JSInterpreter.Lexer
             else if (IsIdentifierStart())
             {
                 // identifier or keyword
+                StringBuilder sb = new StringBuilder();
                 do
                 {
-                    Consume();
+                    if (currentChar == '\\' && position + 4 < source.Length)
+                    {
+                        Consume();
+                        if (currentChar != 'u')
+                        {
+                            SyntaxError("Invalid identifier staring with \\");
+                        }
+                        else
+                        {
+                            Consume();
+                            bool hasBraces = currentChar == '{';
+                            if (hasBraces)
+                                Consume();
+                            int numberStart = position - 1;
+                            if (!currentChar.IsHexDigit())
+                            {
+                                SyntaxError("Invalid identifier staring with \\");
+                            }
+                            else
+                                Consume();
+                            if (!currentChar.IsHexDigit())
+                            {
+                                SyntaxError("Invalid identifier staring with \\");
+                            }
+                            else
+                                Consume();
+                            if (!currentChar.IsHexDigit())
+                            {
+                                SyntaxError("Invalid identifier staring with \\");
+                            }
+                            else
+                                Consume();
+                            if (!currentChar.IsHexDigit())
+                            {
+                                SyntaxError("Invalid identifier staring with \\");
+                            }
+                            else
+                                Consume();
+                            if (hasBraces)
+                            {
+                                if (currentChar == '}')
+                                    Consume();
+                                else
+                                {
+                                    SyntaxError("unicode escape without closing }");
+                                }
+                            }
+                            var numbers = source.Substring(numberStart, 4);
+                            if (!int.TryParse(numbers, System.Globalization.NumberStyles.HexNumber, System.Globalization.CultureInfo.InvariantCulture, out int charValue))
+                            {
+                                SyntaxError($"Invalid unicode sequence {numbers}");
+                            }
+                            sb.Append((char)charValue);
+                        }
+                    }
+                    else
+                    {
+                        sb.Append(currentChar);
+                        Consume();
+                    }
                 } while (IsIdentifierMiddle());
 
-                string value = source.Substring(value_start - 1, position - value_start);
+                overrideValue = sb.ToString();
 
-                if (!keywords.TryGetValue(value, out token_type))
+                if (!keywords.TryGetValue(overrideValue, out token_type))
                 {
                     token_type = TokenType.Identifier;
                 }
@@ -412,59 +472,33 @@ namespace JSInterpreter.Lexer
             else
             {
                 // There is only one four-char operator: >>>=
-                bool found_four_char_token = false;
                 if (Match('>', '>', '>', '='))
                 {
-                    found_four_char_token = true;
                     Consume();
                     Consume();
                     Consume();
                     Consume();
                     token_type = TokenType.UnsignedShiftRightEquals;
                 }
-
-                bool found_three_char_token = false;
-                if (!found_four_char_token && position + 1 < source.Length)
+                else if (position + 1 < source.Length && three_char_tokens.TryGetValue(new string(new[] { currentChar, source[position], source[position + 1] }), out TokenType tokenType))
                 {
-                    char second_char = source[position];
-                    char third_char = source[position + 1];
-                    string three_chars = new string(new[] { currentChar, second_char, third_char });
-                    if (three_char_tokens.TryGetValue(three_chars, out TokenType tokenType))
-                    {
-                        found_three_char_token = true;
-                        Consume();
-                        Consume();
-                        Consume();
-                        token_type = tokenType;
-                    }
+                    Consume();
+                    Consume();
+                    Consume();
+                    token_type = tokenType;
                 }
-
-                bool found_two_char_token = false;
-                if (!found_four_char_token && !found_three_char_token && position < source.Length)
+                else if (position < source.Length && two_char_tokens.TryGetValue(new string(new[] { currentChar, source[position] }), out TokenType tokenType2))
                 {
-                    char second_char = source[position];
-                    string two_chars = new string(new[] { currentChar, second_char });
-                    if (two_char_tokens.TryGetValue(two_chars, out TokenType tokenType))
-                    {
-                        found_two_char_token = true;
-                        Consume();
-                        Consume();
-                        token_type = tokenType;
-                    }
+                    Consume();
+                    Consume();
+                    token_type = tokenType2;
                 }
-
-                bool found_one_char_token = false;
-                if (!found_four_char_token && !found_three_char_token && !found_two_char_token)
+                else if (single_char_tokens.TryGetValue(currentChar, out TokenType tokenType3))
                 {
-                    if (single_char_tokens.TryGetValue(currentChar, out TokenType tokenType))
-                    {
-                        found_one_char_token = true;
-                        Consume();
-                        token_type = tokenType;
-                    }
+                    Consume();
+                    token_type = tokenType3;
                 }
-
-                if (!found_four_char_token && !found_three_char_token && !found_two_char_token && !found_one_char_token)
+                else
                 {
                     Consume();
                     token_type = TokenType.Invalid;
@@ -474,7 +508,7 @@ namespace JSInterpreter.Lexer
             CurrentToken = new Token(
                 token_type,
                 source.Substring(trivia_start - 1, value_start - trivia_start),
-                source.Substring(value_start - 1, position - value_start),
+                overrideValue ?? source.Substring(value_start - 1, position - value_start),
                 trivia_start - 1,
                 value_start - 1,
                 lineNumber,
