@@ -193,11 +193,9 @@ namespace JSInterpreter.Lexer
                                 unicodeCount = 0;
                                 break;
                             default:
-                                throw new NotImplementedException($"Invalid escape sequence \\{Value[i]}");
-                                // FIXME: Also parse octal, hex and unicode sequences
-                                // should anything else generate a syntax error?
-                                //builder.Append(Value[i]);
-                                //break;
+                                // not a needed escape sequence
+                                builder.Append(Value[i]);
+                                break;
                         }
                         if (state == StringLexState.EscapeCharacter)
                             state = StringLexState.Normal;
