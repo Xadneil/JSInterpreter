@@ -1798,18 +1798,15 @@ namespace JSInterpreter.Parser
             {
                 using (var lr = new LexerRewinder(lexer))
                 {
-                    var propNameId = Consume(TokenType.Identifier);
-                    if (propNameId != null)
+                    var propNameId = Consume();
+                    var propertyName = propNameId.Value;
+                    if (Consume(TokenType.ParenOpen) != null && Consume(TokenType.ParenClose) != null && Consume(TokenType.CurlyOpen) != null)
                     {
-                        var propertyName = propNameId.Value;
-                        if (Consume(TokenType.ParenOpen) != null && Consume(TokenType.ParenClose) != null && Consume(TokenType.CurlyOpen) != null)
+                        var body = ParseStatementList();
+                        if (body != null && Consume(TokenType.CurlyClose) != null)
                         {
-                            var body = ParseStatementList();
-                            if (body != null && Consume(TokenType.CurlyClose) != null)
-                            {
-                                lr.Success = true;
-                                return new Getter(propertyName, new FunctionStatementList(body.statements));
-                            }
+                            lr.Success = true;
+                            return new Getter(propertyName, new FunctionStatementList(body.statements));
                         }
                     }
                 }
@@ -1818,36 +1815,33 @@ namespace JSInterpreter.Parser
             {
                 using (var lr = new LexerRewinder(lexer))
                 {
-                    var propNameId = Consume(TokenType.Identifier);
-                    if (propNameId != null)
+                    var propNameId = Consume();
+                    var propertyName = propNameId.Value;
+                    if (Consume(TokenType.ParenOpen) != null)
                     {
-                        var propertyName = propNameId.Value;
-                        if (Consume(TokenType.ParenOpen) != null)
+                        var name = ParseBindingIdentifier();
+                        if (name != null)
                         {
-                            var name = ParseBindingIdentifier();
-                            if (name != null)
+                            FormalParameter? formalParameter;
+                            if (Match(TokenType.Equals))
                             {
-                                FormalParameter? formalParameter;
-                                if (Match(TokenType.Equals))
+                                var initializer = ParseInitializer();
+                                if (initializer == null)
                                 {
-                                    var initializer = ParseInitializer();
-                                    if (initializer == null)
-                                    {
-                                        formalParameter = null;
-                                    }
-                                    else
-                                        formalParameter = new FormalParameter(new Identifier(name), initializer);
+                                    formalParameter = null;
                                 }
                                 else
-                                    formalParameter = new FormalParameter(new Identifier(name));
-                                if (formalParameter != null && Consume(TokenType.ParenClose) != null && Consume(TokenType.CurlyOpen) != null)
+                                    formalParameter = new FormalParameter(new Identifier(name), initializer);
+                            }
+                            else
+                                formalParameter = new FormalParameter(new Identifier(name));
+                            if (formalParameter != null && Consume(TokenType.ParenClose) != null && Consume(TokenType.CurlyOpen) != null)
+                            {
+                                var body = ParseStatementList();
+                                if (body != null && Consume(TokenType.CurlyClose) != null)
                                 {
-                                    var body = ParseStatementList();
-                                    if (body != null && Consume(TokenType.CurlyClose) != null)
-                                    {
-                                        lr.Success = true;
-                                        return new Setter(propertyName, formalParameter, new FunctionStatementList(body.statements));
-                                    }
+                                    lr.Success = true;
+                                    return new Setter(propertyName, formalParameter, new FunctionStatementList(body.statements));
                                 }
                             }
                         }
