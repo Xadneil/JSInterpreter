@@ -4,16 +4,16 @@ using System.Text;
 
 namespace JSInterpreter.AST
 {
-    public class ObjectLiteral : IPrimaryExpression
+    public sealed class ObjectLiteral : AbstractPrimaryExpression
     {
         public readonly IReadOnlyList<IPropertyDefinition> propertyDefinitions;
 
-        public ObjectLiteral(IReadOnlyList<IPropertyDefinition> propertyDefinitions)
+        public ObjectLiteral(IReadOnlyList<IPropertyDefinition> propertyDefinitions, bool isStrictMode) : base(isStrictMode)
         {
             this.propertyDefinitions = propertyDefinitions;
         }
 
-        public Completion Evaluate(Interpreter interpreter)
+        public override Completion Evaluate(Interpreter interpreter)
         {
             var obj = Utils.ObjectCreate(interpreter.CurrentRealm().Intrinsics.ObjectPrototype);
             foreach (var property in propertyDefinitions)
@@ -34,9 +34,9 @@ namespace JSInterpreter.AST
     public class PropertyDefinition : IPropertyDefinition
     {
         public readonly string propertyName;
-        public readonly IAssignmentExpression assignmentExpression;
+        public readonly AbstractAssignmentExpression assignmentExpression;
 
-        public PropertyDefinition(string propertyName, IAssignmentExpression assignmentExpression)
+        public PropertyDefinition(string propertyName, AbstractAssignmentExpression assignmentExpression)
         {
             this.propertyName = propertyName;
             this.assignmentExpression = assignmentExpression;

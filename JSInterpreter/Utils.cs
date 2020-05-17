@@ -92,7 +92,7 @@ namespace JSInterpreter
                         ret.Add(nextArg.value!);
                     }
                     break;
-                case IAssignmentExpression assignmentExpression:
+                case AbstractAssignmentExpression assignmentExpression:
                     valueComp = assignmentExpression.Evaluate(interpreter).GetValue();
                     if (valueComp.IsAbrupt()) return valueComp.WithEmpty<List<IValue>?>();
                     value = valueComp.value!;
@@ -188,7 +188,7 @@ namespace JSInterpreter
             }
         }
 
-        internal static Completion IteratorBindingInitializationSingleNameBinding(Identifier identifier, IAssignmentExpression? initializer, LexicalEnvironment? env, ArgumentIterator arguments)
+        internal static Completion IteratorBindingInitializationSingleNameBinding(Identifier identifier, AbstractAssignmentExpression? initializer, LexicalEnvironment? env, ArgumentIterator arguments)
         {
             var lhsComp = Interpreter.Instance().ResolveBinding(identifier.name, env);
             if (lhsComp.IsAbrupt()) return lhsComp;

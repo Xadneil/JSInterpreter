@@ -4,17 +4,17 @@ using System.Text;
 
 namespace JSInterpreter.AST
 {
-    public class RegularExpressionLiteral : IPrimaryExpression
+    public sealed class RegularExpressionLiteral : AbstractPrimaryExpression
     {
         public readonly string body, flags;
 
-        public RegularExpressionLiteral(string body, string flags)
+        public RegularExpressionLiteral(string body, string flags, bool isStrictMode) : base(isStrictMode)
         {
             this.body = body;
             this.flags = flags;
         }
 
-        public Completion Evaluate(Interpreter interpreter)
+        public override Completion Evaluate(Interpreter interpreter)
         {
             throw new NotImplementedException("regular expressions");
         }

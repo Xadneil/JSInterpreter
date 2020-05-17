@@ -259,12 +259,12 @@ namespace JSInterpreter.Lexer
         // /abc/g
         // 012345
         // length = 6
-        public RegularExpressionLiteral RegexValue()
+        public RegularExpressionLiteral RegexValue(bool isStrictMode)
         {
             var lastSlash = Value.LastIndexOf('/');
             if (lastSlash == Value.Length - 1)
-                return new RegularExpressionLiteral(Value[1..^1], "");
-            return new RegularExpressionLiteral(Value[1..lastSlash], Value.Substring(lastSlash + 1));
+                return new RegularExpressionLiteral(Value[1..^1], "", isStrictMode);
+            return new RegularExpressionLiteral(Value[1..lastSlash], Value.Substring(lastSlash + 1), isStrictMode);
         }
     }
 }

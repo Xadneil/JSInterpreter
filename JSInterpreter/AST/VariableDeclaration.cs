@@ -7,9 +7,9 @@ namespace JSInterpreter.AST
     public class VariableDeclaration : IScopedDeclaration
     {
         public readonly string name;
-        public readonly IAssignmentExpression? assignmentExpression;
+        public readonly AbstractAssignmentExpression? assignmentExpression;
 
-        public VariableDeclaration(string name, IAssignmentExpression? assignmentExpression)
+        public VariableDeclaration(string name, AbstractAssignmentExpression? assignmentExpression)
         {
             this.name = name;
             this.assignmentExpression = assignmentExpression;

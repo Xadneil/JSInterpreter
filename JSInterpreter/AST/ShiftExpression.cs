@@ -11,24 +11,27 @@ namespace JSInterpreter.AST
         ShiftRightUnsigned
     }
 
-    public interface IShiftExpression : IRelationalExpression
+    public abstract class AbstractShiftExpression : AbstractRelationalExpression
     {
+        protected AbstractShiftExpression(bool isStrictMode) : base(isStrictMode)
+        {
+        }
     }
 
-    public class ShiftExpression : IShiftExpression
+    public sealed class ShiftExpression : AbstractShiftExpression
     {
         public readonly ShiftOperator shiftOperator;
-        public readonly IAdditiveExpression additiveExpression;
-        public readonly IShiftExpression shiftExpression;
+        public readonly AbstractAdditiveExpression additiveExpression;
+        public readonly AbstractShiftExpression shiftExpression;
 
-        public ShiftExpression(IShiftExpression shiftExpression, ShiftOperator shiftOperator, IAdditiveExpression additiveExpression)
+        public ShiftExpression(AbstractShiftExpression shiftExpression, ShiftOperator shiftOperator, AbstractAdditiveExpression additiveExpression, bool isStrictMode) : base(isStrictMode)
         {
             this.shiftExpression = shiftExpression;
             this.shiftOperator = shiftOperator;
             this.additiveExpression = additiveExpression;
         }
 
-        public Completion Evaluate(Interpreter interpreter)
+        public override Completion Evaluate(Interpreter interpreter)
         {
             var left = shiftExpression.Evaluate(interpreter).GetValue();
             if (left.IsAbrupt()) return left;

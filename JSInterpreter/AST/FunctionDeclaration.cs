@@ -12,14 +12,14 @@ namespace JSInterpreter.AST
         public readonly FormalParameters formalParameters;
         public readonly FunctionStatementList functionBody;
 
-        public FunctionDeclaration(FormalParameters formalParameters, FunctionStatementList functionBody)
+        public FunctionDeclaration(FormalParameters formalParameters, FunctionStatementList functionBody, bool isStrictMode) : base(isStrictMode)
         {
             isAnonymous = true;
             this.formalParameters = formalParameters;
             this.functionBody = functionBody;
         }
 
-        public FunctionDeclaration(Identifier identifier, FormalParameters formalParameters, FunctionStatementList functionBody)
+        public FunctionDeclaration(Identifier identifier, FormalParameters formalParameters, FunctionStatementList functionBody, bool isStrictMode) : base(isStrictMode)
         {
             isAnonymous = false;
             this.identifier = identifier;
@@ -81,21 +81,21 @@ namespace JSInterpreter.AST
 
     }
 
-    public class FunctionExpression : IPrimaryExpression
+    public sealed class FunctionExpression : AbstractPrimaryExpression
     {
         public readonly bool isAnonymous;
         public readonly Identifier? identifier;
         public readonly FormalParameters formalParameters;
         public readonly FunctionStatementList functionBody;
 
-        public FunctionExpression(FormalParameters formalParameters, FunctionStatementList functionBody)
+        public FunctionExpression(FormalParameters formalParameters, FunctionStatementList functionBody, bool isStrictMode) : base(isStrictMode)
         {
             isAnonymous = true;
             this.formalParameters = formalParameters;
             this.functionBody = functionBody;
         }
 
-        public FunctionExpression(Identifier identifier, FormalParameters formalParameters, FunctionStatementList functionBody)
+        public FunctionExpression(Identifier identifier, FormalParameters formalParameters, FunctionStatementList functionBody, bool isStrictMode) : base(isStrictMode)
         {
             isAnonymous = false;
             this.identifier = identifier;
@@ -103,7 +103,7 @@ namespace JSInterpreter.AST
             this.functionBody = functionBody;
         }
 
-        public Completion Evaluate(Interpreter interpreter)
+        public override Completion Evaluate(Interpreter interpreter)
         {
             if (isAnonymous)
             {
@@ -201,7 +201,7 @@ namespace JSInterpreter.AST
     {
         public readonly Identifier identifier;
         public readonly bool hasInitializer;
-        public readonly IAssignmentExpression? initializerAssignmentExpression;
+        public readonly AbstractAssignmentExpression? initializerAssignmentExpression;
 
         public FormalParameter(Identifier identifier)
         {
@@ -209,7 +209,7 @@ namespace JSInterpreter.AST
             this.identifier = identifier;
         }
 
-        public FormalParameter(Identifier identifier, IAssignmentExpression initializerAssignmentExpression)
+        public FormalParameter(Identifier identifier, AbstractAssignmentExpression initializerAssignmentExpression)
         {
             hasInitializer = true;
             this.identifier = identifier;

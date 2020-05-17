@@ -8,7 +8,7 @@ namespace JSInterpreter.AST
     {
         public readonly IReadOnlyList<IStatementListItem> statements;
 
-        public StatementList(IReadOnlyList<IStatementListItem> statements)
+        public StatementList(IReadOnlyList<IStatementListItem> statements, bool isStrictMode) : base(isStrictMode)
         {
             this.statements = statements;
         }
@@ -105,7 +105,7 @@ namespace JSInterpreter.AST
 
     public class FunctionStatementList : StatementList
     {
-        public FunctionStatementList(IReadOnlyList<IStatementListItem> statements) : base(statements) { }
+        public FunctionStatementList(StatementList statementList) : base(statementList.statements, statementList.IsStrictMode) { }
 
         public override IReadOnlyList<string> LexicallyDeclaredNames()
         {
@@ -137,7 +137,7 @@ namespace JSInterpreter.AST
 
     public class ScriptStatementList : StatementList
     {
-        public ScriptStatementList(IReadOnlyList<IStatementListItem> statements) : base(statements) { }
+        public ScriptStatementList(StatementList statementList) : base(statementList.statements, statementList.IsStrictMode) { }
 
         public override IReadOnlyList<string> LexicallyDeclaredNames()
         {

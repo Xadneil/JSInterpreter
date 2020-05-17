@@ -4,8 +4,11 @@ using System.Text;
 
 namespace JSInterpreter.AST
 {
-    public interface IBitwiseAndExpression : IBitwiseXorExpression
+    public abstract class AbstractBitwiseAndExpression : AbstractBitwiseXorExpression
     {
+        protected AbstractBitwiseAndExpression(bool isStrictMode) : base(isStrictMode)
+        {
+        }
     }
 
     public enum BitwiseOperator
@@ -13,9 +16,9 @@ namespace JSInterpreter.AST
         And, Xor, Or
     }
 
-    public abstract class BitwiseExpression
+    public interface IBitwiseExpression
     {
-        public Completion Evaluate(Interpreter interpreter)
+        public Completion EvaluateBitwise(Interpreter interpreter)
         {
             var left = Left.Evaluate(interpreter).GetValue();
             if (left.IsAbrupt()) return left;
@@ -47,70 +50,85 @@ namespace JSInterpreter.AST
             }));
         }
 
-        protected abstract BitwiseOperator BitwiseOperator { get; }
-        protected abstract IExpression Left { get; }
-        protected abstract IExpression Right { get; }
+        protected BitwiseOperator BitwiseOperator { get; }
+        protected AbstractExpression Left { get; }
+        protected AbstractExpression Right { get; }
     }
 
-    public class BitwiseAndExpression : BitwiseExpression, IBitwiseAndExpression
+    public sealed class BitwiseAndExpression : AbstractBitwiseAndExpression, IBitwiseExpression
     {
-        public readonly IEqualityExpression equalityExpression;
-        public readonly IBitwiseAndExpression bitwiseAndExpression;
+        public readonly AbstractEqualityExpression equalityExpression;
+        public readonly AbstractBitwiseAndExpression bitwiseAndExpression;
 
-        public BitwiseAndExpression(IBitwiseAndExpression bitwiseAndExpression, IEqualityExpression equalityExpression)
+        public BitwiseAndExpression(AbstractBitwiseAndExpression bitwiseAndExpression, AbstractEqualityExpression equalityExpression, bool isStrictMode) : base(isStrictMode)
         {
             this.bitwiseAndExpression = bitwiseAndExpression;
             this.equalityExpression = equalityExpression;
         }
 
-        protected override BitwiseOperator BitwiseOperator => BitwiseOperator.And;
+        BitwiseOperator IBitwiseExpression.BitwiseOperator => BitwiseOperator.And;
+        AbstractExpression IBitwiseExpression.Left => bitwiseAndExpression;
+        AbstractExpression IBitwiseExpression.Right => equalityExpression;
 
-        protected override IExpression Left => bitwiseAndExpression;
-
-        protected override IExpression Right => equalityExpression;
+        public override Completion Evaluate(Interpreter interpreter)
+        {
+            return ((IBitwiseExpression)this).EvaluateBitwise(interpreter);
+        }
     }
 
-    public interface IBitwiseXorExpression : IBitwiseOrExpression
+    public abstract class AbstractBitwiseXorExpression : AbstractBitwiseOrExpression
     {
+        protected AbstractBitwiseXorExpression(bool isStrictMode) : base(isStrictMode)
+        {
+        }
     }
 
-    public class BitwiseXorExpression : BitwiseExpression, IBitwiseXorExpression
+    public sealed class BitwiseXorExpression : AbstractBitwiseXorExpression, IBitwiseExpression
     {
-        public readonly IBitwiseAndExpression bitwiseAndExpression;
-        public readonly IBitwiseXorExpression bitwiseXorExpression;
+        public readonly AbstractBitwiseAndExpression bitwiseAndExpression;
+        public readonly AbstractBitwiseXorExpression bitwiseXorExpression;
 
-        public BitwiseXorExpression(IBitwiseXorExpression bitwiseXorExpression, IBitwiseAndExpression bitwiseAndExpression)
+        public BitwiseXorExpression(AbstractBitwiseXorExpression bitwiseXorExpression, AbstractBitwiseAndExpression bitwiseAndExpression, bool isStrictMode) : base(isStrictMode)
         {
             this.bitwiseXorExpression = bitwiseXorExpression;
             this.bitwiseAndExpression = bitwiseAndExpression;
         }
 
-        protected override BitwiseOperator BitwiseOperator => BitwiseOperator.Xor;
+        BitwiseOperator IBitwiseExpression.BitwiseOperator => BitwiseOperator.Xor;
+        AbstractExpression IBitwiseExpression.Left => bitwiseXorExpression;
+        AbstractExpression IBitwiseExpression.Right => bitwiseAndExpression;
 
-        protected override IExpression Left => bitwiseXorExpression;
-
-        protected override IExpression Right => bitwiseAndExpression;
+        public override Completion Evaluate(Interpreter interpreter)
+        {
+            return ((IBitwiseExpression)this).EvaluateBitwise(interpreter);
+        }
     }
 
-    public interface IBitwiseOrExpression : ILogicalAndExpression
+    public abstract class AbstractBitwiseOrExpression : AbstractLogicalAndExpression
     {
+        protected AbstractBitwiseOrExpression(bool isStrictMode) : base(isStrictMode)
+        {
+        }
     }
 
-    public class BitwiseOrExpression : BitwiseExpression, IBitwiseOrExpression
+    public sealed class BitwiseOrExpression : AbstractBitwiseOrExpression, IBitwiseExpression
     {
-        public readonly IBitwiseXorExpression bitwiseXorExpression;
-        public readonly IBitwiseOrExpression bitwiseOrExpression;
+        public readonly AbstractBitwiseXorExpression bitwiseXorExpression;
+        public readonly AbstractBitwiseOrExpression bitwiseOrExpression;
 
-        public BitwiseOrExpression(IBitwiseOrExpression bitwiseOrExpression, IBitwiseXorExpression bitwiseXorExpression)
+        public BitwiseOrExpression(AbstractBitwiseOrExpression bitwiseOrExpression, AbstractBitwiseXorExpression bitwiseXorExpression, bool isStrictMode) : base(isStrictMode)
         {
             this.bitwiseOrExpression = bitwiseOrExpression;
             this.bitwiseXorExpression = bitwiseXorExpression;
         }
 
-        protected override BitwiseOperator BitwiseOperator => BitwiseOperator.Or;
+        BitwiseOperator IBitwiseExpression.BitwiseOperator => BitwiseOperator.Or;
+        AbstractExpression IBitwiseExpression.Left => bitwiseOrExpression;
+        AbstractExpression IBitwiseExpression.Right => bitwiseXorExpression;
 
-        protected override IExpression Left => bitwiseOrExpression;
-
-        protected override IExpression Right => bitwiseXorExpression;
+        public override Completion Evaluate(Interpreter interpreter)
+        {
+            return ((IBitwiseExpression)this).EvaluateBitwise(interpreter);
+        }
     }
 }

@@ -5,22 +5,25 @@ using System.Text;
 
 namespace JSInterpreter.AST
 {
-    public interface IMemberExpression : INewExpression
+    public abstract class AbstractMemberExpression : AbstractNewExpression
     {
+        protected AbstractMemberExpression(bool isStrictMode) : base(isStrictMode)
+        {
+        }
     }
 
-    public class IndexMemberExpression : IMemberExpression
+    public sealed class IndexMemberExpression : AbstractMemberExpression
     {
-        public readonly IMemberExpression indexedMemberExpression;
-        public readonly IExpression indexerExpression;
+        public readonly AbstractMemberExpression indexedMemberExpression;
+        public readonly AbstractExpression indexerExpression;
 
-        public IndexMemberExpression(IMemberExpression indexedMemberExpression, IExpression indexerExpression)
+        public IndexMemberExpression(AbstractMemberExpression indexedMemberExpression, AbstractExpression indexerExpression, bool isStrictMode) : base(isStrictMode)
         {
             this.indexedMemberExpression = indexedMemberExpression;
             this.indexerExpression = indexerExpression;
         }
 
-        public Completion Evaluate(Interpreter interpreter)
+        public override Completion Evaluate(Interpreter interpreter)
         {
             var baseValueComp = indexedMemberExpression.Evaluate(interpreter).GetValue();
             if (baseValueComp.IsAbrupt()) return baseValueComp;
@@ -37,18 +40,18 @@ namespace JSInterpreter.AST
         }
     }
 
-    public class DotMemberExpression : IMemberExpression
+    public sealed class DotMemberExpression : AbstractMemberExpression
     {
-        public readonly IMemberExpression dotMemberExpression;
+        public readonly AbstractMemberExpression dotMemberExpression;
         public readonly string dotIdentifierName;
 
-        public DotMemberExpression(IMemberExpression dotMemberExpression, string dotIdentifierName)
+        public DotMemberExpression(AbstractMemberExpression dotMemberExpression, string dotIdentifierName, bool isStrictMode) : base(isStrictMode)
         {
             this.dotMemberExpression = dotMemberExpression;
             this.dotIdentifierName = dotIdentifierName;
         }
 
-        public Completion Evaluate(Interpreter interpreter)
+        public override Completion Evaluate(Interpreter interpreter)
         {
             var baseValueComp = dotMemberExpression.Evaluate(interpreter).GetValue();
             if (baseValueComp.IsAbrupt()) return baseValueComp;
@@ -76,16 +79,16 @@ namespace JSInterpreter.AST
         }
     }
 
-    public class SuperIndexMemberExpression : IMemberExpression
+    public sealed class SuperIndexMemberExpression : AbstractMemberExpression
     {
-        public readonly IExpression superIndexerExpression;
+        public readonly AbstractExpression superIndexerExpression;
 
-        public SuperIndexMemberExpression(IExpression superIndexerExpression)
+        public SuperIndexMemberExpression(AbstractExpression superIndexerExpression, bool isStrictMode) : base(isStrictMode)
         {
             this.superIndexerExpression = superIndexerExpression;
         }
 
-        public Completion Evaluate(Interpreter interpreter)
+        public override Completion Evaluate(Interpreter interpreter)
         {
             var envBase = interpreter.GetThisEnvironment();
             if (!(envBase is FunctionEnvironmentRecord env))
@@ -106,16 +109,16 @@ namespace JSInterpreter.AST
         }
     }
 
-    public class SuperDotMemberExpression : IMemberExpression
+    public sealed class SuperDotMemberExpression : AbstractMemberExpression
     {
         public readonly string superDotIdentifierName;
 
-        public SuperDotMemberExpression(string superDotIdentifierName)
+        public SuperDotMemberExpression(string superDotIdentifierName, bool isStrictMode) : base(isStrictMode)
         {
             this.superDotIdentifierName = superDotIdentifierName;
         }
 
-        public Completion Evaluate(Interpreter interpreter)
+        public override Completion Evaluate(Interpreter interpreter)
         {
             var envBase = interpreter.GetThisEnvironment();
             if (!(envBase is FunctionEnvironmentRecord env))
@@ -130,18 +133,18 @@ namespace JSInterpreter.AST
         }
     }
 
-    public class NewMemberExpression : IMemberExpression
+    public sealed class NewMemberExpression : AbstractMemberExpression
     {
-        public readonly IMemberExpression newMemberExpression;
+        public readonly AbstractMemberExpression newMemberExpression;
         public readonly Arguments newArguments;
 
-        public NewMemberExpression(IMemberExpression newMemberExpression, Arguments newArguments)
+        public NewMemberExpression(AbstractMemberExpression newMemberExpression, Arguments newArguments, bool isStrictMode) : base(isStrictMode)
         {
             this.newMemberExpression = newMemberExpression;
             this.newArguments = newArguments;
         }
 
-        public Completion Evaluate(Interpreter interpreter)
+        public override Completion Evaluate(Interpreter interpreter)
         {
             return newMemberExpression.EvaluateNew(interpreter, newArguments);
         }

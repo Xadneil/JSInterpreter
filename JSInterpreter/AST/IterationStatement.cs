@@ -61,6 +61,10 @@ namespace JSInterpreter.AST
 
     public abstract class IterationStatement : BreakableStatement
     {
+        protected IterationStatement(bool isStrictMode) : base(isStrictMode)
+        {
+        }
+
         public override Completion Evaluate(Interpreter interpreter)
         {
             return LabelledEvaluate(interpreter, new List<string>());
@@ -75,7 +79,7 @@ namespace JSInterpreter.AST
             return false;
         }
 
-        protected static Completion ForBodyEvaluation(IExpression? test, IExpression? increment, Statement stmt, IEnumerable<string> perIterationBindings, List<string> labelSet)
+        protected static Completion ForBodyEvaluation(AbstractExpression? test, AbstractExpression? increment, Statement stmt, IEnumerable<string> perIterationBindings, List<string> labelSet)
         {
             IValue V = UndefinedValue.Instance;
             var comp = CreatePerIterationEnvironment(perIterationBindings);
@@ -127,7 +131,7 @@ namespace JSInterpreter.AST
             return Completion.NormalCompletion(UndefinedValue.Instance);
         }
 
-        protected static CompletionOr<IteratorRecord?> ForInOfHeadEvaluation(IEnumerable<string> TDZNames, IExpression expr, IterationKind iterationKind)
+        protected static CompletionOr<IteratorRecord?> ForInOfHeadEvaluation(IEnumerable<string> TDZNames, AbstractExpression expr, IterationKind iterationKind)
         {
             var oldEnv = Interpreter.Instance().RunningExecutionContext().LexicalEnvironment;
             if (TDZNames.Any())
@@ -272,9 +276,9 @@ namespace JSInterpreter.AST
     public class DoWhileIterationStatement : IterationStatement
     {
         public readonly Statement doStatement;
-        public readonly IExpression whileExpression;
+        public readonly AbstractExpression whileExpression;
 
-        public DoWhileIterationStatement(Statement doStatement, IExpression whileExpression)
+        public DoWhileIterationStatement(Statement doStatement, AbstractExpression whileExpression, bool isStrictMode) : base(isStrictMode)
         {
             this.doStatement = doStatement;
             this.whileExpression = whileExpression;
@@ -315,10 +319,10 @@ namespace JSInterpreter.AST
 
     public class WhileIterationStatement : IterationStatement
     {
-        public readonly IExpression whileExpression;
+        public readonly AbstractExpression whileExpression;
         public readonly Statement doStatement;
 
-        public WhileIterationStatement(IExpression whileExpression, Statement doStatement)
+        public WhileIterationStatement(AbstractExpression whileExpression, Statement doStatement, bool isStrictMode) : base(isStrictMode)
         {
             this.doStatement = doStatement;
             this.whileExpression = whileExpression;
@@ -361,11 +365,11 @@ namespace JSInterpreter.AST
     public class ForExpressionIterationStatement : IterationStatement
     {
         public readonly Statement doStatement;
-        public readonly IExpression? forExpression;
-        public readonly IExpression? conditionExpression;
-        public readonly IExpression? endExpression;
+        public readonly AbstractExpression? forExpression;
+        public readonly AbstractExpression? conditionExpression;
+        public readonly AbstractExpression? endExpression;
 
-        public ForExpressionIterationStatement(IExpression? forExpression, IExpression? conditionExpression, IExpression? endExpression, Statement doStatement)
+        public ForExpressionIterationStatement(AbstractExpression? forExpression, AbstractExpression? conditionExpression, AbstractExpression? endExpression, Statement doStatement, bool isStrictMode) : base(isStrictMode)
         {
             this.doStatement = doStatement;
             this.forExpression = forExpression;
@@ -403,10 +407,10 @@ namespace JSInterpreter.AST
     {
         public readonly Statement doStatement;
         public readonly VariableDeclarationList variableDeclarations;
-        public readonly IExpression? conditionExpression;
-        public readonly IExpression? endExpression;
+        public readonly AbstractExpression? conditionExpression;
+        public readonly AbstractExpression? endExpression;
 
-        public ForVarIterationStatement(VariableDeclarationList variableDeclarations, IExpression? conditionExpression, IExpression? endExpression, Statement doStatement)
+        public ForVarIterationStatement(VariableDeclarationList variableDeclarations, AbstractExpression? conditionExpression, AbstractExpression? endExpression, Statement doStatement, bool isStrictMode) : base(isStrictMode)
         {
             this.doStatement = doStatement;
             this.variableDeclarations = variableDeclarations;
@@ -441,10 +445,10 @@ namespace JSInterpreter.AST
     {
         public readonly Statement doStatement;
         public readonly LexicalDeclaration lexicalDeclaration;
-        public readonly IExpression leftExpression;
-        public readonly IExpression rightExpression;
+        public readonly AbstractExpression leftExpression;
+        public readonly AbstractExpression rightExpression;
 
-        public ForLexicalIterationStatement(LexicalDeclaration lexicalDeclaration, IExpression leftExpression, IExpression rightExpression, Statement doStatement)
+        public ForLexicalIterationStatement(LexicalDeclaration lexicalDeclaration, AbstractExpression leftExpression, AbstractExpression rightExpression, Statement doStatement, bool isStrictMode) : base(isStrictMode)
         {
             this.doStatement = doStatement;
             this.lexicalDeclaration = lexicalDeclaration;
@@ -497,11 +501,11 @@ namespace JSInterpreter.AST
 
     public class ForInLHSIterationStatement : IterationStatement
     {
-        public readonly ILeftHandSideExpression leftHandSideExpression;
-        public readonly IExpression inExpression;
+        public readonly AbstractLeftHandSideExpression leftHandSideExpression;
+        public readonly AbstractExpression inExpression;
         public readonly Statement doStatement;
 
-        public ForInLHSIterationStatement(ILeftHandSideExpression leftHandSideExpression, IExpression inExpression, Statement doStatement)
+        public ForInLHSIterationStatement(AbstractLeftHandSideExpression leftHandSideExpression, AbstractExpression inExpression, Statement doStatement, bool isStrictMode) : base(isStrictMode)
         {
             this.leftHandSideExpression = leftHandSideExpression;
             this.inExpression = inExpression;
@@ -534,10 +538,10 @@ namespace JSInterpreter.AST
     public class ForInVarIterationStatement : IterationStatement
     {
         public readonly ForBinding forVar;
-        public readonly IExpression forInExpression;
+        public readonly AbstractExpression forInExpression;
         public readonly Statement doStatement;
 
-        public ForInVarIterationStatement(ForBinding forVar, IExpression forInExpression, Statement doStatement)
+        public ForInVarIterationStatement(ForBinding forVar, AbstractExpression forInExpression, Statement doStatement, bool isStrictMode) : base(isStrictMode)
         {
             this.forVar = forVar;
             this.forInExpression = forInExpression;
@@ -570,10 +574,10 @@ namespace JSInterpreter.AST
     public class ForInLetConstIterationStatement : IterationStatement
     {
         public readonly ForDeclaration forDeclaration;
-        public readonly IExpression forInExpression;
+        public readonly AbstractExpression forInExpression;
         public readonly Statement doStatement;
 
-        public ForInLetConstIterationStatement(ForDeclaration forDeclaration, IExpression forInExpression, Statement doStatement)
+        public ForInLetConstIterationStatement(ForDeclaration forDeclaration, AbstractExpression forInExpression, Statement doStatement, bool isStrictMode) : base(isStrictMode)
         {
             this.forDeclaration = forDeclaration;
             this.forInExpression = forInExpression;
@@ -605,11 +609,11 @@ namespace JSInterpreter.AST
 
     public class ForOfLHSIterationStatement : IterationStatement
     {
-        public readonly ILeftHandSideExpression leftHandSideExpression;
-        public readonly IAssignmentExpression ofExpression;
+        public readonly AbstractLeftHandSideExpression leftHandSideExpression;
+        public readonly AbstractAssignmentExpression ofExpression;
         public readonly Statement doStatement;
 
-        public ForOfLHSIterationStatement(ILeftHandSideExpression leftHandSideExpression, IAssignmentExpression ofExpression, Statement doStatement)
+        public ForOfLHSIterationStatement(AbstractLeftHandSideExpression leftHandSideExpression, AbstractAssignmentExpression ofExpression, Statement doStatement, bool isStrictMode) : base(isStrictMode)
         {
             this.leftHandSideExpression = leftHandSideExpression;
             this.ofExpression = ofExpression;
@@ -642,10 +646,10 @@ namespace JSInterpreter.AST
     public class ForOfVarIterationStatement : IterationStatement
     {
         public readonly ForBinding forVar;
-        public readonly IAssignmentExpression forOfExpression;
+        public readonly AbstractAssignmentExpression forOfExpression;
         public readonly Statement doStatement;
 
-        public ForOfVarIterationStatement(ForBinding forVar, IAssignmentExpression forOfExpression, Statement doStatement)
+        public ForOfVarIterationStatement(ForBinding forVar, AbstractAssignmentExpression forOfExpression, Statement doStatement, bool isStrictMode) : base(isStrictMode)
         {
             this.forVar = forVar;
             this.forOfExpression = forOfExpression;
@@ -678,10 +682,10 @@ namespace JSInterpreter.AST
     public class ForOfLetConstIterationStatement : IterationStatement
     {
         public readonly ForDeclaration forDeclaration;
-        public readonly IAssignmentExpression forOfExpression;
+        public readonly AbstractAssignmentExpression forOfExpression;
         public readonly Statement doStatement;
 
-        public ForOfLetConstIterationStatement(ForDeclaration forDeclaration, IAssignmentExpression forOfExpression, Statement doStatement)
+        public ForOfLetConstIterationStatement(ForDeclaration forDeclaration, AbstractAssignmentExpression forOfExpression, Statement doStatement, bool isStrictMode) : base(isStrictMode)
         {
             this.forDeclaration = forDeclaration;
             this.forOfExpression = forOfExpression;

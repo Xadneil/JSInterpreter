@@ -5,16 +5,16 @@ using System.Text;
 
 namespace JSInterpreter.AST
 {
-    public class ArrayLiteral : IPrimaryExpression
+    public sealed class ArrayLiteral : AbstractPrimaryExpression
     {
         public readonly IReadOnlyList<IArrayLiteralItem> arrayLiteralItems;
 
-        public ArrayLiteral(IReadOnlyList<IArrayLiteralItem> arrayLiteralItems)
+        public ArrayLiteral(IReadOnlyList<IArrayLiteralItem> arrayLiteralItems, bool isStrictMode) : base(isStrictMode)
         {
             this.arrayLiteralItems = arrayLiteralItems;
         }
 
-        public Completion Evaluate(Interpreter interpreter)
+        public override Completion Evaluate(Interpreter interpreter)
         {
             if (arrayLiteralItems.Count == 1 && arrayLiteralItems[0] is Elision e)
             {
@@ -41,7 +41,7 @@ namespace JSInterpreter.AST
                 IValue value;
                 switch (item)
                 {
-                    case IAssignmentExpression assignmentExpression:
+                    case AbstractAssignmentExpression assignmentExpression:
                         valueComp = assignmentExpression.Evaluate(Interpreter.Instance()).GetValue();
                         if (valueComp.IsAbrupt()) return valueComp;
                         value = valueComp.value!;

@@ -20,22 +20,25 @@ namespace JSInterpreter.AST
         Exponentiate
     }
 
-    public interface IAssignmentExpression : IExpression, IArrayLiteralItem, IArgumentItem
+    public abstract class AbstractAssignmentExpression : AbstractExpression, IArrayLiteralItem, IArgumentItem
     {
+        protected AbstractAssignmentExpression(bool isStrictMode) : base(isStrictMode)
+        {
+        }
     }
 
-    public class AssignmentExpression : IAssignmentExpression
+    public sealed class AssignmentExpression : AbstractAssignmentExpression
     {
-        public readonly ILeftHandSideExpression leftHandSideExpression;
-        public readonly IAssignmentExpression assignmentExpression;
+        public readonly AbstractLeftHandSideExpression leftHandSideExpression;
+        public readonly AbstractAssignmentExpression assignmentExpression;
 
-        public AssignmentExpression(ILeftHandSideExpression leftHandSideExpression, IAssignmentExpression assignmentExpression)
+        public AssignmentExpression(AbstractLeftHandSideExpression leftHandSideExpression, AbstractAssignmentExpression assignmentExpression, bool isStrictMode) : base(isStrictMode)
         {
             this.leftHandSideExpression = leftHandSideExpression;
             this.assignmentExpression = assignmentExpression;
         }
 
-        public Completion Evaluate(Interpreter interpreter)
+        public override Completion Evaluate(Interpreter interpreter)
         {
             if (!(leftHandSideExpression is ObjectLiteral) && !(leftHandSideExpression is ArrayLiteral))
             {
@@ -58,20 +61,20 @@ namespace JSInterpreter.AST
         }
     }
 
-    public class OperatorAssignmentExpression : IAssignmentExpression
+    public sealed class OperatorAssignmentExpression : AbstractAssignmentExpression
     {
-        public readonly ILeftHandSideExpression leftHandSideExpression;
+        public readonly AbstractLeftHandSideExpression leftHandSideExpression;
         public readonly AssignmentOperator assignmentOperator;
-        public readonly IAssignmentExpression assignmentExpression;
+        public readonly AbstractAssignmentExpression assignmentExpression;
 
-        public OperatorAssignmentExpression(ILeftHandSideExpression leftHandSideExpression, AssignmentOperator assignmentOperator, IAssignmentExpression assignmentExpression)
+        public OperatorAssignmentExpression(AbstractLeftHandSideExpression leftHandSideExpression, AssignmentOperator assignmentOperator, AbstractAssignmentExpression assignmentExpression, bool isStrictMode) : base(isStrictMode)
         {
             this.leftHandSideExpression = leftHandSideExpression;
             this.assignmentOperator = assignmentOperator;
             this.assignmentExpression = assignmentExpression;
         }
 
-        public Completion Evaluate(Interpreter interpreter)
+        public override Completion Evaluate(Interpreter interpreter)
         {
             var lref = leftHandSideExpression.Evaluate(interpreter);
             if (!(lref.value is ReferenceValue referenceValue))
@@ -95,9 +98,9 @@ namespace JSInterpreter.AST
                 AssignmentOperator.ShiftLeft => ShiftExpression.Calculate(lval, ShiftOperator.ShiftLeft, rval),
                 AssignmentOperator.ShiftRight => ShiftExpression.Calculate(lval, ShiftOperator.ShiftRight, rval),
                 AssignmentOperator.ShiftRightUnsigned => ShiftExpression.Calculate(lval, ShiftOperator.ShiftRightUnsigned, rval),
-                AssignmentOperator.BitwiseAnd => BitwiseExpression.Calculate(lval, BitwiseOperator.And, rval),
-                AssignmentOperator.BitwiseXor => BitwiseExpression.Calculate(lval, BitwiseOperator.Xor, rval),
-                AssignmentOperator.BitwiseOr => BitwiseExpression.Calculate(lval, BitwiseOperator.Or, rval),
+                AssignmentOperator.BitwiseAnd => IBitwiseExpression.Calculate(lval, BitwiseOperator.And, rval),
+                AssignmentOperator.BitwiseXor => IBitwiseExpression.Calculate(lval, BitwiseOperator.Xor, rval),
+                AssignmentOperator.BitwiseOr => IBitwiseExpression.Calculate(lval, BitwiseOperator.Or, rval),
                 AssignmentOperator.Exponentiate => ExponentiationExpression.Calculate(lval, rval),
                 _ => throw new InvalidOperationException($"OperatorAssignmentExpression.Evaluate: invalid AssignmentOperator enum value {(int)assignmentOperator}")
             };

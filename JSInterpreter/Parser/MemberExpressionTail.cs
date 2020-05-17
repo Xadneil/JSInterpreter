@@ -4,11 +4,11 @@ namespace JSInterpreter.Parser
 {
     public class MemberExpressionTail
     {
-        public IExpression? Expression { get; private set; }
+        public AbstractExpression? Expression { get; private set; }
         public string? IdentifierName { get; private set; }
         public MemberExpressionTail? Tail { get; private set; }
 
-        public MemberExpressionTail(IExpression expression, MemberExpressionTail? tail)
+        public MemberExpressionTail(AbstractExpression expression, MemberExpressionTail? tail)
         {
             Expression = expression;
             Tail = tail;

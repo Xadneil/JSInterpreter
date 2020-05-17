@@ -4,22 +4,25 @@ using System.Text;
 
 namespace JSInterpreter.AST
 {
-    public interface ILogicalAndExpression : ILogicalOrExpression
+    public abstract class AbstractLogicalAndExpression : AbstractLogicalOrExpression
     {
+        protected AbstractLogicalAndExpression(bool isStrictMode) : base(isStrictMode)
+        {
+        }
     }
 
-    public class LogicalAndExpression : ILogicalAndExpression
+    public sealed class LogicalAndExpression : AbstractLogicalAndExpression
     {
-        public readonly IBitwiseOrExpression bitwiseOrExpression;
-        public readonly ILogicalAndExpression logicalAndExpression;
+        public readonly AbstractBitwiseOrExpression bitwiseOrExpression;
+        public readonly AbstractLogicalAndExpression logicalAndExpression;
 
-        public LogicalAndExpression(ILogicalAndExpression logicalAndExpression, IBitwiseOrExpression bitwiseOrExpression)
+        public LogicalAndExpression(AbstractLogicalAndExpression logicalAndExpression, AbstractBitwiseOrExpression bitwiseOrExpression, bool isStrictMode) : base(isStrictMode)
         {
             this.logicalAndExpression = logicalAndExpression;
             this.bitwiseOrExpression = bitwiseOrExpression;
         }
 
-        public Completion Evaluate(Interpreter interpreter)
+        public override Completion Evaluate(Interpreter interpreter)
         {
             var left = logicalAndExpression.Evaluate(interpreter).GetValue();
             if (left.IsAbrupt()) return left;
@@ -30,22 +33,25 @@ namespace JSInterpreter.AST
         }
     }
 
-    public interface ILogicalOrExpression : IConditionalExpression
+    public abstract class AbstractLogicalOrExpression : AbstractConditionalExpression
     {
+        protected AbstractLogicalOrExpression(bool isStrictMode) : base(isStrictMode)
+        {
+        }
     }
 
-    public class LogicalOrExpression : ILogicalOrExpression
+    public sealed class LogicalOrExpression : AbstractLogicalOrExpression
     {
-        public readonly ILogicalAndExpression logicalAndExpression;
-        public readonly ILogicalOrExpression logicalOrExpression;
+        public readonly AbstractLogicalAndExpression logicalAndExpression;
+        public readonly AbstractLogicalOrExpression logicalOrExpression;
 
-        public LogicalOrExpression(ILogicalOrExpression logicalOrExpression, ILogicalAndExpression logicalAndExpression)
+        public LogicalOrExpression(AbstractLogicalOrExpression logicalOrExpression, AbstractLogicalAndExpression logicalAndExpression, bool isStrictMode) : base(isStrictMode)
         {
             this.logicalOrExpression = logicalOrExpression;
             this.logicalAndExpression = logicalAndExpression;
         }
 
-        public Completion Evaluate(Interpreter interpreter)
+        public override Completion Evaluate(Interpreter interpreter)
         {
             var left = logicalOrExpression.Evaluate(interpreter).GetValue();
             if (left.IsAbrupt()) return left;

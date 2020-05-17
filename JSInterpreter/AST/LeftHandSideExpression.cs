@@ -4,12 +4,19 @@ using System.Text;
 
 namespace JSInterpreter.AST
 {
-    public interface ILeftHandSideExpression : IUpdateExpression, IForInOfInitializer
+    public abstract class AbstractLeftHandSideExpression : AbstractUpdateExpression, IForInOfInitializer
     {
+        protected AbstractLeftHandSideExpression(bool isStrictMode) : base(isStrictMode)
+        {
+        }
     }
 
-    public interface INewExpression : ILeftHandSideExpression
+    public abstract class AbstractNewExpression : AbstractLeftHandSideExpression
     {
+        protected AbstractNewExpression(bool isStrictMode) : base(isStrictMode)
+        {
+        }
+
         public Completion EvaluateNew(Interpreter interpreter, Arguments arguments)
         {
             var constructorComp = Evaluate(interpreter).GetValue();
@@ -25,16 +32,16 @@ namespace JSInterpreter.AST
         }
     }
 
-    public class NewExpression : INewExpression
+    public sealed class NewExpression : AbstractNewExpression
     {
-        public readonly INewExpression newExpression;
+        public readonly AbstractNewExpression newExpression;
 
-        public NewExpression(INewExpression newExpression)
+        public NewExpression(AbstractNewExpression newExpression, bool isStrictMode) : base(isStrictMode)
         {
             this.newExpression = newExpression;
         }
 
-        public Completion Evaluate(Interpreter interpreter)
+        public override Completion Evaluate(Interpreter interpreter)
         {
             return newExpression.EvaluateNew(interpreter, new Arguments(Utils.EmptyList<IArgumentItem>()));
         }

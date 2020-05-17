@@ -31,16 +31,16 @@ namespace JSInterpreter.AST
             return lhs!.PutValue(value);
         }
     }
-    public class IdentifierReference : IPrimaryExpression, IPropertyDefinition
+    public sealed class IdentifierReference : AbstractPrimaryExpression, IPropertyDefinition
     {
         public readonly Identifier identifier;
 
-        public IdentifierReference(Identifier identifier)
+        public IdentifierReference(Identifier identifier, bool isStrictMode) : base(isStrictMode)
         {
             this.identifier = identifier;
         }
 
-        public Completion Evaluate(Interpreter interpreter)
+        public override Completion Evaluate(Interpreter interpreter)
         {
             return interpreter.ResolveBinding(identifier.name);
         }

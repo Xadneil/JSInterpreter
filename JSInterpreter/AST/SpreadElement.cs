@@ -4,9 +4,9 @@ namespace JSInterpreter.AST
 {
     public class SpreadElement : IArrayLiteralItem, IPropertyDefinition, IArgumentItem
     {
-        public readonly IAssignmentExpression assignmentExpression;
+        public readonly AbstractAssignmentExpression assignmentExpression;
 
-        public SpreadElement(IAssignmentExpression assignmentExpression)
+        public SpreadElement(AbstractAssignmentExpression assignmentExpression)
         {
             this.assignmentExpression = assignmentExpression;
         }

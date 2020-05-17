@@ -11,24 +11,27 @@ namespace JSInterpreter.AST
         Modulus
     }
 
-    public interface IMultiplicativeExpression : IAdditiveExpression
+    public abstract class AbstractMultiplicativeExpression : AbstractAdditiveExpression
     {
+        protected AbstractMultiplicativeExpression(bool isStrictMode) : base(isStrictMode)
+        {
+        }
     }
 
-    public class MultiplicativeExpression : IMultiplicativeExpression
+    public class MultiplicativeExpression : AbstractMultiplicativeExpression
     {
         public readonly MultiplicativeOperator multiplicativeOperator;
-        public readonly IExponentiationExpression exponentiationExpression;
-        public readonly IMultiplicativeExpression multiplicativeExpression;
+        public readonly AbstractExponentiationExpression exponentiationExpression;
+        public readonly AbstractMultiplicativeExpression multiplicativeExpression;
 
-        public MultiplicativeExpression(IMultiplicativeExpression multiplicativeExpression, MultiplicativeOperator multiplicativeOperator, IExponentiationExpression exponentiationExpression)
+        public MultiplicativeExpression(AbstractMultiplicativeExpression multiplicativeExpression, MultiplicativeOperator multiplicativeOperator, AbstractExponentiationExpression exponentiationExpression, bool isStrictMode) : base(isStrictMode)
         {
             this.multiplicativeExpression = multiplicativeExpression;
             this.multiplicativeOperator = multiplicativeOperator;
             this.exponentiationExpression = exponentiationExpression;
         }
 
-        public Completion Evaluate(Interpreter interpreter)
+        public override Completion Evaluate(Interpreter interpreter)
         {
             var left = multiplicativeExpression.Evaluate(interpreter).GetValue();
             if (left.IsAbrupt()) return left;

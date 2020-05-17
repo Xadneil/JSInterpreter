@@ -11,6 +11,7 @@ namespace JSInterpreter.Parser
     {
         private ParseFailureException? exception;
         private readonly Lexer.Lexer lexer;
+        public bool Strict = false;
 
         public Parser(string source)
         {
@@ -21,6 +22,16 @@ namespace JSInterpreter.Parser
         private Token Consume()
         {
             var oldToken = lexer.CurrentToken;
+            if (Strict && oldToken.Type == TokenType.Identifier &&
+                    (oldToken.Value == "implements" ||
+                    oldToken.Value == "interface" ||
+                    oldToken.Value == "package" ||
+                    oldToken.Value == "protected" ||
+                    oldToken.Value == "private" ||
+                    oldToken.Value == "public"))
+            {
+                throw new ParseFailureException($"invalid use of future reserved word {oldToken.Value} in strict code");
+            }
             lexer.Next();
             return oldToken;
         }
@@ -66,6 +77,12 @@ namespace JSInterpreter.Parser
             {
                 return Expected<Token>(expectedType.ToString());
             }
+            var oldToken = lexer.CurrentToken;
+            if (expectedType == TokenType.Identifier && Strict && oldToken.Type == TokenType.Identifier &&
+                (oldToken.Value == "static" || oldToken.Value == "yield"))
+            {
+                throw new ParseFailureException($"{oldToken.Value} is not allowed as an identifier in strict code");
+            }
             return Consume();
         }
 
@@ -80,26 +97,26 @@ namespace JSInterpreter.Parser
 
         public Script ParseScript()
         {
-            var statementList = ParseStatementList();
+            var statementList = ParseStatementList(setStrict: true);
             if (CurrentToken.Type != TokenType.Eof && exception != null)
                 throw exception;
             if (statementList == null && exception != null)
                 throw exception;
             if (statementList == null)
                 throw new ParseFailureException("Got null Statement List but no exception");
-            return new Script(new ScriptStatementList(statementList.statements));
+            return new Script(new ScriptStatementList(statementList));
         }
 
         public FunctionStatementList ParseFunctionBody()
         {
-            var statementList = ParseStatementList();
+            var statementList = ParseStatementList(setStrict: !Strict);
             if (CurrentToken.Type != TokenType.Eof && exception != null)
                 throw exception;
             if (statementList == null && exception != null)
                 throw exception;
             if (statementList == null)
                 throw new ParseFailureException("Got null Statement List but no exception");
-            return new FunctionStatementList(statementList.statements);
+            return new FunctionStatementList(statementList);
         }
 
         private IStatementListItem? ParseStatementListItem()
@@ -151,7 +168,7 @@ namespace JSInterpreter.Parser
                         if (lr.Success = statement != null)
                             return statement;
                     }
-                    IExpression expr;
+                    AbstractExpression expr;
                     using (var lr = new LexerRewinder(lexer))
                     {
                         var tmp = ParseExpression();
@@ -162,7 +179,7 @@ namespace JSInterpreter.Parser
                         expr = tmp;
                     }
                     ConsumeOrInsertSemicolon();
-                    return new ExpressionStatement(expr);
+                    return new ExpressionStatement(expr, Strict);
             }
         }
 
@@ -173,19 +190,39 @@ namespace JSInterpreter.Parser
             if (statementList == null) return null;
             if (Consume(TokenType.CurlyClose) == null) return null;
 
-            return new Block(statementList);
+            return new Block(statementList, Strict);
         }
 
-        private StatementList? ParseStatementList()
+        private StatementList? ParseStatementList(bool setStrict = false)
         {
             var statementItems = new List<IStatementListItem>();
+            bool inDirectivePrologues = setStrict && Strict == false;
+            bool unsetStrict = false;
             while (!Match(TokenType.CurlyClose) && !Match(TokenType.Eof))
             {
                 IStatementListItem? item = ParseStatementListItem();
                 if (item == null) return null;
+                if (inDirectivePrologues)
+                {
+                    if (item is ExpressionStatement statement && statement.expression is Literal l && l.literalType == LiteralType.String)
+                    {
+                        if (l.@string == "use strict")
+                        {
+                            Strict = true;
+                            unsetStrict = true;
+                        }
+                    }
+                    else
+                    {
+                        inDirectivePrologues = false;
+                    }
+                }
                 statementItems.Add(item);
             }
-            return new StatementList(statementItems);
+            var statementList = new StatementList(statementItems, Strict);
+            if (unsetStrict)
+                Strict = false;
+            return statementList;
         }
 
         private VariableStatement? ParseVariableStatement()
@@ -195,7 +232,7 @@ namespace JSInterpreter.Parser
             if (variableDeclarationList == null) return null;
             if (Match(TokenType.Semicolon))
                 Consume();
-            return new VariableStatement(variableDeclarationList);
+            return new VariableStatement(variableDeclarationList, Strict);
         }
 
         private VariableDeclarationList? ParseVariableDeclarationList()
@@ -206,7 +243,7 @@ namespace JSInterpreter.Parser
             {
                 var variableName = ParseBindingIdentifier();
                 if (variableName == null) return null;
-                IAssignmentExpression? initializer = null;
+                AbstractAssignmentExpression? initializer = null;
                 if (Match(TokenType.Equals))
                 {
                     initializer = ParseInitializer();
@@ -240,7 +277,7 @@ namespace JSInterpreter.Parser
                     variableName = ParseBindingIdentifier();
                     if (variableName == null) return null;
                 }
-                IAssignmentExpression? initializer = null;
+                AbstractAssignmentExpression? initializer = null;
                 if (Match(TokenType.Equals))
                 {
                     initializer = ParseInitializer();
@@ -259,7 +296,7 @@ namespace JSInterpreter.Parser
         private string? ParseBindingIdentifier()
         {
             if (Match(TokenType.Identifier))
-                return Consume().Value;
+                return Consume(TokenType.Identifier)!.Value;
             else if (Match(TokenType.Yield))
                 return "yield";
             else if (Match(TokenType.Await))
@@ -269,7 +306,7 @@ namespace JSInterpreter.Parser
 
         private bool MatchBindingIdentifier() => Match(TokenType.Identifier) || Match(TokenType.Yield) || Match(TokenType.Await);
 
-        private IAssignmentExpression? ParseInitializer()
+        private AbstractAssignmentExpression? ParseInitializer()
         {
             Consume(TokenType.Equals);
             return ParseAssignmentExpression();
@@ -289,9 +326,9 @@ namespace JSInterpreter.Parser
                 Consume();
                 var falseStatement = ParseStatement();
                 if (falseStatement == null) return null;
-                return new IfStatement(test, trueStatement, falseStatement);
+                return new IfStatement(test, trueStatement, falseStatement, Strict);
             }
-            return new IfStatement(test, trueStatement);
+            return new IfStatement(test, trueStatement, Strict);
         }
 
         private BreakableStatement? ParseBreakableStatement()
@@ -310,23 +347,23 @@ namespace JSInterpreter.Parser
                 if (statement == null) return null;
                 if (Consume(TokenType.While) == null) return null;
                 if (Consume(TokenType.ParenOpen) == null) return null;
-                IExpression? test = ParseExpression();
+                AbstractExpression? test = ParseExpression();
                 if (test == null) return null;
                 if (Consume(TokenType.ParenClose) == null) return null;
                 if (Match(TokenType.Semicolon))
                     Consume();
-                return new DoWhileIterationStatement(statement, test);
+                return new DoWhileIterationStatement(statement, test, Strict);
             }
             if (Match(TokenType.While))
             {
                 Consume();
                 if (Consume(TokenType.ParenOpen) == null) return null;
-                IExpression? test = ParseExpression();
+                AbstractExpression? test = ParseExpression();
                 if (test == null) return null;
                 if (Consume(TokenType.ParenClose) == null) return null;
                 Statement? statement = ParseStatement();
                 if (statement == null) return null;
-                return new WhileIterationStatement(test, statement);
+                return new WhileIterationStatement(test, statement, Strict);
             }
             if (!Match(TokenType.For))
                 return Expected<IterationStatement>("For");
@@ -351,17 +388,17 @@ namespace JSInterpreter.Parser
                     if (Consume(TokenType.ParenClose) == null) return null;
                     var statement = ParseStatement();
                     if (statement == null) return null;
-                    return new ForInVarIterationStatement(new ForBinding(firstIdentifier), expression, statement);
+                    return new ForInVarIterationStatement(new ForBinding(firstIdentifier), expression, statement, Strict);
                 }
                 if (Match(TokenType.Of))
                 {
                     Consume();
-                    IAssignmentExpression? expression = ParseAssignmentExpression();
+                    AbstractAssignmentExpression? expression = ParseAssignmentExpression();
                     if (expression == null) return null;
                     if (Consume(TokenType.ParenClose) == null) return null;
                     var statement = ParseStatement();
                     if (statement == null) return null;
-                    return new ForOfVarIterationStatement(new ForBinding(firstIdentifier), expression, statement);
+                    return new ForOfVarIterationStatement(new ForBinding(firstIdentifier), expression, statement, Strict);
                 }
                 if (Match(TokenType.Equals))
                 {
@@ -369,14 +406,14 @@ namespace JSInterpreter.Parser
                     var variableDeclarationList = ParseVariableDeclarationListWithInitialIdentifier(firstIdentifier);
                     if (variableDeclarationList == null) return null;
                     if (Consume(TokenType.Semicolon) == null) return null;
-                    IExpression? test = null;
+                    AbstractExpression? test = null;
                     if (!Match(TokenType.Semicolon))
                     {
                         test = ParseExpression();
                         if (test == null) return null;
                     }
                     if (Consume(TokenType.Semicolon) == null) return null;
-                    IExpression? update = null;
+                    AbstractExpression? update = null;
                     if (!Match(TokenType.ParenClose))
                     {
                         update = ParseExpression();
@@ -385,7 +422,7 @@ namespace JSInterpreter.Parser
                     if (Consume(TokenType.ParenClose) == null) return null;
                     var statement = ParseStatement();
                     if (statement == null) return null;
-                    return new ForVarIterationStatement(variableDeclarationList, test, update, statement);
+                    return new ForVarIterationStatement(variableDeclarationList, test, update, statement, Strict);
                 }
                 return Expected<IterationStatement>("=, in, or of");
             }
@@ -404,21 +441,21 @@ namespace JSInterpreter.Parser
                     if (Consume(TokenType.ParenClose) == null) return null;
                     var statement = ParseStatement();
                     if (statement == null) return null;
-                    return new ForInLetConstIterationStatement(new ForDeclaration(isConst, forBinding), expression, statement);
+                    return new ForInLetConstIterationStatement(new ForDeclaration(isConst, forBinding), expression, statement, Strict);
                 }
                 if (Match(TokenType.Of))
                 {
                     Consume();
-                    IAssignmentExpression? expression = ParseAssignmentExpression();
+                    AbstractAssignmentExpression? expression = ParseAssignmentExpression();
                     if (expression == null) return null;
                     if (Consume(TokenType.ParenClose) == null) return null;
                     var statement = ParseStatement();
                     if (statement == null) return null;
-                    return new ForOfLetConstIterationStatement(new ForDeclaration(isConst, forBinding), expression, statement);
+                    return new ForOfLetConstIterationStatement(new ForDeclaration(isConst, forBinding), expression, statement, Strict);
                 }
                 return Expected<IterationStatement>("in or of");
             }
-            ILeftHandSideExpression? lhs = ParseLeftHandSideExpression();
+            AbstractLeftHandSideExpression? lhs = ParseLeftHandSideExpression();
             if (lhs == null) return null;
 
             if (Match(TokenType.In))
@@ -429,38 +466,38 @@ namespace JSInterpreter.Parser
                 if (Consume(TokenType.ParenClose) == null) return null;
                 var statement = ParseStatement();
                 if (statement == null) return null;
-                return new ForInLHSIterationStatement(lhs, expression, statement);
+                return new ForInLHSIterationStatement(lhs, expression, statement, Strict);
             }
             if (Match(TokenType.Of))
             {
                 Consume();
-                IAssignmentExpression? expression = ParseAssignmentExpression();
+                AbstractAssignmentExpression? expression = ParseAssignmentExpression();
                 if (expression == null) return null;
                 if (Consume(TokenType.ParenClose) == null) return null;
                 var statement = ParseStatement();
                 if (statement == null) return null;
-                return new ForOfLHSIterationStatement(lhs, expression, statement);
+                return new ForOfLHSIterationStatement(lhs, expression, statement, Strict);
             }
             return Expected<IterationStatement>("in or of");
         }
 
         private ForExpressionIterationStatement? ParseForExpression()
         {
-            IExpression? start = null;
+            AbstractExpression? start = null;
             if (!Match(TokenType.Semicolon))
             {
                 start = ParseExpression();
                 if (start == null) return null;
             }
             if (Consume(TokenType.Semicolon) == null) return null;
-            IExpression? test = null;
+            AbstractExpression? test = null;
             if (!Match(TokenType.Semicolon))
             {
                 test = ParseExpression();
                 if (test == null) return null;
             }
             if (Consume(TokenType.Semicolon) == null) return null;
-            IExpression? update = null;
+            AbstractExpression? update = null;
             if (!Match(TokenType.ParenClose))
             {
                 update = ParseExpression();
@@ -469,7 +506,7 @@ namespace JSInterpreter.Parser
             if (Consume(TokenType.ParenClose) == null) return null;
             var statement = ParseStatement();
             if (statement == null) return null;
-            return new ForExpressionIterationStatement(start, test, update, statement);
+            return new ForExpressionIterationStatement(start, test, update, statement, Strict);
         }
 
         private SwitchStatement? ParseSwitchStatement()
@@ -484,7 +521,7 @@ namespace JSInterpreter.Parser
             if (Match(TokenType.CurlyClose))
             {
                 Consume();
-                return new SwitchStatement(expression, new CaseBlock(Utils.EmptyList<CaseClause>()));
+                return new SwitchStatement(expression, new CaseBlock(Utils.EmptyList<CaseClause>()), Strict);
             }
 
             bool foundDefault = false;
@@ -519,7 +556,7 @@ namespace JSInterpreter.Parser
             }
 
             if (Consume(TokenType.CurlyClose) == null) return null;
-            return new SwitchStatement(expression, new CaseBlock(firstCases, defaultClause, secondCases));
+            return new SwitchStatement(expression, new CaseBlock(firstCases, defaultClause, secondCases), Strict);
         }
 
         private ContinueStatement ParseContinueStatement()
@@ -531,8 +568,8 @@ namespace JSInterpreter.Parser
             if (Match(TokenType.Semicolon))
                 Consume();
             if (label == null)
-                return new ContinueStatement();
-            return new ContinueStatement(label);
+                return new ContinueStatement(Strict);
+            return new ContinueStatement(label, Strict);
         }
 
         private BreakStatement ParseBreakStatement()
@@ -544,14 +581,14 @@ namespace JSInterpreter.Parser
             if (Match(TokenType.Semicolon))
                 Consume();
             if (label == null)
-                return new BreakStatement();
-            return new BreakStatement(label);
+                return new BreakStatement(Strict);
+            return new BreakStatement(label, Strict);
         }
 
         private ReturnStatement? ParseReturnStatement()
         {
             Consume(TokenType.Return);
-            IExpression? expression = null;
+            AbstractExpression? expression = null;
             if (!CurrentToken.PassedNewLine && !Match(TokenType.Semicolon))
             {
                 expression = ParseExpression();
@@ -560,8 +597,8 @@ namespace JSInterpreter.Parser
             if (Match(TokenType.Semicolon))
                 Consume();
             if (expression == null)
-                return new ReturnStatement();
-            return new ReturnStatement(expression);
+                return new ReturnStatement(Strict);
+            return new ReturnStatement(expression, Strict);
         }
 
         private LabelledStatement? ParseLabelledStatement()
@@ -573,11 +610,11 @@ namespace JSInterpreter.Parser
             {
                 var function = ParseFunctionDeclaration();
                 if (function == null) return null;
-                return new LabelledStatement(new Identifier(label), function);
+                return new LabelledStatement(new Identifier(label), function, Strict);
             }
             var statement = ParseStatement();
             if (statement == null) return null;
-            return new LabelledStatement(new Identifier(label), statement);
+            return new LabelledStatement(new Identifier(label), statement, Strict);
         }
 
         private ThrowStatement? ParseThrowStatement()
@@ -589,7 +626,7 @@ namespace JSInterpreter.Parser
             if (expression == null) return null;
             if (Match(TokenType.Semicolon))
                 Consume(TokenType.Semicolon);
-            return new ThrowStatement(expression);
+            return new ThrowStatement(expression, Strict);
         }
 
         private TryStatement? ParseTryStatement()
@@ -620,18 +657,18 @@ namespace JSInterpreter.Parser
             if (catchClause.HasValue && finallyBlock == null)
             {
                 if (catchClause.Value.catchParameter != null)
-                    return TryStatement.TryCatch(tryBlock, new Identifier(catchClause.Value.catchParameter), catchClause.Value.catchBlock);
+                    return TryStatement.TryCatch(tryBlock, new Identifier(catchClause.Value.catchParameter), catchClause.Value.catchBlock, Strict);
                 else
-                    return TryStatement.TryCatch(tryBlock, catchClause.Value.catchBlock);
+                    return TryStatement.TryCatch(tryBlock, catchClause.Value.catchBlock, Strict);
             }
             else if (!catchClause.HasValue && finallyBlock != null)
-                return TryStatement.TryFinally(tryBlock, finallyBlock);
+                return TryStatement.TryFinally(tryBlock, finallyBlock, Strict);
             else
             {
                 if (catchClause!.Value.catchParameter != null)
-                    return TryStatement.TryCatchFinally(tryBlock, new Identifier(catchClause.Value.catchParameter), catchClause.Value.catchBlock, finallyBlock!);
+                    return TryStatement.TryCatchFinally(tryBlock, new Identifier(catchClause.Value.catchParameter), catchClause.Value.catchBlock, finallyBlock!, Strict);
                 else
-                    return TryStatement.TryCatchFinally(tryBlock, catchClause.Value.catchBlock, finallyBlock!);
+                    return TryStatement.TryCatchFinally(tryBlock, catchClause.Value.catchBlock, finallyBlock!, Strict);
             }
         }
 
@@ -692,14 +729,14 @@ namespace JSInterpreter.Parser
             }
             if (Consume(TokenType.ParenClose) == null) return null;
             if (Consume(TokenType.CurlyOpen) == null) return null;
-            var statementList = ParseStatementList();
+            var statementList = ParseStatementList(setStrict: !Strict);
             if (statementList == null) return null;
-            var statements = new FunctionStatementList(statementList.statements);
+            var statements = new FunctionStatementList(statementList);
             if (Consume(TokenType.CurlyClose) == null) return null;
 
             if (functionName != null)
-                return new FunctionDeclaration(new Identifier(functionName), parameters, statements);
-            return new FunctionDeclaration(parameters, statements);
+                return new FunctionDeclaration(new Identifier(functionName), parameters, statements, Strict);
+            return new FunctionDeclaration(parameters, statements, Strict);
         }
 
         public FormalParameters? ParseFormalParameters()
@@ -765,7 +802,7 @@ namespace JSInterpreter.Parser
             {
                 var variableName = ParseBindingIdentifier();
                 if (variableName == null) return null;
-                IAssignmentExpression? initializer = null;
+                AbstractAssignmentExpression? initializer = null;
                 if (Match(TokenType.Equals))
                 {
                     initializer = ParseInitializer();
@@ -782,16 +819,16 @@ namespace JSInterpreter.Parser
                 Consume(TokenType.Comma);
             }
 
-            return new LexicalDeclaration(lexicalDeclarationType, list);
+            return new LexicalDeclaration(lexicalDeclarationType, list, Strict);
         }
 
-        private IExpression? ParseExpression()
+        private AbstractExpression? ParseExpression()
         {
-            IAssignmentExpression? expression = ParseAssignmentExpression();
+            AbstractAssignmentExpression? expression = ParseAssignmentExpression();
             if (expression == null) return null;
             if (!Match(TokenType.Comma))
                 return expression;
-            var list = new List<IAssignmentExpression>() { expression };
+            var list = new List<AbstractAssignmentExpression>() { expression };
             do
             {
                 Consume(TokenType.Comma);
@@ -800,14 +837,14 @@ namespace JSInterpreter.Parser
                 list.Add(nextExpression);
             } while (Match(TokenType.Comma));
 
-            return new CommaExpression(list);
+            return new CommaExpression(list, Strict);
         }
 
-        private IAssignmentExpression? ParseAssignmentExpression()
+        private AbstractAssignmentExpression? ParseAssignmentExpression()
         {
             using (var lr = new LexerRewinder(lexer))
             {
-                ILeftHandSideExpression? lhs = ParseLeftHandSideExpression();
+                AbstractLeftHandSideExpression? lhs = ParseLeftHandSideExpression();
                 if (lhs != null)
                 {
                     if (Match(TokenType.Equals))
@@ -815,14 +852,14 @@ namespace JSInterpreter.Parser
                         Consume();
                         var rhs = ParseAssignmentExpression();
                         if (lr.Success = rhs != null)
-                            return new AssignmentExpression(lhs, rhs!);
+                            return new AssignmentExpression(lhs, rhs!, Strict);
                     }
                     if (MatchAssignmentOperator())
                     {
                         var op = ParseAssignmentOperator();
                         var rhs = ParseAssignmentExpression();
                         if (lr.Success = rhs != null)
-                            return new OperatorAssignmentExpression(lhs, op, rhs!);
+                            return new OperatorAssignmentExpression(lhs, op, rhs!, Strict);
                     }
                 }
             }
@@ -866,7 +903,7 @@ namespace JSInterpreter.Parser
             };
         }
 
-        private IConditionalExpression? ParseConditionalExpression()
+        private AbstractConditionalExpression? ParseConditionalExpression()
         {
             var expression = ParseLogicalOrExpression();
             if (expression == null) return null;
@@ -876,10 +913,10 @@ namespace JSInterpreter.Parser
             if (Consume(TokenType.Colon) == null) return null;
             var falseExpr = ParseAssignmentExpression();
             if (falseExpr == null) return null;
-            return new ConditionalExpression(expression, trueExpr, falseExpr);
+            return new ConditionalExpression(expression, trueExpr, falseExpr, Strict);
         }
 
-        private ILogicalOrExpression? ParseLogicalOrExpression()
+        private AbstractLogicalOrExpression? ParseLogicalOrExpression()
         {
             var lhs = ParseLogicalAndExpression();
             if (lhs == null) return null;
@@ -889,16 +926,16 @@ namespace JSInterpreter.Parser
             if (tail == null)
                 return lhs;
 
-            var or = new LogicalOrExpression(lhs, tail.RHS);
+            var or = new LogicalOrExpression(lhs, tail.RHS, Strict);
             while (tail.Tail != null)
             {
                 tail = tail.Tail;
-                or = new LogicalOrExpression(or, tail.RHS);
+                or = new LogicalOrExpression(or, tail.RHS, Strict);
             }
             return or;
         }
 
-        private (bool success, TailContainer<ILogicalAndExpression>? tail) ParseLogicalOrTail()
+        private (bool success, TailContainer<AbstractLogicalAndExpression>? tail) ParseLogicalOrTail()
         {
             if (!Match(TokenType.DoublePipe))
                 return (true, null);
@@ -907,10 +944,10 @@ namespace JSInterpreter.Parser
             if (rhs == null) return (false, null);
             var tail = ParseLogicalOrTail();
             if (!tail.success) return (false, null);
-            return (true, new TailContainer<ILogicalAndExpression>(rhs, tail.tail));
+            return (true, new TailContainer<AbstractLogicalAndExpression>(rhs, tail.tail));
         }
 
-        private ILogicalAndExpression? ParseLogicalAndExpression()
+        private AbstractLogicalAndExpression? ParseLogicalAndExpression()
         {
             var lhs = ParseBitwiseOrExpression();
             if (lhs == null) return null;
@@ -920,16 +957,16 @@ namespace JSInterpreter.Parser
             if (tail == null)
                 return lhs;
 
-            var and = new LogicalAndExpression(lhs, tail.RHS);
+            var and = new LogicalAndExpression(lhs, tail.RHS, Strict);
             while (tail.Tail != null)
             {
                 tail = tail.Tail;
-                and = new LogicalAndExpression(and, tail.RHS);
+                and = new LogicalAndExpression(and, tail.RHS, Strict);
             }
             return and;
         }
 
-        private (bool success, TailContainer<IBitwiseOrExpression>? tail) ParseLogicalAndTail()
+        private (bool success, TailContainer<AbstractBitwiseOrExpression>? tail) ParseLogicalAndTail()
         {
             if (!Match(TokenType.DoubleAmpersand))
                 return (true, null);
@@ -938,10 +975,10 @@ namespace JSInterpreter.Parser
             if (rhs == null) return (false, null);
             var tail = ParseLogicalAndTail();
             if (!tail.success) return (false, null);
-            return (true, new TailContainer<IBitwiseOrExpression>(rhs, tail.tail));
+            return (true, new TailContainer<AbstractBitwiseOrExpression>(rhs, tail.tail));
         }
 
-        private IBitwiseOrExpression? ParseBitwiseOrExpression()
+        private AbstractBitwiseOrExpression? ParseBitwiseOrExpression()
         {
             var lhs = ParseBitwiseXorExpression();
             if (lhs == null) return null;
@@ -951,16 +988,16 @@ namespace JSInterpreter.Parser
             if (tail == null)
                 return lhs;
 
-            var bitwiseOr = new BitwiseOrExpression(lhs, tail.RHS);
+            var bitwiseOr = new BitwiseOrExpression(lhs, tail.RHS, Strict);
             while (tail.Tail != null)
             {
                 tail = tail.Tail;
-                bitwiseOr = new BitwiseOrExpression(bitwiseOr, tail.RHS);
+                bitwiseOr = new BitwiseOrExpression(bitwiseOr, tail.RHS, Strict);
             }
             return bitwiseOr;
         }
 
-        private (bool success, TailContainer<IBitwiseXorExpression>? tail) ParseBitwiseOrTail()
+        private (bool success, TailContainer<AbstractBitwiseXorExpression>? tail) ParseBitwiseOrTail()
         {
             if (!Match(TokenType.Pipe))
                 return (true, null);
@@ -969,10 +1006,10 @@ namespace JSInterpreter.Parser
             if (rhs == null) return (false, null);
             var tail = ParseBitwiseOrTail();
             if (!tail.success) return (false, null);
-            return (true, new TailContainer<IBitwiseXorExpression>(rhs, tail.tail));
+            return (true, new TailContainer<AbstractBitwiseXorExpression>(rhs, tail.tail));
         }
 
-        private IBitwiseXorExpression? ParseBitwiseXorExpression()
+        private AbstractBitwiseXorExpression? ParseBitwiseXorExpression()
         {
             var lhs = ParseBitwiseAndExpression();
             if (lhs == null) return null;
@@ -982,16 +1019,16 @@ namespace JSInterpreter.Parser
             if (tail == null)
                 return lhs;
 
-            var bitwiseXor = new BitwiseXorExpression(lhs, tail.RHS);
+            var bitwiseXor = new BitwiseXorExpression(lhs, tail.RHS, Strict);
             while (tail.Tail != null)
             {
                 tail = tail.Tail;
-                bitwiseXor = new BitwiseXorExpression(bitwiseXor, tail.RHS);
+                bitwiseXor = new BitwiseXorExpression(bitwiseXor, tail.RHS, Strict);
             }
             return bitwiseXor;
         }
 
-        private (bool success, TailContainer<IBitwiseAndExpression>? tail) ParseBitwiseXorTail()
+        private (bool success, TailContainer<AbstractBitwiseAndExpression>? tail) ParseBitwiseXorTail()
         {
             if (!Match(TokenType.Caret))
                 return (true, null);
@@ -1000,10 +1037,10 @@ namespace JSInterpreter.Parser
             if (rhs == null) return (false, null);
             var tail = ParseBitwiseXorTail();
             if (!tail.success) return (false, null);
-            return (true, new TailContainer<IBitwiseAndExpression>(rhs, tail.tail));
+            return (true, new TailContainer<AbstractBitwiseAndExpression>(rhs, tail.tail));
         }
 
-        private IBitwiseAndExpression? ParseBitwiseAndExpression()
+        private AbstractBitwiseAndExpression? ParseBitwiseAndExpression()
         {
             var lhs = ParseEqualityExpression();
             if (lhs == null) return null;
@@ -1013,16 +1050,16 @@ namespace JSInterpreter.Parser
             if (tail == null)
                 return lhs;
 
-            var bitwiseAnd = new BitwiseAndExpression(lhs, tail.RHS);
+            var bitwiseAnd = new BitwiseAndExpression(lhs, tail.RHS, Strict);
             while (tail.Tail != null)
             {
                 tail = tail.Tail;
-                bitwiseAnd = new BitwiseAndExpression(bitwiseAnd, tail.RHS);
+                bitwiseAnd = new BitwiseAndExpression(bitwiseAnd, tail.RHS, Strict);
             }
             return bitwiseAnd;
         }
 
-        private (bool success, TailContainer<IEqualityExpression>? tail) ParseBitwiseAndTail()
+        private (bool success, TailContainer<AbstractEqualityExpression>? tail) ParseBitwiseAndTail()
         {
             if (!Match(TokenType.Ampersand))
                 return (true, null);
@@ -1031,10 +1068,10 @@ namespace JSInterpreter.Parser
             if (rhs == null) return (false, null);
             var tail = ParseBitwiseAndTail();
             if (!tail.success) return (false, null);
-            return (true, new TailContainer<IEqualityExpression>(rhs, tail.tail));
+            return (true, new TailContainer<AbstractEqualityExpression>(rhs, tail.tail));
         }
 
-        private IEqualityExpression? ParseEqualityExpression()
+        private AbstractEqualityExpression? ParseEqualityExpression()
         {
             var lhs = ParseRelationalExpression();
             if (lhs == null) return null;
@@ -1044,16 +1081,16 @@ namespace JSInterpreter.Parser
             if (tail == null)
                 return lhs;
 
-            var expression = new EqualityExpression(lhs, tail.Op, tail.RHS);
+            var expression = new EqualityExpression(lhs, tail.Op, tail.RHS, Strict);
             while (tail.Tail != null)
             {
                 tail = tail.Tail;
-                expression = new EqualityExpression(expression, tail.Op, tail.RHS);
+                expression = new EqualityExpression(expression, tail.Op, tail.RHS, Strict);
             }
             return expression;
         }
 
-        private (bool success, TailOperatorContainer<IRelationalExpression, EqualityOperator>? tail) ParseEqualityTail()
+        private (bool success, TailOperatorContainer<AbstractRelationalExpression, EqualityOperator>? tail) ParseEqualityTail()
         {
             if (!MatchEqualityOperator())
                 return (true, null);
@@ -1062,7 +1099,7 @@ namespace JSInterpreter.Parser
             if (rhs == null) return (false, null);
             var tail = ParseEqualityTail();
             if (!tail.success) return (false, null);
-            return (true, new TailOperatorContainer<IRelationalExpression, EqualityOperator>(rhs, op, tail.tail));
+            return (true, new TailOperatorContainer<AbstractRelationalExpression, EqualityOperator>(rhs, op, tail.tail));
         }
 
         private EqualityOperator ParseEqualityOperator()
@@ -1086,7 +1123,7 @@ namespace JSInterpreter.Parser
                 Match(TokenType.ExclamationMarkEqualsEquals);
         }
 
-        private IRelationalExpression? ParseRelationalExpression()
+        private AbstractRelationalExpression? ParseRelationalExpression()
         {
             var lhs = ParseShiftExpression();
             if (lhs == null) return null;
@@ -1096,16 +1133,16 @@ namespace JSInterpreter.Parser
             if (tail == null)
                 return lhs;
 
-            var expression = new RelationalExpression(lhs, tail.Op, tail.RHS);
+            var expression = new RelationalExpression(lhs, tail.Op, tail.RHS, Strict);
             while (tail.Tail != null)
             {
                 tail = tail.Tail;
-                expression = new RelationalExpression(expression, tail.Op, tail.RHS);
+                expression = new RelationalExpression(expression, tail.Op, tail.RHS, Strict);
             }
             return expression;
         }
 
-        private (bool success, TailOperatorContainer<IShiftExpression, RelationalOperator>? tail) ParseRelationalTail()
+        private (bool success, TailOperatorContainer<AbstractShiftExpression, RelationalOperator>? tail) ParseRelationalTail()
         {
             if (!MatchRelationalOperator())
                 return (true, null);
@@ -1114,7 +1151,7 @@ namespace JSInterpreter.Parser
             if (rhs == null) return (false, null);
             var tail = ParseRelationalTail();
             if (!tail.success) return (false, null);
-            return (true, new TailOperatorContainer<IShiftExpression, RelationalOperator>(rhs, op, tail.tail));
+            return (true, new TailOperatorContainer<AbstractShiftExpression, RelationalOperator>(rhs, op, tail.tail));
         }
 
         private RelationalOperator ParseRelationalOperator()
@@ -1142,7 +1179,7 @@ namespace JSInterpreter.Parser
                 Match(TokenType.In);
         }
 
-        private IShiftExpression? ParseShiftExpression()
+        private AbstractShiftExpression? ParseShiftExpression()
         {
             var lhs = ParseAdditiveExpression();
             if (lhs == null) return null;
@@ -1152,16 +1189,16 @@ namespace JSInterpreter.Parser
             if (tail == null)
                 return lhs;
 
-            var expression = new ShiftExpression(lhs, tail.Op, tail.RHS);
+            var expression = new ShiftExpression(lhs, tail.Op, tail.RHS, Strict);
             while (tail.Tail != null)
             {
                 tail = tail.Tail;
-                expression = new ShiftExpression(expression, tail.Op, tail.RHS);
+                expression = new ShiftExpression(expression, tail.Op, tail.RHS, Strict);
             }
             return expression;
         }
 
-        private (bool success, TailOperatorContainer<IAdditiveExpression, ShiftOperator>? tail) ParseShiftTail()
+        private (bool success, TailOperatorContainer<AbstractAdditiveExpression, ShiftOperator>? tail) ParseShiftTail()
         {
             if (!MatchShiftOperator())
                 return (true, null);
@@ -1170,7 +1207,7 @@ namespace JSInterpreter.Parser
             if (rhs == null) return (false, null);
             var tail = ParseShiftTail();
             if (!tail.success) return (false, null);
-            return (true, new TailOperatorContainer<IAdditiveExpression, ShiftOperator>(rhs, op, tail.tail));
+            return (true, new TailOperatorContainer<AbstractAdditiveExpression, ShiftOperator>(rhs, op, tail.tail));
         }
 
         private ShiftOperator ParseShiftOperator()
@@ -1192,7 +1229,7 @@ namespace JSInterpreter.Parser
                 Match(TokenType.UnsignedShiftRight);
         }
 
-        private IAdditiveExpression? ParseAdditiveExpression()
+        private AbstractAdditiveExpression? ParseAdditiveExpression()
         {
             var lhs = ParseMultiplicativeExpression();
             if (lhs == null) return null;
@@ -1202,16 +1239,16 @@ namespace JSInterpreter.Parser
             if (tail == null)
                 return lhs;
 
-            var expression = new AdditiveExpression(lhs, tail.Op, tail.RHS);
+            var expression = new AdditiveExpression(lhs, tail.Op, tail.RHS, Strict);
             while (tail.Tail != null)
             {
                 tail = tail.Tail;
-                expression = new AdditiveExpression(expression, tail.Op, tail.RHS);
+                expression = new AdditiveExpression(expression, tail.Op, tail.RHS, Strict);
             }
             return expression;
         }
 
-        private (bool success, TailOperatorContainer<IMultiplicativeExpression, AdditiveOperator>? tail) ParseAdditiveTail()
+        private (bool success, TailOperatorContainer<AbstractMultiplicativeExpression, AdditiveOperator>? tail) ParseAdditiveTail()
         {
             if (!MatchAdditiveOperator())
                 return (true, null);
@@ -1220,7 +1257,7 @@ namespace JSInterpreter.Parser
             if (rhs == null) return (false, null);
             var tail = ParseAdditiveTail();
             if (!tail.success) return (false, null);
-            return (true, new TailOperatorContainer<IMultiplicativeExpression, AdditiveOperator>(rhs, op, tail.tail));
+            return (true, new TailOperatorContainer<AbstractMultiplicativeExpression, AdditiveOperator>(rhs, op, tail.tail));
         }
 
         private AdditiveOperator ParseAdditiveOperator()
@@ -1236,7 +1273,7 @@ namespace JSInterpreter.Parser
 
         private bool MatchAdditiveOperator() => Match(TokenType.Plus) || Match(TokenType.Minus);
 
-        private IMultiplicativeExpression? ParseMultiplicativeExpression()
+        private AbstractMultiplicativeExpression? ParseMultiplicativeExpression()
         {
             var lhs = ParseExponentiationExpression();
             if (lhs == null) return null;
@@ -1246,16 +1283,16 @@ namespace JSInterpreter.Parser
             if (tail == null)
                 return lhs;
 
-            var expression = new MultiplicativeExpression(lhs, tail.Op, tail.RHS);
+            var expression = new MultiplicativeExpression(lhs, tail.Op, tail.RHS, Strict);
             while (tail.Tail != null)
             {
                 tail = tail.Tail;
-                expression = new MultiplicativeExpression(expression, tail.Op, tail.RHS);
+                expression = new MultiplicativeExpression(expression, tail.Op, tail.RHS, Strict);
             }
             return expression;
         }
 
-        private (bool success, TailOperatorContainer<IExponentiationExpression, MultiplicativeOperator>? tail) ParseMultiplicativeTail()
+        private (bool success, TailOperatorContainer<AbstractExponentiationExpression, MultiplicativeOperator>? tail) ParseMultiplicativeTail()
         {
             if (!MatchMultiplicativeOperator())
                 return (true, null);
@@ -1264,7 +1301,7 @@ namespace JSInterpreter.Parser
             if (rhs == null) return (false, null);
             var tail = ParseMultiplicativeTail();
             if (!tail.success) return (false, null);
-            return (true, new TailOperatorContainer<IExponentiationExpression, MultiplicativeOperator>(rhs, op, tail.tail));
+            return (true, new TailOperatorContainer<AbstractExponentiationExpression, MultiplicativeOperator>(rhs, op, tail.tail));
         }
 
         private MultiplicativeOperator ParseMultiplicativeOperator()
@@ -1286,25 +1323,25 @@ namespace JSInterpreter.Parser
                 Match(TokenType.Percent);
         }
 
-        private IExponentiationExpression? ParseExponentiationExpression()
+        private AbstractExponentiationExpression? ParseExponentiationExpression()
         {
             using (var lr = new LexerRewinder(lexer))
             {
-                IUpdateExpression? lhs = ParseUpdateExpression();
+                AbstractUpdateExpression? lhs = ParseUpdateExpression();
                 if (lhs != null)
                 {
                     if (Consume(TokenType.DoubleAsterisk) != null)
                     {
                         var rhs = ParseExponentiationExpression();
                         if (lr.Success = rhs != null)
-                            return new ExponentiationExpression(lhs, rhs!);
+                            return new ExponentiationExpression(lhs, rhs!, Strict);
                     }
                 }
             }
             return ParseUnaryExpression();
         }
 
-        private IUnaryExpression? ParseUnaryExpression()
+        private AbstractUnaryExpression? ParseUnaryExpression()
         {
             if (!MatchUnaryOperator())
             {
@@ -1313,7 +1350,7 @@ namespace JSInterpreter.Parser
             var op = ParseUnaryOperator();
             var expression = ParseUnaryExpression();
             if (expression == null) return null;
-            return new OperatorUnaryExpression(op, expression);
+            return new OperatorUnaryExpression(op, expression, Strict);
         }
 
         private UnaryOperator ParseUnaryOperator()
@@ -1344,14 +1381,14 @@ namespace JSInterpreter.Parser
                 Match(TokenType.ExclamationMark);
         }
 
-        private IUpdateExpression? ParseUpdateExpression()
+        private AbstractUpdateExpression? ParseUpdateExpression()
         {
             if (MatchUpdateOperator())
             {
                 var op = ParseUpdateOperator();
                 var expression = ParseUnaryExpression();
                 if (expression == null) return null;
-                return new PrefixUpdateExpression(expression, op);
+                return new PrefixUpdateExpression(expression, op, Strict);
             }
 
             var lhs = ParseLeftHandSideExpression();
@@ -1359,7 +1396,7 @@ namespace JSInterpreter.Parser
             if (MatchUpdateOperator() && !CurrentToken.PassedNewLine)
             {
                 var op = ParseUpdateOperator();
-                return new PostfixUpdateExpression(lhs, op);
+                return new PostfixUpdateExpression(lhs, op, Strict);
             }
             return lhs;
         }
@@ -1377,7 +1414,7 @@ namespace JSInterpreter.Parser
 
         private bool MatchUpdateOperator() => Match(TokenType.PlusPlus) || Match(TokenType.MinusMinus);
 
-        private ILeftHandSideExpression? ParseLeftHandSideExpression()
+        private AbstractLeftHandSideExpression? ParseLeftHandSideExpression()
         {
             using (var lr = new LexerRewinder(lexer))
             {
@@ -1388,7 +1425,7 @@ namespace JSInterpreter.Parser
             return ParseNewExpression();
         }
 
-        private INewExpression? ParseNewExpression()
+        private AbstractNewExpression? ParseNewExpression()
         {
             using (var lr = new LexerRewinder(lexer))
             {
@@ -1398,16 +1435,16 @@ namespace JSInterpreter.Parser
                     if (innerExpression != null)
                     {
                         if (lr.Success = CurrentToken.Type != TokenType.ParenOpen)
-                            return new NewExpression(innerExpression);
+                            return new NewExpression(innerExpression, Strict);
                     }
                 }
             }
             return ParseMemberExpression();
         }
 
-        private ICallExpression? ParseCallExpression()
+        private AbstractCallExpression? ParseCallExpression()
         {
-            ICallExpression? lhs = null;
+            AbstractCallExpression? lhs = null;
             using (var lr = new LexerRewinder(lexer))
             {
                 lhs = ParseCoveredCallExpression();
@@ -1426,14 +1463,14 @@ namespace JSInterpreter.Parser
             do
             {
                 if (tail.Arguments != null)
-                    lhs = new RecursiveCallExpression(lhs, tail.Arguments);
+                    lhs = new RecursiveCallExpression(lhs, tail.Arguments, Strict);
                 else if (tail.IdentifierName != null)
-                    lhs = new DotCallExpression(lhs, tail.IdentifierName);
+                    lhs = new DotCallExpression(lhs, tail.IdentifierName, Strict);
                 else if (tail.Expression != null)
-                    lhs = new IndexCallExpression(lhs, tail.Expression);
+                    lhs = new IndexCallExpression(lhs, tail.Expression, Strict);
                 else
                 {
-                    return Expected<ICallExpression>("call expression tail component");
+                    return Expected<AbstractCallExpression>("call expression tail component");
                 }
 
                 tail = tail.Tail;
@@ -1457,7 +1494,7 @@ namespace JSInterpreter.Parser
             else if (Match(TokenType.Period))
             {
                 Consume();
-                var identifierName = Consume().Value;
+                var identifierName = Consume(TokenType.Identifier)!.Value;
                 var tail = ParseCallExpressionTail();
                 if (!tail.success) return (false, null);
                 return (true, new CallExpressionTail(identifierName, tail.tail));
@@ -1482,7 +1519,7 @@ namespace JSInterpreter.Parser
             if (Consume(TokenType.Super) == null) return null;
             var arguments = ParseArguments();
             if (arguments == null) return null;
-            return new SuperCall(arguments);
+            return new SuperCall(arguments, Strict);
         }
 
         private MemberCallExpression? ParseCoveredCallExpression()
@@ -1491,7 +1528,7 @@ namespace JSInterpreter.Parser
             if (memberExpression == null) return null;
             var arguments = ParseArguments();
             if (arguments == null) return null;
-            return new MemberCallExpression(memberExpression, arguments);
+            return new MemberCallExpression(memberExpression, arguments, Strict);
         }
 
         private Arguments? ParseArguments()
@@ -1531,7 +1568,7 @@ namespace JSInterpreter.Parser
             return ParseAssignmentExpression();
         }
 
-        private IMemberExpression? ParseMemberExpression()
+        private AbstractMemberExpression? ParseMemberExpression()
         {
             if (Match(TokenType.New))
             {
@@ -1540,13 +1577,13 @@ namespace JSInterpreter.Parser
                 if (left == null) return null;
                 var arguments = ParseArguments();
                 if (arguments == null) return null;
-                return new NewMemberExpression(left, arguments);
+                return new NewMemberExpression(left, arguments, Strict);
             }
             if (Match(TokenType.Super))
             {
                 return ParseSuperProperty();
             }
-            IMemberExpression? lhs = ParsePrimaryExpression();
+            AbstractMemberExpression? lhs = ParsePrimaryExpression();
             if (lhs == null) return null;
             var (success, tail) = ParseMemberExpressionTail();
             if (!success) return null;
@@ -1557,12 +1594,12 @@ namespace JSInterpreter.Parser
             do
             {
                 if (tail.IdentifierName != null)
-                    lhs = new DotMemberExpression(lhs, tail.IdentifierName);
+                    lhs = new DotMemberExpression(lhs, tail.IdentifierName, Strict);
                 else if (tail.Expression != null)
-                    lhs = new IndexMemberExpression(lhs, tail.Expression);
+                    lhs = new IndexMemberExpression(lhs, tail.Expression, Strict);
                 else
                 {
-                    return Expected<IMemberExpression>("member expression tail component");
+                    return Expected<AbstractMemberExpression>("member expression tail component");
                 }
 
                 tail = tail.Tail;
@@ -1588,7 +1625,7 @@ namespace JSInterpreter.Parser
             if (Match(TokenType.Period))
             {
                 Consume();
-                var name = Consume().Value;
+                var name = Consume(TokenType.Identifier)!.Value;
                 var tail = ParseMemberExpressionTail();
 
                 if (!tail.success) return (false, null);
@@ -1598,7 +1635,7 @@ namespace JSInterpreter.Parser
             return (false, null);
         }
 
-        private IMemberExpression? ParseSuperProperty()
+        private AbstractMemberExpression? ParseSuperProperty()
         {
             Consume(TokenType.Super);
             if (Match(TokenType.BracketOpen))
@@ -1607,25 +1644,25 @@ namespace JSInterpreter.Parser
                 var expression = ParseExpression();
                 if (expression == null) return null;
                 if (Consume(TokenType.BracketClose) == null) return null;
-                return new SuperIndexMemberExpression(expression);
+                return new SuperIndexMemberExpression(expression, Strict);
             }
             if (Match(TokenType.Period))
             {
                 Consume();
-                return new SuperDotMemberExpression(Consume().Value);
+                return new SuperDotMemberExpression(Consume(TokenType.Identifier)!.Value, Strict);
             }
-            return Expected<IMemberExpression>("super property");
+            return Expected<AbstractMemberExpression>("super property");
         }
 
-        private IPrimaryExpression? ParsePrimaryExpression()
+        private AbstractPrimaryExpression? ParsePrimaryExpression()
         {
             switch (CurrentToken.Type)
             {
                 case TokenType.This:
                     Consume();
-                    return ThisExpression.Instance;
+                    return ThisExpression.Instance(Strict);
                 case TokenType.Identifier:
-                    return new IdentifierReference(new Identifier(Consume().Value));
+                    return new IdentifierReference(new Identifier(Consume(TokenType.Identifier)!.Value), Strict);
                 case TokenType.BoolLiteral:
                     return new Literal(Consume().BoolValue());
                 case TokenType.NullLiteral:
@@ -1648,7 +1685,7 @@ namespace JSInterpreter.Parser
                     return ParseParenthesizedExpression();
             }
 
-            return Expected<IPrimaryExpression>("primary expression");
+            return Expected<AbstractPrimaryExpression>("primary expression");
         }
 
         private RegularExpressionLiteral? ParseRegularExpressionLiteral()
@@ -1661,7 +1698,7 @@ namespace JSInterpreter.Parser
                     exception = new ParseFailureException("Regex is not valid.");
                     return null;
                 }
-                var regex = Consume().RegexValue();
+                var regex = Consume().RegexValue(Strict);
                 lr.Success = true;
                 return regex;
             }
@@ -1702,7 +1739,7 @@ namespace JSInterpreter.Parser
                     Consume();
             }
             Consume(TokenType.BracketClose);
-            return new ArrayLiteral(items);
+            return new ArrayLiteral(items, Strict);
         }
 
         private ObjectLiteral? ParseObjectLiteral()
@@ -1711,7 +1748,7 @@ namespace JSInterpreter.Parser
             if (Match(TokenType.CurlyClose))
             {
                 Consume();
-                return new ObjectLiteral(Utils.EmptyList<IPropertyDefinition>());
+                return new ObjectLiteral(Utils.EmptyList<IPropertyDefinition>(), Strict);
             }
             var definitions = new List<IPropertyDefinition>();
             while (true)
@@ -1773,7 +1810,7 @@ namespace JSInterpreter.Parser
                     {
                         var identifier = Consume(TokenType.Identifier);
                         if (lr.Success = identifier != null)
-                            propertyDefinition = new IdentifierReference(new Identifier(identifier!.Value));
+                            propertyDefinition = new IdentifierReference(new Identifier(identifier!.Value), Strict);
                     }
                 if (propertyDefinition == null)
                     return Expected<ObjectLiteral>("object literal property definition");
@@ -1785,14 +1822,14 @@ namespace JSInterpreter.Parser
             }
             Consume(TokenType.CurlyClose);
 
-            return new ObjectLiteral(definitions);
+            return new ObjectLiteral(definitions, Strict);
         }
 
         private IMethodDefinition? ParseMethodDefinition()
         {
             if (CurrentToken.Type != TokenType.Identifier)
                 return Expected<IMethodDefinition>("method name, get, or set");
-            var identifier = Consume().Value;
+            var identifier = Consume(TokenType.Identifier)!.Value;
 
             if (identifier == "get")
             {
@@ -1802,11 +1839,11 @@ namespace JSInterpreter.Parser
                     var propertyName = propNameId.Value;
                     if (Consume(TokenType.ParenOpen) != null && Consume(TokenType.ParenClose) != null && Consume(TokenType.CurlyOpen) != null)
                     {
-                        var body = ParseStatementList();
+                        var body = ParseStatementList(setStrict: !Strict);
                         if (body != null && Consume(TokenType.CurlyClose) != null)
                         {
                             lr.Success = true;
-                            return new Getter(propertyName, new FunctionStatementList(body.statements));
+                            return new Getter(propertyName, new FunctionStatementList(body));
                         }
                     }
                 }
@@ -1837,11 +1874,11 @@ namespace JSInterpreter.Parser
                                 formalParameter = new FormalParameter(new Identifier(name));
                             if (formalParameter != null && Consume(TokenType.ParenClose) != null && Consume(TokenType.CurlyOpen) != null)
                             {
-                                var body = ParseStatementList();
+                                var body = ParseStatementList(setStrict: !Strict);
                                 if (body != null && Consume(TokenType.CurlyClose) != null)
                                 {
                                     lr.Success = true;
-                                    return new Setter(propertyName, formalParameter, new FunctionStatementList(body.statements));
+                                    return new Setter(propertyName, formalParameter, new FunctionStatementList(body));
                                 }
                             }
                         }
@@ -1852,10 +1889,10 @@ namespace JSInterpreter.Parser
                 if (Consume(TokenType.ParenOpen) == null) return null;
                 var parameters = ParseFormalParameters();
                 if (parameters == null || Consume(TokenType.ParenClose) == null || Consume(TokenType.CurlyOpen) == null) return null;
-                var body = ParseStatementList();
+                var body = ParseStatementList(setStrict: !Strict);
                 if (body == null) return null;
                 if (Consume(TokenType.CurlyClose) == null) return null;
-                return new MethodDefinition(identifier, parameters, new FunctionStatementList(body.statements));
+                return new MethodDefinition(identifier, parameters, new FunctionStatementList(body));
             }
         }
 
@@ -1876,14 +1913,14 @@ namespace JSInterpreter.Parser
                 parameters = tmp;
             }
             if (Consume(TokenType.ParenClose) == null || Consume(TokenType.CurlyOpen) == null) return null;
-            var statementList = ParseStatementList();
+            var statementList = ParseStatementList(setStrict: !Strict);
             if (statementList == null) return null;
-            var statements = new FunctionStatementList(statementList.statements);
+            var statements = new FunctionStatementList(statementList);
             if (Consume(TokenType.CurlyClose) == null) return null;
 
             if (functionName != null)
-                return new FunctionExpression(new Identifier(functionName), parameters, statements);
-            return new FunctionExpression(parameters, statements);
+                return new FunctionExpression(new Identifier(functionName), parameters, statements, Strict);
+            return new FunctionExpression(parameters, statements, Strict);
         }
 
         private ParenthesizedExpression? ParseParenthesizedExpression()
@@ -1892,7 +1929,7 @@ namespace JSInterpreter.Parser
             var expression = ParseExpression();
             if (expression == null) return null;
             if (Consume(TokenType.ParenClose) == null) return null;
-            return new ParenthesizedExpression(expression);
+            return new ParenthesizedExpression(expression, Strict);
         }
     }
 }

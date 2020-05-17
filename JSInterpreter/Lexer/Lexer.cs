@@ -41,7 +41,6 @@ namespace JSInterpreter.Lexer
         public Token CurrentToken { get => currentState.CurrentToken; private set => currentState.CurrentToken = value; }
 
         private readonly string source;
-        private readonly bool logErrors = true;
         private readonly Stack<LexerState> stateStack;
 
         private LexerState currentState;
@@ -84,7 +83,7 @@ namespace JSInterpreter.Lexer
                 keywords["import"] = TokenType.Import;
                 keywords["in"] = TokenType.In;
                 keywords["instanceof"] = TokenType.Instanceof;
-                keywords["interface"] = TokenType.Interface;
+                //keywords["interface"] = TokenType.Interface; // prefer the identifier version, so it doesn't cause errors in non-strict code
                 keywords["let"] = TokenType.Let;
                 keywords["new"] = TokenType.New;
                 keywords["null"] = TokenType.NullLiteral;

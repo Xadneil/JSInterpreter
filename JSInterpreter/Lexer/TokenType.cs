@@ -84,7 +84,7 @@ namespace JSInterpreter.Lexer
         Import,
         In,
         Instanceof,
-        Interface,
+        //Interface,
         Invalid,
         LessThan,
         LessThanEquals,

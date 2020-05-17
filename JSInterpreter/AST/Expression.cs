@@ -4,19 +4,24 @@ using System.Text;
 
 namespace JSInterpreter.AST
 {
-    public interface IExpression : IHasEvaluate
+    public abstract class AbstractExpression : ParseNode, IHasEvaluate
     {
-    }
-    public class CommaExpression : IExpression
-    {
-        public readonly IReadOnlyList<IAssignmentExpression> assignmentExpressions;
+        protected AbstractExpression(bool isStrictMode) : base(isStrictMode)
+        {
+        }
 
-        public CommaExpression(IReadOnlyList<IAssignmentExpression> assignmentExpressions)
+        public abstract Completion Evaluate(Interpreter interpreter);
+    }
+    public sealed class CommaExpression : AbstractExpression
+    {
+        public readonly IReadOnlyList<AbstractAssignmentExpression> assignmentExpressions;
+
+        public CommaExpression(IReadOnlyList<AbstractAssignmentExpression> assignmentExpressions, bool isStrictMode) : base(isStrictMode)
         {
             this.assignmentExpressions = assignmentExpressions;
         }
 
-        public Completion Evaluate(Interpreter interpreter)
+        public override Completion Evaluate(Interpreter interpreter)
         {
             IValue lastValue = UndefinedValue.Instance;
             foreach (var expression in assignmentExpressions)

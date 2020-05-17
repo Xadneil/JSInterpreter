@@ -21,7 +21,7 @@ namespace JSInterpreter.AST
         public bool hasCatchParameter;
         public readonly Identifier? catchParameter;
 
-        private TryStatement(TryStatementType tryStatementType, Block tryBlock, Block? catchBlock, Block? finallyBlock, Identifier? catchParameter = null)
+        private TryStatement(TryStatementType tryStatementType, Block tryBlock, bool isStrictMode, Block? catchBlock, Block? finallyBlock, Identifier? catchParameter = null) : base(isStrictMode)
         {
             this.tryStatementType = tryStatementType;
             this.tryBlock = tryBlock;
@@ -31,29 +31,29 @@ namespace JSInterpreter.AST
             hasCatchParameter = catchParameter != null;
         }
 
-        public static TryStatement TryCatch(Block tryBlock, Block catchBlock)
+        public static TryStatement TryCatch(Block tryBlock, Block catchBlock, bool isStrictMode)
         {
-            return new TryStatement(TryStatementType.TryCatch, tryBlock, catchBlock, null);
+            return new TryStatement(TryStatementType.TryCatch, tryBlock, isStrictMode, catchBlock, null);
         }
 
-        public static TryStatement TryCatch(Block tryBlock, Identifier catchParameter, Block catchBlock)
+        public static TryStatement TryCatch(Block tryBlock, Identifier catchParameter, Block catchBlock, bool isStrictMode)
         {
-            return new TryStatement(TryStatementType.TryCatch, tryBlock, catchBlock, null, catchParameter);
+            return new TryStatement(TryStatementType.TryCatch, tryBlock, isStrictMode, catchBlock, null, catchParameter);
         }
 
-        public static TryStatement TryFinally(Block tryBlock, Block finallyBlock)
+        public static TryStatement TryFinally(Block tryBlock, Block finallyBlock, bool isStrictMode)
         {
-            return new TryStatement(TryStatementType.TryFinally, tryBlock, null, finallyBlock);
+            return new TryStatement(TryStatementType.TryFinally, tryBlock, isStrictMode, null, finallyBlock);
         }
 
-        public static TryStatement TryCatchFinally(Block tryBlock, Block catchBlock, Block finallyBlock)
+        public static TryStatement TryCatchFinally(Block tryBlock, Block catchBlock, Block finallyBlock, bool isStrictMode)
         {
-            return new TryStatement(TryStatementType.TryCatchFinally, tryBlock, catchBlock, finallyBlock);
+            return new TryStatement(TryStatementType.TryCatchFinally, tryBlock, isStrictMode, catchBlock, finallyBlock);
         }
 
-        public static TryStatement TryCatchFinally(Block tryBlock, Identifier catchParameter, Block catchBlock, Block finallyBlock)
+        public static TryStatement TryCatchFinally(Block tryBlock, Identifier catchParameter, Block catchBlock, Block finallyBlock, bool isStrictMode)
         {
-            return new TryStatement(TryStatementType.TryCatchFinally, tryBlock, catchBlock, finallyBlock, catchParameter);
+            return new TryStatement(TryStatementType.TryCatchFinally, tryBlock, isStrictMode, catchBlock, finallyBlock, catchParameter);
         }
 
         public override IReadOnlyList<string> VarDeclaredNames()

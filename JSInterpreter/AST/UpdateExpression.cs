@@ -10,22 +10,25 @@ namespace JSInterpreter.AST
         Decrement
     }
 
-    public interface IUpdateExpression : IUnaryExpression
+    public abstract class AbstractUpdateExpression : AbstractUnaryExpression
     {
+        protected AbstractUpdateExpression(bool isStrictMode) : base(isStrictMode)
+        {
+        }
     }
 
-    public class PostfixUpdateExpression : IUpdateExpression
+    public sealed class PostfixUpdateExpression : AbstractUpdateExpression
     {
-        public readonly ILeftHandSideExpression leftHandSideExpression;
+        public readonly AbstractLeftHandSideExpression leftHandSideExpression;
         public readonly UpdateOperator updateOperation;
 
-        public PostfixUpdateExpression(ILeftHandSideExpression leftHandSideExpression, UpdateOperator updateOperation)
+        public PostfixUpdateExpression(AbstractLeftHandSideExpression leftHandSideExpression, UpdateOperator updateOperation, bool isStrictMode) : base(isStrictMode)
         {
             this.leftHandSideExpression = leftHandSideExpression;
             this.updateOperation = updateOperation;
         }
 
-        public Completion Evaluate(Interpreter interpreter)
+        public override Completion Evaluate(Interpreter interpreter)
         {
             var lhs = leftHandSideExpression.Evaluate(interpreter);
             if (lhs.IsAbrupt()) return lhs;
@@ -53,18 +56,18 @@ namespace JSInterpreter.AST
         }
     }
 
-    public class PrefixUpdateExpression : IUpdateExpression
+    public sealed class PrefixUpdateExpression : AbstractUpdateExpression
     {
-        public readonly IUnaryExpression unaryExpression;
+        public readonly AbstractUnaryExpression unaryExpression;
         public readonly UpdateOperator updateOperation;
 
-        public PrefixUpdateExpression(IUnaryExpression unaryExpression, UpdateOperator updateOperation)
+        public PrefixUpdateExpression(AbstractUnaryExpression unaryExpression, UpdateOperator updateOperation, bool isStrictMode) : base(isStrictMode)
         {
             this.unaryExpression = unaryExpression;
             this.updateOperation = updateOperation;
         }
 
-        public Completion Evaluate(Interpreter interpreter)
+        public override Completion Evaluate(Interpreter interpreter)
         {
             var lhs = unaryExpression.Evaluate(interpreter);
             if (lhs.IsAbrupt()) return lhs;

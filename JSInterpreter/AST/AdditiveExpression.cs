@@ -10,24 +10,27 @@ namespace JSInterpreter.AST
         Subtract
     }
 
-    public interface IAdditiveExpression : IShiftExpression
+    public abstract class AbstractAdditiveExpression : AbstractShiftExpression
     {
+        protected AbstractAdditiveExpression(bool isStrictMode) : base(isStrictMode)
+        {
+        }
     }
 
-    public class AdditiveExpression : IAdditiveExpression
+    public sealed class AdditiveExpression : AbstractAdditiveExpression
     {
         public readonly AdditiveOperator additiveOperator;
-        public readonly IMultiplicativeExpression multiplicativeExpression;
-        public readonly IAdditiveExpression additiveExpression;
+        public readonly AbstractMultiplicativeExpression multiplicativeExpression;
+        public readonly AbstractAdditiveExpression additiveExpression;
 
-        public AdditiveExpression(IAdditiveExpression additiveExpression, AdditiveOperator additiveOperator, IMultiplicativeExpression multiplicativeExpression)
+        public AdditiveExpression(AbstractAdditiveExpression additiveExpression, AdditiveOperator additiveOperator, AbstractMultiplicativeExpression multiplicativeExpression, bool isStrictMode) : base(isStrictMode)
         {
             this.additiveExpression = additiveExpression;
             this.additiveOperator = additiveOperator;
             this.multiplicativeExpression = multiplicativeExpression;
         }
 
-        public Completion Evaluate(Interpreter interpreter)
+        public override Completion Evaluate(Interpreter interpreter)
         {
             var left = additiveExpression.Evaluate(interpreter).GetValue();
             if (left.IsAbrupt()) return left;

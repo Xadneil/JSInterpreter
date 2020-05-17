@@ -15,22 +15,25 @@ namespace JSInterpreter.AST
         LogicalNot
     }
 
-    public interface IUnaryExpression : IExponentiationExpression
+    public abstract class AbstractUnaryExpression : AbstractExponentiationExpression
     {
+        protected AbstractUnaryExpression(bool isStrictMode) : base(isStrictMode)
+        {
+        }
     }
 
-    public class OperatorUnaryExpression : IUnaryExpression
+    public sealed class OperatorUnaryExpression : AbstractUnaryExpression
     {
         public readonly UnaryOperator unaryOperator;
-        public readonly IUnaryExpression unaryExpression;
+        public readonly AbstractUnaryExpression unaryExpression;
 
-        public OperatorUnaryExpression(UnaryOperator unaryOperator, IUnaryExpression unaryExpression)
+        public OperatorUnaryExpression(UnaryOperator unaryOperator, AbstractUnaryExpression unaryExpression, bool isStrictMode) : base(isStrictMode)
         {
             this.unaryOperator = unaryOperator;
             this.unaryExpression = unaryExpression;
         }
 
-        public Completion Evaluate(Interpreter interpreter)
+        public override Completion Evaluate(Interpreter interpreter)
         {
             Completion comp, comp2;
             switch (unaryOperator)

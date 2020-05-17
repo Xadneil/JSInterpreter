@@ -12,24 +12,27 @@ namespace JSInterpreter.AST
         StrictNotEquals
     }
 
-    public interface IEqualityExpression : IBitwiseAndExpression
+    public abstract class AbstractEqualityExpression : AbstractBitwiseAndExpression
     {
+        protected AbstractEqualityExpression(bool isStrictMode) : base(isStrictMode)
+        {
+        }
     }
 
-    public class EqualityExpression : IEqualityExpression
+    public sealed class EqualityExpression : AbstractEqualityExpression
     {
         public readonly EqualityOperator equalityOperator;
-        public readonly IRelationalExpression relationalExpression;
-        public readonly IEqualityExpression equalityExpression;
+        public readonly AbstractRelationalExpression relationalExpression;
+        public readonly AbstractEqualityExpression equalityExpression;
 
-        public EqualityExpression(IEqualityExpression equalityExpression, EqualityOperator equalityOperator, IRelationalExpression relationalExpression)
+        public EqualityExpression(AbstractEqualityExpression equalityExpression, EqualityOperator equalityOperator, AbstractRelationalExpression relationalExpression, bool isStrictMode) : base(isStrictMode)
         {
             this.equalityExpression = equalityExpression;
             this.equalityOperator = equalityOperator;
             this.relationalExpression = relationalExpression;
         }
 
-        public Completion Evaluate(Interpreter interpreter)
+        public override Completion Evaluate(Interpreter interpreter)
         {
             var leftComp = equalityExpression.Evaluate(interpreter).GetValue();
             if (leftComp.IsAbrupt()) return leftComp;

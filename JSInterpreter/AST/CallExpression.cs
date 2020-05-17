@@ -5,22 +5,25 @@ using System.Text;
 
 namespace JSInterpreter.AST
 {
-    public interface ICallExpression : ILeftHandSideExpression
+    public abstract class AbstractCallExpression : AbstractLeftHandSideExpression
     {
+        protected AbstractCallExpression(bool isStrictMode) : base(isStrictMode)
+        {
+        }
     }
 
-    public class MemberCallExpression : ICallExpression
+    public sealed class MemberCallExpression : AbstractCallExpression
     {
-        public readonly IMemberExpression memberExpression;
+        public readonly AbstractMemberExpression memberExpression;
         public readonly Arguments arguments;
 
-        public MemberCallExpression(IMemberExpression memberExpression, Arguments arguments)
+        public MemberCallExpression(AbstractMemberExpression memberExpression, Arguments arguments, bool isStrictMode) : base(isStrictMode)
         {
             this.memberExpression = memberExpression;
             this.arguments = arguments;
         }
 
-        public Completion Evaluate(Interpreter interpreter)
+        public override Completion Evaluate(Interpreter interpreter)
         {
             var @ref = memberExpression.Evaluate(interpreter);
             var funcComp = @ref.GetValue();
@@ -41,11 +44,9 @@ namespace JSInterpreter.AST
                     if (!argList.Other.Any())
                         return Completion.NormalCompletion(UndefinedValue.Instance);
                     var evalText = argList.Other![0];
-                    //TODO detect strict mode
-                    var strictCaller = false;
                     var evalRealm = interpreter.CurrentRealm();
                     //TODO HostEnsureCanCompileStrings
-                    return GlobalObjectProperties.PerformEval(evalText, evalRealm, strictCaller, true);
+                    return GlobalObjectProperties.PerformEval(evalText, evalRealm, IsStrictMode, true);
                 }
             }
             //TODO: support tail calls
@@ -53,16 +54,16 @@ namespace JSInterpreter.AST
         }
     }
 
-    public class SuperCall : ICallExpression
+    public sealed class SuperCall : AbstractCallExpression
     {
         public readonly Arguments arguments;
 
-        public SuperCall(Arguments arguments)
+        public SuperCall(Arguments arguments, bool isStrictMode) : base(isStrictMode)
         {
             this.arguments = arguments;
         }
 
-        public Completion Evaluate(Interpreter interpreter)
+        public override Completion Evaluate(Interpreter interpreter)
         {
             var newTargetValue = interpreter.GetNewTarget();
             if (!(newTargetValue is Object newTarget))
@@ -95,18 +96,18 @@ namespace JSInterpreter.AST
         }
     }
 
-    public class RecursiveCallExpression : ICallExpression
+    public sealed class RecursiveCallExpression : AbstractCallExpression
     {
-        public readonly ICallExpression callExpression;
+        public readonly AbstractCallExpression callExpression;
         public readonly Arguments arguments;
 
-        public RecursiveCallExpression(ICallExpression callExpression, Arguments arguments)
+        public RecursiveCallExpression(AbstractCallExpression callExpression, Arguments arguments, bool isStrictMode) : base(isStrictMode)
         {
             this.callExpression = callExpression;
             this.arguments = arguments;
         }
 
-        public Completion Evaluate(Interpreter interpreter)
+        public override Completion Evaluate(Interpreter interpreter)
         {
             var @ref = callExpression.Evaluate(interpreter);
             var funcComp = @ref.GetValue();
@@ -121,18 +122,18 @@ namespace JSInterpreter.AST
         }
     }
 
-    public class IndexCallExpression : ICallExpression
+    public sealed class IndexCallExpression : AbstractCallExpression
     {
-        public readonly ICallExpression callExpression;
-        public readonly IExpression indexerExpression;
+        public readonly AbstractCallExpression callExpression;
+        public readonly AbstractExpression indexerExpression;
 
-        public IndexCallExpression(ICallExpression callExpression, IExpression indexerExpression)
+        public IndexCallExpression(AbstractCallExpression callExpression, AbstractExpression indexerExpression, bool isStrictMode) : base(isStrictMode)
         {
             this.callExpression = callExpression;
             this.indexerExpression = indexerExpression;
         }
 
-        public Completion Evaluate(Interpreter interpreter)
+        public override Completion Evaluate(Interpreter interpreter)
         {
             var baseValueComp = callExpression.Evaluate(interpreter).GetValue();
             if (baseValueComp.IsAbrupt()) return baseValueComp;
@@ -149,18 +150,18 @@ namespace JSInterpreter.AST
         }
     }
 
-    public class DotCallExpression : ICallExpression
+    public sealed class DotCallExpression : AbstractCallExpression
     {
-        public readonly ICallExpression callExpression;
+        public readonly AbstractCallExpression callExpression;
         public readonly string dotIdentifierName;
 
-        public DotCallExpression(ICallExpression callExpression, string dotIdentifierName)
+        public DotCallExpression(AbstractCallExpression callExpression, string dotIdentifierName, bool isStrictMode) : base(isStrictMode)
         {
             this.callExpression = callExpression;
             this.dotIdentifierName = dotIdentifierName;
         }
 
-        public Completion Evaluate(Interpreter interpreter)
+        public override Completion Evaluate(Interpreter interpreter)
         {
             var baseValueComp = callExpression.Evaluate(interpreter).GetValue();
             if (baseValueComp.IsAbrupt()) return baseValueComp;

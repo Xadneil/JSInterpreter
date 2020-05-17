@@ -4,22 +4,25 @@ using System.Text;
 
 namespace JSInterpreter.AST
 {
-    public interface IExponentiationExpression : IMultiplicativeExpression
+    public abstract class AbstractExponentiationExpression : AbstractMultiplicativeExpression
     {
+        protected AbstractExponentiationExpression(bool isStrictMode) : base(isStrictMode)
+        {
+        }
     }
 
-    public class ExponentiationExpression : IExponentiationExpression
+    public class ExponentiationExpression : AbstractExponentiationExpression
     {
-        public readonly IUpdateExpression updateExpression;
-        public readonly IExponentiationExpression exponentiationExpression;
+        public readonly AbstractUpdateExpression updateExpression;
+        public readonly AbstractExponentiationExpression exponentiationExpression;
 
-        public ExponentiationExpression(IUpdateExpression updateExpression, IExponentiationExpression exponentiationExpression)
+        public ExponentiationExpression(AbstractUpdateExpression updateExpression, AbstractExponentiationExpression exponentiationExpression, bool isStrictMode) : base(isStrictMode)
         {
             this.updateExpression = updateExpression;
             this.exponentiationExpression = exponentiationExpression;
         }
 
-        public Completion Evaluate(Interpreter interpreter)
+        public override Completion Evaluate(Interpreter interpreter)
         {
             var left = updateExpression.Evaluate(interpreter).GetValue();
             if (left.IsAbrupt()) return left;

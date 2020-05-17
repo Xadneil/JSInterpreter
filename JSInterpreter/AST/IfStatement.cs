@@ -8,18 +8,18 @@ namespace JSInterpreter.AST
     public class IfStatement : Statement
     {
         public readonly bool hasElse;
-        public readonly IExpression conditionExpression;
+        public readonly AbstractExpression conditionExpression;
         public readonly Statement trueStatement;
         public readonly Statement? falseStatement;
 
-        public IfStatement(IExpression conditionExpression, Statement trueStatement)
+        public IfStatement(AbstractExpression conditionExpression, Statement trueStatement, bool isStrictMode) : base(isStrictMode)
         {
             hasElse = false;
             this.conditionExpression = conditionExpression;
             this.trueStatement = trueStatement;
         }
 
-        public IfStatement(IExpression conditionExpression, Statement trueStatement, Statement falseStatement)
+        public IfStatement(AbstractExpression conditionExpression, Statement trueStatement, Statement falseStatement, bool isStrictMode) : base(isStrictMode)
         {
             hasElse = true;
             this.conditionExpression = conditionExpression;

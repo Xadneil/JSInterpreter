@@ -5,11 +5,11 @@ using System.Text;
 
 namespace JSInterpreter.AST
 {
-    public class Block : Statement
+    public sealed class Block : Statement
     {
         public readonly StatementList statementList;
 
-        public Block(StatementList statementList)
+        public Block(StatementList statementList, bool isStrictMode) : base(isStrictMode)
         {
             this.statementList = statementList;
         }

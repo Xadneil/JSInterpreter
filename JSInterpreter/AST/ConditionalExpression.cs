@@ -4,23 +4,26 @@ using System.Text;
 
 namespace JSInterpreter.AST
 {
-    public interface IConditionalExpression : IAssignmentExpression
+    public abstract class AbstractConditionalExpression : AbstractAssignmentExpression
     {
+        protected AbstractConditionalExpression(bool isStrictMode) : base(isStrictMode)
+        {
+        }
     }
-    public class ConditionalExpression : IConditionalExpression
+    public sealed class ConditionalExpression : AbstractConditionalExpression
     {
-        public readonly ILogicalOrExpression logicalOrExpression;
-        public readonly IAssignmentExpression ifTrueAssignmentExpression;
-        public readonly IAssignmentExpression ifFalseAssignmentExpression;
+        public readonly AbstractLogicalOrExpression logicalOrExpression;
+        public readonly AbstractAssignmentExpression ifTrueAssignmentExpression;
+        public readonly AbstractAssignmentExpression ifFalseAssignmentExpression;
 
-        public ConditionalExpression(ILogicalOrExpression logicalOrExpression, IAssignmentExpression ifTrueAssignmentExpression, IAssignmentExpression ifFalseAssignmentExpression)
+        public ConditionalExpression(AbstractLogicalOrExpression logicalOrExpression, AbstractAssignmentExpression ifTrueAssignmentExpression, AbstractAssignmentExpression ifFalseAssignmentExpression, bool isStrictMode) : base(isStrictMode)
         {
             this.logicalOrExpression = logicalOrExpression;
             this.ifTrueAssignmentExpression = ifTrueAssignmentExpression;
             this.ifFalseAssignmentExpression = ifFalseAssignmentExpression;
         }
 
-        public Completion Evaluate(Interpreter interpreter)
+        public override Completion Evaluate(Interpreter interpreter)
         {
             var conditionComp = logicalOrExpression.Evaluate(interpreter).GetValue();
             if (conditionComp.IsAbrupt()) return conditionComp;

@@ -4,32 +4,37 @@ using System.Text;
 
 namespace JSInterpreter.AST
 {
-    public interface IPrimaryExpression : IMemberExpression
+    public abstract class AbstractPrimaryExpression : AbstractMemberExpression
     {
+        protected AbstractPrimaryExpression(bool isStrictMode) : base(isStrictMode)
+        {
+        }
     }
 
-    public class ThisExpression : IPrimaryExpression
+    public sealed class ThisExpression : AbstractPrimaryExpression
     {
-        public static readonly ThisExpression Instance = new ThisExpression();
+        private static readonly ThisExpression strictInstance = new ThisExpression(true);
+        private static readonly ThisExpression nonStrictInstance = new ThisExpression(false);
+        public static ThisExpression Instance(bool isStrictMode) => isStrictMode ? strictInstance : nonStrictInstance;
 
-        private ThisExpression() { }
+        private ThisExpression(bool isStrictMode) : base(isStrictMode) { }
 
-        public Completion Evaluate(Interpreter interpreter)
+        public override Completion Evaluate(Interpreter interpreter)
         {
             return interpreter.ResolveThisBinding();
         }
     }
 
-    public class ParenthesizedExpression : IPrimaryExpression
+    public sealed class ParenthesizedExpression : AbstractPrimaryExpression
     {
-        public readonly IExpression expression;
+        public readonly AbstractExpression expression;
 
-        public ParenthesizedExpression(IExpression expression)
+        public ParenthesizedExpression(AbstractExpression expression, bool isStrictMode) : base(isStrictMode)
         {
             this.expression = expression;
         }
 
-        public Completion Evaluate(Interpreter interpreter)
+        public override Completion Evaluate(Interpreter interpreter)
         {
             return expression.Evaluate(interpreter);
         }

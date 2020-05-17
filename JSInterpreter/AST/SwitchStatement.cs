@@ -7,11 +7,11 @@ namespace JSInterpreter.AST
 {
     public class SwitchStatement : BreakableStatement
     {
-        public readonly IExpression switchExpression;
+        public readonly AbstractExpression switchExpression;
         public readonly CaseBlock caseBlock;
 
 
-        public SwitchStatement(IExpression switchExpression, CaseBlock caseBlock)
+        public SwitchStatement(AbstractExpression switchExpression, CaseBlock caseBlock, bool isStrictMode) : base(isStrictMode)
         {
             this.switchExpression = switchExpression;
             this.caseBlock = caseBlock;
@@ -201,10 +201,10 @@ namespace JSInterpreter.AST
 
     public class CaseClause
     {
-        public readonly IExpression matchExpression;
+        public readonly AbstractExpression matchExpression;
         public readonly StatementList statementList;
 
-        public CaseClause(IExpression matchExpression, StatementList statementList)
+        public CaseClause(AbstractExpression matchExpression, StatementList statementList)
         {
             this.matchExpression = matchExpression;
             this.statementList = statementList;

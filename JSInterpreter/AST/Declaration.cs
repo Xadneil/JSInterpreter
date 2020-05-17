@@ -5,8 +5,12 @@ using System.Text;
 
 namespace JSInterpreter.AST
 {
-    public abstract class Declaration : IStatementListItem, IDeclarationPart
+    public abstract class Declaration : ParseNode, IStatementListItem, IDeclarationPart
     {
+        protected Declaration(bool isStrictMode) : base(isStrictMode)
+        {
+        }
+
         public IReadOnlyList<string> VarDeclaredNames()
         {
             return Utils.EmptyList<string>();
@@ -31,14 +35,17 @@ namespace JSInterpreter.AST
 
     public abstract class HoistableDeclaration : Declaration, IDeclarationPart, IScopedDeclaration
     {
+        protected HoistableDeclaration(bool isStrictMode) : base(isStrictMode)
+        {
+        }
     }
 
-    public class LexicalDeclaration : Declaration
+    public sealed class LexicalDeclaration : Declaration
     {
         public readonly LexicalDeclarationType lexicalDeclarationType;
         public readonly IReadOnlyList<LexicalDeclarationItem> lexicalDeclarationItems;
 
-        public LexicalDeclaration(LexicalDeclarationType lexicalDeclarationType, IReadOnlyList<LexicalDeclarationItem> lexicalDeclarationItems)
+        public LexicalDeclaration(LexicalDeclarationType lexicalDeclarationType, IReadOnlyList<LexicalDeclarationItem> lexicalDeclarationItems, bool isStrictMode) : base(isStrictMode)
         {
             this.lexicalDeclarationType = lexicalDeclarationType;
             this.lexicalDeclarationItems = lexicalDeclarationItems;
@@ -80,9 +87,9 @@ namespace JSInterpreter.AST
     {
         private readonly LexicalDeclarationType lexicalDeclarationType;
         public readonly string name;
-        public readonly IAssignmentExpression? assignmentExpression;
+        public readonly AbstractAssignmentExpression? assignmentExpression;
 
-        public LexicalDeclarationItem(LexicalDeclarationType lexicalDeclarationType, string name, IAssignmentExpression? assignmentExpression)
+        public LexicalDeclarationItem(LexicalDeclarationType lexicalDeclarationType, string name, AbstractAssignmentExpression? assignmentExpression)
         {
             this.lexicalDeclarationType = lexicalDeclarationType;
             this.name = name;

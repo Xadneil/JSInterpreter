@@ -14,24 +14,27 @@ namespace JSInterpreter.AST
         In
     }
 
-    public interface IRelationalExpression : IEqualityExpression
+    public abstract class AbstractRelationalExpression : AbstractEqualityExpression
     {
+        protected AbstractRelationalExpression(bool isStrictMode) : base(isStrictMode)
+        {
+        }
     }
 
-    public class RelationalExpression : IRelationalExpression
+    public class RelationalExpression : AbstractRelationalExpression
     {
         public readonly RelationalOperator relationalOperator;
-        public readonly IShiftExpression shiftExpression;
-        public readonly IRelationalExpression relationalExpression;
+        public readonly AbstractShiftExpression shiftExpression;
+        public readonly AbstractRelationalExpression relationalExpression;
 
-        public RelationalExpression(IRelationalExpression relationalExpression, RelationalOperator relationalOperator, IShiftExpression shiftExpression)
+        public RelationalExpression(AbstractRelationalExpression relationalExpression, RelationalOperator relationalOperator, AbstractShiftExpression shiftExpression, bool isStrictMode) : base(isStrictMode)
         {
             this.relationalExpression = relationalExpression;
             this.relationalOperator = relationalOperator;
             this.shiftExpression = shiftExpression;
         }
 
-        public Completion Evaluate(Interpreter interpreter)
+        public override Completion Evaluate(Interpreter interpreter)
         {
             var leftValueComp = relationalExpression.Evaluate(interpreter).GetValue();
             if (leftValueComp.IsAbrupt()) return leftValueComp;

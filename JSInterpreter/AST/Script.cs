@@ -9,7 +9,7 @@ namespace JSInterpreter.AST
     {
         public readonly ScriptStatementList scriptBody;
 
-        public Script(ScriptStatementList scriptBody)
+        public Script(ScriptStatementList scriptBody) : base(false)
         {
             this.scriptBody = scriptBody;
         }

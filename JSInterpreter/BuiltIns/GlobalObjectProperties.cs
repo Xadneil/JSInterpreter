@@ -25,8 +25,8 @@ namespace JSInterpreter
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types")]
         public static Completion PerformEval(IValue xValue, Realm evalRealm, bool strictCaller, bool direct)
         {
-            if (!(direct || (!direct && !strictCaller)))
-                throw new InvalidOperationException("Direct evals cannot have strictCaller. Spec 18.2.1.1 step 1");
+            if (!direct && strictCaller)
+                throw new InvalidOperationException("Indirect evals cannot have strictCaller. Spec 18.2.1.1 step 1");
             if (!(xValue is StringValue xString))
                 return Completion.NormalCompletion(xValue);
             var x = xString.@string;
@@ -48,7 +48,10 @@ namespace JSInterpreter
             {
                 //TODO use the in variables to apply additional early errors
                 // Spec 18.2.1.1 step 6
-                script = new Parser.Parser(x).ParseScript();
+                script = new Parser.Parser(x)
+                {
+                    Strict = strictCaller
+                }.ParseScript();
             }
             catch (Exception e)
             {
@@ -56,8 +59,7 @@ namespace JSInterpreter
             }
             if (!script.scriptBody.Any())
                 return Completion.NormalCompletion(UndefinedValue.Instance);
-            //TODO detect strict mode
-            var strictEval = false;
+            var strictEval = strictCaller || script.IsStrictMode;
             var ctx = Interpreter.Instance().RunningExecutionContext();
             LexicalEnvironment lexEnv;
             LexicalEnvironment varEnv;

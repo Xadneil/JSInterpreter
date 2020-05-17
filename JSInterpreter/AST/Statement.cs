@@ -11,8 +11,12 @@ namespace JSInterpreter.AST
         IReadOnlyList<IScopedDeclaration> VarScopedDeclarations();
     }
 
-    public abstract class Statement : IStatementListItem, ILabelledItem
+    public abstract class Statement : ParseNode, IStatementListItem, ILabelledItem
     {
+        protected Statement(bool isStrictMode) : base(isStrictMode)
+        {
+        }
+
         public abstract Completion Evaluate(Interpreter interpreter);
 
         public virtual Completion LabelledEvaluate(Interpreter interpreter, List<string> labelSet)
@@ -33,11 +37,11 @@ namespace JSInterpreter.AST
         public abstract IReadOnlyList<IScopedDeclaration> VarScopedDeclarations();
     }
 
-    public class ExpressionStatement : Statement
+    public sealed class ExpressionStatement : Statement
     {
-        public readonly IExpression expression;
+        public readonly AbstractExpression expression;
 
-        public ExpressionStatement(IExpression expression)
+        public ExpressionStatement(AbstractExpression expression, bool isStrictMode) : base(isStrictMode)
         {
             this.expression = expression;
         }
@@ -65,14 +69,16 @@ namespace JSInterpreter.AST
 
     public abstract class BreakableStatement : Statement
     {
-
+        protected BreakableStatement(bool isStrictMode) : base(isStrictMode)
+        {
+        }
     }
 
-    public class VariableStatement : Statement
+    public sealed class VariableStatement : Statement
     {
         public readonly VariableDeclarationList variableDeclarations;
 
-        public VariableStatement(VariableDeclarationList variableDeclarations)
+        public VariableStatement(VariableDeclarationList variableDeclarations, bool isStrictMode) : base(isStrictMode)
         {
             this.variableDeclarations = variableDeclarations;
         }
@@ -103,26 +109,26 @@ namespace JSInterpreter.AST
     public class VariableStatementItem
     {
         public readonly string name;
-        public readonly IAssignmentExpression assignmentExpression;
+        public readonly AbstractAssignmentExpression assignmentExpression;
 
-        public VariableStatementItem(string name, IAssignmentExpression assignmentExpression)
+        public VariableStatementItem(string name, AbstractAssignmentExpression assignmentExpression)
         {
             this.name = name;
             this.assignmentExpression = assignmentExpression;
         }
     }
 
-    public class ContinueStatement : Statement
+    public sealed class ContinueStatement : Statement
     {
         public readonly bool hasLabel;
         public readonly string? label;
 
-        public ContinueStatement()
+        public ContinueStatement(bool isStrictMode) : base(isStrictMode)
         {
             hasLabel = false;
         }
 
-        public ContinueStatement(string label)
+        public ContinueStatement(string label, bool isStrictMode) : base(isStrictMode)
         {
             hasLabel = true;
             this.label = label;
@@ -151,17 +157,17 @@ namespace JSInterpreter.AST
         }
     }
 
-    public class BreakStatement : Statement
+    public sealed class BreakStatement : Statement
     {
         public readonly bool hasLabel;
         public readonly string? label;
 
-        public BreakStatement()
+        public BreakStatement(bool isStrictMode) : base(isStrictMode)
         {
             hasLabel = false;
         }
 
-        public BreakStatement(string label)
+        public BreakStatement(string label, bool isStrictMode) : base(isStrictMode)
         {
             hasLabel = true;
             this.label = label;
@@ -190,12 +196,12 @@ namespace JSInterpreter.AST
         }
     }
 
-    public class ReturnStatement : Statement
+    public sealed class ReturnStatement : Statement
     {
-        public readonly IExpression? expression;
+        public readonly AbstractExpression? expression;
 
-        public ReturnStatement() { }
-        public ReturnStatement(IExpression expression)
+        public ReturnStatement(bool isStrictMode) : base(isStrictMode) { }
+        public ReturnStatement(AbstractExpression expression, bool isStrictMode) : base(isStrictMode)
         {
             this.expression = expression;
         }
@@ -231,12 +237,12 @@ namespace JSInterpreter.AST
         Completion LabelledEvaluate(Interpreter interpreter, List<string> labelSet);
     }
 
-    public class LabelledStatement : Statement
+    public sealed class LabelledStatement : Statement
     {
         public readonly Identifier identifier;
         public readonly ILabelledItem labelledItem;
 
-        public LabelledStatement(Identifier identifier, ILabelledItem labelledItem)
+        public LabelledStatement(Identifier identifier, ILabelledItem labelledItem, bool isStrictMode) : base(isStrictMode)
         {
             this.identifier = identifier;
             this.labelledItem = labelledItem;
@@ -303,11 +309,11 @@ namespace JSInterpreter.AST
         }
     }
 
-    public class ThrowStatement : Statement
+    public sealed class ThrowStatement : Statement
     {
-        public readonly IExpression expression;
+        public readonly AbstractExpression expression;
 
-        public ThrowStatement(IExpression expression)
+        public ThrowStatement(AbstractExpression expression, bool isStrictMode) : base(isStrictMode)
         {
             this.expression = expression;
         }
@@ -335,8 +341,12 @@ namespace JSInterpreter.AST
         }
     }
 
-    public class EmptyStatement : Statement
+    public sealed class EmptyStatement : Statement
     {
+        public EmptyStatement() : base(false)
+        {
+        }
+
         public override Completion Evaluate(Interpreter interpreter)
         {
             return Completion.NormalCompletion();
@@ -360,6 +370,10 @@ namespace JSInterpreter.AST
 
     public class DebuggerStatement : Statement
     {
+        public DebuggerStatement() : base(false)
+        {
+        }
+
         public override IReadOnlyList<IDeclarationPart> LexicallyScopedDeclarations()
         {
             return Utils.EmptyList<IDeclarationPart>();
