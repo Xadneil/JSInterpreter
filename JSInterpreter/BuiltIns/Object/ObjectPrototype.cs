@@ -18,10 +18,10 @@ namespace JSInterpreter
         {
             DefinePropertyOrThrow("constructor", new PropertyDescriptor(objectConstructor, true, false, true));
 
-            DefinePropertyOrThrow("hasOwnProperty", new PropertyDescriptor(Utils.CreateBuiltinFunction(hasOwnProperty, Utils.EmptyList<string>(), realm), true, false, true));
-            DefinePropertyOrThrow("isPrototypeOf", new PropertyDescriptor(Utils.CreateBuiltinFunction(isPrototypeOf, Utils.EmptyList<string>(), realm), true, false, true));
-            DefinePropertyOrThrow("toString", new PropertyDescriptor(Utils.CreateBuiltinFunction(ToObjectString, Utils.EmptyList<string>(), realm), true, false, true));
-            DefinePropertyOrThrow("valueOf", new PropertyDescriptor(Utils.CreateBuiltinFunction(valueOf, Utils.EmptyList<string>(), realm), true, false, true));
+            DefinePropertyOrThrow("hasOwnProperty", new PropertyDescriptor(Utils.CreateBuiltinFunction(hasOwnProperty, realm: realm), true, false, true));
+            DefinePropertyOrThrow("isPrototypeOf", new PropertyDescriptor(Utils.CreateBuiltinFunction(isPrototypeOf, realm: realm), true, false, true));
+            DefinePropertyOrThrow("toString", new PropertyDescriptor(Utils.CreateBuiltinFunction(ToObjectString, realm: realm), true, false, true));
+            DefinePropertyOrThrow("valueOf", new PropertyDescriptor(Utils.CreateBuiltinFunction(valueOf, realm: realm), true, false, true));
         }
 
         private Completion valueOf(IValue @this, IReadOnlyList<IValue> arguments)

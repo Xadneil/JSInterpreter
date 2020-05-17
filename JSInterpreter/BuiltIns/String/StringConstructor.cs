@@ -11,7 +11,7 @@ namespace JSInterpreter
             this.prototype = prototype;
             DefinePropertyOrThrow("prototype", new PropertyDescriptor(prototype, true, false, false));
 
-            DefinePropertyOrThrow("fromCharCode", new PropertyDescriptor(Utils.CreateBuiltinFunction(fromCharCode, Utils.EmptyList<string>(), realm), true, false, false));
+            DefinePropertyOrThrow("fromCharCode", new PropertyDescriptor(Utils.CreateBuiltinFunction(fromCharCode, realm: realm), true, false, false));
         }
 
         public override Completion InternalCall(IValue thisValue, IReadOnlyList<IValue> arguments)

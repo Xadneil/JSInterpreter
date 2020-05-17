@@ -10,7 +10,7 @@ namespace JSInterpreter
         {
             DefinePropertyOrThrow("constructor", new PropertyDescriptor(constructor, true, false, true));
 
-            DefinePropertyOrThrow("push", new PropertyDescriptor(Utils.CreateBuiltinFunction(push, Utils.EmptyList<string>(), realm), true, false, true));
+            DefinePropertyOrThrow("push", new PropertyDescriptor(Utils.CreateBuiltinFunction(push, realm: realm), true, false, true));
         }
 
         private Completion push(IValue @this, IReadOnlyList<IValue> arguments)

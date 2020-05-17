@@ -45,12 +45,13 @@ namespace JSInterpreter
         public DatePrototype(DateConstructor constructor, Realm realm)
         {
             DefinePropertyOrThrow("constructor", new PropertyDescriptor(constructor, true, false, true));
-            DefinePropertyOrThrow("getTimezoneOffset", new PropertyDescriptor(Utils.CreateBuiltinFunction(getTimeZoneOffset, Utils.EmptyList<string>(), realm), true, false, true));
-            DefinePropertyOrThrow("getDate", new PropertyDescriptor(Utils.CreateBuiltinFunction(getDate, Utils.EmptyList<string>(), realm), true, false, true));
-            DefinePropertyOrThrow("getHours", new PropertyDescriptor(Utils.CreateBuiltinFunction(getHours, Utils.EmptyList<string>(), realm), true, false, true));
-            DefinePropertyOrThrow("getMinutes", new PropertyDescriptor(Utils.CreateBuiltinFunction(getMinutes, Utils.EmptyList<string>(), realm), true, false, true));
-            DefinePropertyOrThrow("getMonth", new PropertyDescriptor(Utils.CreateBuiltinFunction(getMonth, Utils.EmptyList<string>(), realm), true, false, true));
-            DefinePropertyOrThrow("valueOf", new PropertyDescriptor(Utils.CreateBuiltinFunction(valueOf, Utils.EmptyList<string>(), realm), true, false, true));
+            DefinePropertyOrThrow("getTimezoneOffset", new PropertyDescriptor(Utils.CreateBuiltinFunction(getTimeZoneOffset, realm: realm), true, false, true));
+            DefinePropertyOrThrow("getDate", new PropertyDescriptor(Utils.CreateBuiltinFunction(getDate, realm: realm), true, false, true));
+            DefinePropertyOrThrow("getHours", new PropertyDescriptor(Utils.CreateBuiltinFunction(getHours, realm: realm), true, false, true));
+            DefinePropertyOrThrow("getMinutes", new PropertyDescriptor(Utils.CreateBuiltinFunction(getMinutes, realm: realm), true, false, true));
+            DefinePropertyOrThrow("getMonth", new PropertyDescriptor(Utils.CreateBuiltinFunction(getMonth, realm: realm), true, false, true));
+            DefinePropertyOrThrow("toString", new PropertyDescriptor(Utils.CreateBuiltinFunction(toString, realm: realm), true, false, true));
+            DefinePropertyOrThrow("valueOf", new PropertyDescriptor(Utils.CreateBuiltinFunction(valueOf, realm: realm), true, false, true));
 
         }
 

@@ -13,12 +13,12 @@ namespace JSInterpreter.BuiltIns.Math
             DefinePropertyOrThrow("E", new PropertyDescriptor(new NumberValue(System.Math.E), false, false, false));
             DefinePropertyOrThrow("LN2", new PropertyDescriptor(new NumberValue(System.Math.Log(2)), false, false, false));
 
-            DefinePropertyOrThrow("abs", new PropertyDescriptor(Utils.CreateBuiltinFunction(abs, Utils.EmptyList<string>(), realm), true, false, true));
-            DefinePropertyOrThrow("ceil", new PropertyDescriptor(Utils.CreateBuiltinFunction(ceil, Utils.EmptyList<string>(), realm), true, false, true));
-            DefinePropertyOrThrow("floor", new PropertyDescriptor(Utils.CreateBuiltinFunction(floor, Utils.EmptyList<string>(), realm), true, false, true));
-            DefinePropertyOrThrow("log", new PropertyDescriptor(Utils.CreateBuiltinFunction(log, Utils.EmptyList<string>(), realm), true, false, true));
-            DefinePropertyOrThrow("min", new PropertyDescriptor(Utils.CreateBuiltinFunction(min, Utils.EmptyList<string>(), realm), true, false, true));
-            DefinePropertyOrThrow("pow", new PropertyDescriptor(Utils.CreateBuiltinFunction(pow, Utils.EmptyList<string>(), realm), true, false, true));
+            DefinePropertyOrThrow("abs", new PropertyDescriptor(Utils.CreateBuiltinFunction(abs, realm: realm), true, false, true));
+            DefinePropertyOrThrow("ceil", new PropertyDescriptor(Utils.CreateBuiltinFunction(ceil, realm: realm), true, false, true));
+            DefinePropertyOrThrow("floor", new PropertyDescriptor(Utils.CreateBuiltinFunction(floor, realm: realm), true, false, true));
+            DefinePropertyOrThrow("log", new PropertyDescriptor(Utils.CreateBuiltinFunction(log, realm: realm), true, false, true));
+            DefinePropertyOrThrow("min", new PropertyDescriptor(Utils.CreateBuiltinFunction(min, realm: realm), true, false, true));
+            DefinePropertyOrThrow("pow", new PropertyDescriptor(Utils.CreateBuiltinFunction(pow, realm: realm), true, false, true));
         }
 
         public static Completion abs(IValue @this, IReadOnlyList<IValue> arguments)

@@ -11,8 +11,13 @@ namespace JSInterpreter
         public BooleanObject(BooleanValue value)
         {
             Value = value;
-#warning add boolean prototype
-            //prototype = Interpreter.Instance().CurrentRealm().Intrinsics.BooleanPrototype;
+            prototype = Interpreter.Instance().CurrentRealm().Intrinsics.BooleanPrototype;
+        }
+
+        protected BooleanObject(BooleanValue value, Object? prototype)
+        {
+            Value = value;
+            this.prototype = prototype;
         }
     }
 }

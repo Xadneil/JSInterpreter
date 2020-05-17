@@ -16,11 +16,11 @@ namespace JSInterpreter
 
         public void DefineDeferredProperties(Realm realm)
         {
-            DefinePropertyOrThrow("create", new PropertyDescriptor(Utils.CreateBuiltinFunction(create, Utils.EmptyList<string>(), realm), true, false, true));
-            DefinePropertyOrThrow("defineProperty", new PropertyDescriptor(Utils.CreateBuiltinFunction(defineProperty, Utils.EmptyList<string>(), realm), true, false, true));
-            DefinePropertyOrThrow("getOwnPropertyDescriptor", new PropertyDescriptor(Utils.CreateBuiltinFunction(getOwnPropertyDescriptor, Utils.EmptyList<string>(), realm), true, false, true));
-            DefinePropertyOrThrow("getPrototypeOf", new PropertyDescriptor(Utils.CreateBuiltinFunction(getPrototypeOf, Utils.EmptyList<string>(), realm), true, false, true));
-            DefinePropertyOrThrow("preventExtensions", new PropertyDescriptor(Utils.CreateBuiltinFunction(preventExtensions, Utils.EmptyList<string>(), realm), true, false, true));
+            DefinePropertyOrThrow("create", new PropertyDescriptor(Utils.CreateBuiltinFunction(create, realm: realm), true, false, true));
+            DefinePropertyOrThrow("defineProperty", new PropertyDescriptor(Utils.CreateBuiltinFunction(defineProperty, realm: realm), true, false, true));
+            DefinePropertyOrThrow("getOwnPropertyDescriptor", new PropertyDescriptor(Utils.CreateBuiltinFunction(getOwnPropertyDescriptor, realm: realm), true, false, true));
+            DefinePropertyOrThrow("getPrototypeOf", new PropertyDescriptor(Utils.CreateBuiltinFunction(getPrototypeOf, realm: realm), true, false, true));
+            DefinePropertyOrThrow("preventExtensions", new PropertyDescriptor(Utils.CreateBuiltinFunction(preventExtensions, realm: realm), true, false, true));
         }
 
         public override Completion InternalCall(IValue thisValue, IReadOnlyList<IValue> arguments)

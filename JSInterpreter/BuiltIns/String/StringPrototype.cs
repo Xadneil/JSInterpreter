@@ -9,9 +9,9 @@ namespace JSInterpreter
         public StringPrototype(StringConstructor constructor, Realm realm)
         {
             DefinePropertyOrThrow("constructor", new PropertyDescriptor(constructor, true, false, true));
-            DefinePropertyOrThrow("charCodeAt", new PropertyDescriptor(Utils.CreateBuiltinFunction(charCodeAt, Utils.EmptyList<string>(), realm), true, false, false));
-            DefinePropertyOrThrow("toString", new PropertyDescriptor(Utils.CreateBuiltinFunction(toString, Utils.EmptyList<string>(), realm), true, false, false));
-            DefinePropertyOrThrow("valueOf", new PropertyDescriptor(Utils.CreateBuiltinFunction(valueOf, Utils.EmptyList<string>(), realm), true, false, false));
+            DefinePropertyOrThrow("charCodeAt", new PropertyDescriptor(Utils.CreateBuiltinFunction(charCodeAt, realm: realm), true, false, false));
+            DefinePropertyOrThrow("toString", new PropertyDescriptor(Utils.CreateBuiltinFunction(toString, realm: realm), true, false, false));
+            DefinePropertyOrThrow("valueOf", new PropertyDescriptor(Utils.CreateBuiltinFunction(valueOf, realm: realm), true, false, false));
         }
 
         private Completion charCodeAt(IValue @this, IReadOnlyList<IValue> arguments)

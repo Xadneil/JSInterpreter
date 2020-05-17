@@ -39,6 +39,10 @@ namespace JSInterpreter
             Intrinsics.ArrayPrototype = new ArrayPrototype(Intrinsics.ArrayConstructor, this);
             Intrinsics.ArrayConstructor.InitPrototypeProperty(Intrinsics.ArrayPrototype);
 
+            Intrinsics.BooleanConstructor = new BooleanConstructor(Intrinsics.FunctionPrototype);
+            Intrinsics.BooleanPrototype = new BooleanPrototype(Intrinsics.BooleanConstructor, this);
+            Intrinsics.BooleanConstructor.InitPrototypeProperty(Intrinsics.BooleanPrototype);
+
             Intrinsics.DateConstructor = new DateConstructor(Intrinsics.FunctionPrototype);
             Intrinsics.DatePrototype = new DatePrototype(Intrinsics.DateConstructor, this);
 
@@ -89,7 +93,7 @@ namespace JSInterpreter
 
         public Callable DefineEval()
         {
-            return Utils.CreateBuiltinFunction(GlobalObjectProperties.eval, Utils.EmptyList<string>(), this);
+            return Utils.CreateBuiltinFunction(GlobalObjectProperties.eval, realm: this);
         }
 
         public Completion SetDefaultGlobalBindings()
@@ -103,19 +107,22 @@ namespace JSInterpreter
             if (comp.IsAbrupt()) return comp;
             comp = GlobalObject.DefinePropertyOrThrow("eval", new PropertyDescriptor(Intrinsics.Eval, true, false, true));
             if (comp.IsAbrupt()) return comp;
-            comp = GlobalObject.DefinePropertyOrThrow("isFinite", new PropertyDescriptor(Utils.CreateBuiltinFunction(GlobalObjectProperties.isFinite, Utils.EmptyList<string>(), this), true, false, true));
+            comp = GlobalObject.DefinePropertyOrThrow("isFinite", new PropertyDescriptor(Utils.CreateBuiltinFunction(GlobalObjectProperties.isFinite, realm: this), true, false, true));
             if (comp.IsAbrupt()) return comp;
-            comp = GlobalObject.DefinePropertyOrThrow("isNaN", new PropertyDescriptor(Utils.CreateBuiltinFunction(GlobalObjectProperties.isNaN, Utils.EmptyList<string>(), this), true, false, true));
+            comp = GlobalObject.DefinePropertyOrThrow("isNaN", new PropertyDescriptor(Utils.CreateBuiltinFunction(GlobalObjectProperties.isNaN, realm: this), true, false, true));
             if (comp.IsAbrupt()) return comp;
-            comp = GlobalObject.DefinePropertyOrThrow("parseFloat", new PropertyDescriptor(Utils.CreateBuiltinFunction(GlobalObjectProperties.parseFloat, Utils.EmptyList<string>(), this), true, false, true));
+            comp = GlobalObject.DefinePropertyOrThrow("parseFloat", new PropertyDescriptor(Utils.CreateBuiltinFunction(GlobalObjectProperties.parseFloat, realm: this), true, false, true));
             if (comp.IsAbrupt()) return comp;
-            comp = GlobalObject.DefinePropertyOrThrow("parseInt", new PropertyDescriptor(Utils.CreateBuiltinFunction(GlobalObjectProperties.parseInt, Utils.EmptyList<string>(), this), true, false, true));
+            comp = GlobalObject.DefinePropertyOrThrow("parseInt", new PropertyDescriptor(Utils.CreateBuiltinFunction(GlobalObjectProperties.parseInt, realm: this), true, false, true));
             if (comp.IsAbrupt()) return comp;
 
             comp = GlobalObject.DefinePropertyOrThrow("Function", new PropertyDescriptor(Intrinsics.FunctionConstructor, true, false, true));
             if (comp.IsAbrupt()) return comp;
 
             comp = GlobalObject.DefinePropertyOrThrow("Array", new PropertyDescriptor(Intrinsics.ArrayConstructor, true, false, true));
+            if (comp.IsAbrupt()) return comp;
+
+            comp = GlobalObject.DefinePropertyOrThrow("Boolean", new PropertyDescriptor(Intrinsics.BooleanConstructor, true, false, true));
             if (comp.IsAbrupt()) return comp;
 
             comp = GlobalObject.DefinePropertyOrThrow("Date", new PropertyDescriptor(Intrinsics.DateConstructor, true, false, true));
@@ -163,6 +170,8 @@ namespace JSInterpreter
         public ArrayConstructor ArrayConstructor;
         public ArrayIteratorPrototype ArrayIteratorPrototype;
         public ArrayPrototype ArrayPrototype;
+        public BooleanConstructor BooleanConstructor;
+        public BooleanPrototype BooleanPrototype;
         public DateConstructor DateConstructor;
         public DatePrototype DatePrototype;
 

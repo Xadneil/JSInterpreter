@@ -124,14 +124,12 @@ namespace JSInterpreter
         public static readonly BooleanValue True = new BooleanValue(true);
         public static readonly BooleanValue False = new BooleanValue(false);
 
-        private readonly Completion wrapperObject;
         private readonly Completion cachedNumber;
         private readonly Completion cachedString;
 
         private BooleanValue(bool boolean)
         {
             this.boolean = boolean;
-            wrapperObject = Completion.NormalCompletion(new BooleanObject(this));
             cachedNumber = Completion.NormalCompletion(new NumberValue(boolean ? 1 : 0));
             cachedString = Completion.NormalCompletion(new StringValue(boolean ? "true" : "false"));
         }
@@ -143,7 +141,7 @@ namespace JSInterpreter
 
         public Completion ToObject()
         {
-            return wrapperObject;
+            return Completion.NormalCompletion(new BooleanObject(this));
         }
 
         public Completion ToJsString()

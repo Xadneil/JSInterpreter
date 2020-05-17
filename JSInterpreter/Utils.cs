@@ -218,14 +218,15 @@ namespace JSInterpreter
             return lhs.InitializeReferencedBinding(v);
         }
 
-        public static FunctionObject CreateBuiltinFunction(Func<IValue, IReadOnlyList<IValue>, Completion> steps, IEnumerable<string> internalSlotsList, Realm? realm = null, Object? prototype = null)
+        public static FunctionObject CreateBuiltinFunction(Func<IValue, IReadOnlyList<IValue>, Completion> steps, IEnumerable<string>? internalSlotsList = null, Realm? realm = null, Object? prototype = null)
         {
             if (realm == null)
                 realm = Interpreter.Instance().CurrentRealm();
             if (prototype == null)
                 prototype = realm.Intrinsics.FunctionPrototype;
             var func = new BuiltinFunction(steps);
-            func.AddCustomInternalSlots(internalSlotsList);
+            if (internalSlotsList != null)
+                func.AddCustomInternalSlots(internalSlotsList);
             func.Realm = realm;
             func.prototype = prototype;
             func.IsExtensible = true;
