@@ -25,6 +25,7 @@
  */
 
 using JSInterpreter.AST;
+using JSInterpreter.Parser;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -55,7 +56,7 @@ namespace JSInterpreter.Lexer
             PassedNewLine = passedNewLine;
         }
 
-        public double DoubleValue()
+        public double DoubleValue(bool strict)
         {
             if (Type != TokenType.NumericLiteral)
                 throw new InvalidOperationException("DoubleValue can only be used on a numeric literal.");
@@ -109,6 +110,10 @@ namespace JSInterpreter.Lexer
                 else if (char.IsDigit(Value[1]))
                 {
                     // also octal, but syntax error in strict mode
+                    if (strict)
+                    {
+                        throw new ParseFailureException("Octal numbers starting with '0' are not allowed in strict code");
+                    }
                     return Convert.ToInt32(Value.Substring(1), 8);
                 }
             }

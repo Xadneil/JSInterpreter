@@ -5,7 +5,7 @@ using System.Text;
 
 namespace JSInterpreter.AST
 {
-    public class FunctionDeclaration : HoistableDeclaration, ILabelledItem, IScopedDeclaration
+    public sealed class FunctionDeclaration : HoistableDeclaration, ILabelledItem, IScopedDeclaration
     {
         public readonly bool isAnonymous;
         public readonly Identifier? identifier;
@@ -63,9 +63,7 @@ namespace JSInterpreter.AST
         {
             if (!isAnonymous)
             {
-                //TODO: scan body code for strict directive
-                bool strict = false;
-                var F = FunctionObject.FunctionCreate(FunctionObject.FunctionCreateKind.Normal, formalParameters, functionBody, scope, strict);
+                var F = FunctionObject.FunctionCreate(FunctionObject.FunctionCreateKind.Normal, formalParameters, functionBody, scope, functionBody.IsStrictMode);
                 F.MakeConstructor();
                 F.SetFunctionName(identifier!.name);
                 return F;
@@ -107,22 +105,19 @@ namespace JSInterpreter.AST
         {
             if (isAnonymous)
             {
-                //TODO: detect strict mode
                 var scope = interpreter.RunningExecutionContext().LexicalEnvironment;
-                var closure = FunctionObject.FunctionCreate(FunctionObject.FunctionCreateKind.Normal, formalParameters, functionBody, scope, strict: false);
+                var closure = FunctionObject.FunctionCreate(FunctionObject.FunctionCreateKind.Normal, formalParameters, functionBody, scope, functionBody.IsStrictMode);
                 closure.MakeConstructor();
                 //TODO set SourceText
                 return Completion.NormalCompletion(closure);
             }
             else
             {
-
-                //TODO: detect strict mode
                 var scope = interpreter.RunningExecutionContext().LexicalEnvironment;
                 var funcEnv = scope.NewDeclarativeEnvironment();
                 var envRec = funcEnv.EnvironmentRecord;
                 envRec.CreateImmutableBinding(identifier!.name, false);
-                var closure = FunctionObject.FunctionCreate(FunctionObject.FunctionCreateKind.Normal, formalParameters, functionBody, funcEnv, strict: false);
+                var closure = FunctionObject.FunctionCreate(FunctionObject.FunctionCreateKind.Normal, formalParameters, functionBody, funcEnv, functionBody.IsStrictMode);
                 closure.MakeConstructor();
                 closure.SetFunctionName(identifier.name);
                 //TODO set SourceText

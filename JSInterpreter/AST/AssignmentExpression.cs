@@ -48,7 +48,7 @@ namespace JSInterpreter.AST
                 if (!(lref is ReferenceValue referenceValue))
                     throw new InvalidOperationException("AssignmentExpression.Evaluate: left hand side did not return a reference.");
                 Completion rval;
-                if (assignmentExpression is FunctionExpression functionExpression && functionExpression.isAnonymous && (leftHandSideExpression is Identifier || leftHandSideExpression is IdentifierReference))
+                if (assignmentExpression is FunctionExpression functionExpression && functionExpression.isAnonymous && leftHandSideExpression is IdentifierReference)
                     rval = functionExpression.NamedEvaluate(interpreter, referenceValue.referencedName);
                 else
                     rval = assignmentExpression.Evaluate(interpreter).GetValue();

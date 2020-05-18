@@ -5,7 +5,7 @@ using System.Text;
 
 namespace JSInterpreter.AST
 {
-    public class SwitchStatement : BreakableStatement
+    public sealed class SwitchStatement : BreakableStatement
     {
         public readonly AbstractExpression switchExpression;
         public readonly CaseBlock caseBlock;

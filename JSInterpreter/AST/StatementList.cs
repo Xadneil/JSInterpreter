@@ -103,7 +103,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    public class FunctionStatementList : StatementList
+    public sealed class FunctionStatementList : StatementList
     {
         public FunctionStatementList(StatementList statementList) : base(statementList.statements, statementList.IsStrictMode) { }
 
@@ -135,7 +135,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    public class ScriptStatementList : StatementList
+    public sealed class ScriptStatementList : StatementList
     {
         public ScriptStatementList(StatementList statementList) : base(statementList.statements, statementList.IsStrictMode) { }
 

@@ -27,12 +27,12 @@ namespace JSInterpreter.AST
     {
     }
 
-    public class ForDeclaration : IForInOfInitializer
+    public class ForDeclaration : ParseNode, IForInOfInitializer
     {
         public bool isConst;
         public string name;
 
-        public ForDeclaration(bool isConst, string name)
+        public ForDeclaration(bool isConst, string name, bool isStrictMode) : base(isStrictMode)
         {
             this.isConst = isConst;
             this.name = name;
@@ -55,7 +55,7 @@ namespace JSInterpreter.AST
 
         public Completion Evaluate(Interpreter interpreter)
         {
-            return interpreter.ResolveBinding(name);
+            return interpreter.ResolveBinding(name, IsStrictMode);
         }
     }
 
@@ -163,7 +163,7 @@ namespace JSInterpreter.AST
             }
         }
 
-        protected static Completion ForInOfBodyEvaluation(IForInOfInitializer lhs, Statement stmt, IteratorRecord iteratorRecord, IterationKind iterationKind, LHSKind lhsKind, List<string> labelSet, IteratorKind? iteratorKindNullable = null)
+        protected Completion ForInOfBodyEvaluation(IForInOfInitializer lhs, Statement stmt, IteratorRecord iteratorRecord, IterationKind iterationKind, LHSKind lhsKind, List<string> labelSet, IteratorKind? iteratorKindNullable = null)
         {
             var iteratorKind = iteratorKindNullable.GetValueOrDefault(IteratorKind.Sync);
             var oldEnv = Interpreter.Instance().RunningExecutionContext().LexicalEnvironment;
@@ -203,7 +203,7 @@ namespace JSInterpreter.AST
                     forDeclaration.BindingInstantiation(iterationEnv);
                     Interpreter.Instance().RunningExecutionContext().LexicalEnvironment = iterationEnv;
                     if (!destructuring)
-                        lhsRef = Interpreter.Instance().ResolveBinding(forDeclaration.name);
+                        lhsRef = Interpreter.Instance().ResolveBinding(forDeclaration.name, IsStrictMode);
                 }
                 Completion status;
                 if (!destructuring)
@@ -253,18 +253,18 @@ namespace JSInterpreter.AST
         }
     }
 
-    public class ForBinding : IForInOfInitializer, IScopedDeclaration
+    public sealed class ForBinding : ParseNode, IForInOfInitializer, IScopedDeclaration
     {
         public readonly string name;
 
-        public ForBinding(string name)
+        public ForBinding(string name, bool isStrictMode) : base(isStrictMode)
         {
             this.name = name;
         }
 
         public Completion Evaluate(Interpreter interpreter)
         {
-            return interpreter.ResolveBinding(name);
+            return interpreter.ResolveBinding(name, IsStrictMode);
         }
 
         public IReadOnlyList<string> BoundNames()
@@ -273,7 +273,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    public class DoWhileIterationStatement : IterationStatement
+    public sealed class DoWhileIterationStatement : IterationStatement
     {
         public readonly Statement doStatement;
         public readonly AbstractExpression whileExpression;
@@ -317,7 +317,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    public class WhileIterationStatement : IterationStatement
+    public sealed class WhileIterationStatement : IterationStatement
     {
         public readonly AbstractExpression whileExpression;
         public readonly Statement doStatement;
@@ -362,7 +362,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    public class ForExpressionIterationStatement : IterationStatement
+    public sealed class ForExpressionIterationStatement : IterationStatement
     {
         public readonly Statement doStatement;
         public readonly AbstractExpression? forExpression;
@@ -403,7 +403,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    public class ForVarIterationStatement : IterationStatement
+    public sealed class ForVarIterationStatement : IterationStatement
     {
         public readonly Statement doStatement;
         public readonly VariableDeclarationList variableDeclarations;
@@ -441,7 +441,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    public class ForLexicalIterationStatement : IterationStatement
+    public sealed class ForLexicalIterationStatement : IterationStatement
     {
         public readonly Statement doStatement;
         public readonly LexicalDeclaration lexicalDeclaration;
@@ -499,7 +499,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    public class ForInLHSIterationStatement : IterationStatement
+    public sealed class ForInLHSIterationStatement : IterationStatement
     {
         public readonly AbstractLeftHandSideExpression leftHandSideExpression;
         public readonly AbstractExpression inExpression;
@@ -535,7 +535,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    public class ForInVarIterationStatement : IterationStatement
+    public sealed class ForInVarIterationStatement : IterationStatement
     {
         public readonly ForBinding forVar;
         public readonly AbstractExpression forInExpression;
@@ -571,7 +571,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    public class ForInLetConstIterationStatement : IterationStatement
+    public sealed class ForInLetConstIterationStatement : IterationStatement
     {
         public readonly ForDeclaration forDeclaration;
         public readonly AbstractExpression forInExpression;
@@ -607,7 +607,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    public class ForOfLHSIterationStatement : IterationStatement
+    public sealed class ForOfLHSIterationStatement : IterationStatement
     {
         public readonly AbstractLeftHandSideExpression leftHandSideExpression;
         public readonly AbstractAssignmentExpression ofExpression;
@@ -643,7 +643,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    public class ForOfVarIterationStatement : IterationStatement
+    public sealed class ForOfVarIterationStatement : IterationStatement
     {
         public readonly ForBinding forVar;
         public readonly AbstractAssignmentExpression forOfExpression;
@@ -679,7 +679,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    public class ForOfLetConstIterationStatement : IterationStatement
+    public sealed class ForOfLetConstIterationStatement : IterationStatement
     {
         public readonly ForDeclaration forDeclaration;
         public readonly AbstractAssignmentExpression forOfExpression;

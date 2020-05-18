@@ -146,7 +146,9 @@ namespace JSInterpreter
         public CompletionOr<T> WithEmpty<T>()
         {
 #pragma warning disable CS8653 // A default expression introduces a null value for a type parameter.
+#pragma warning disable CS8604 // Possible null reference argument.
             return new CompletionOr<T>(completionType, value, target, default);
+#pragma warning restore CS8604 // Possible null reference argument.
 #pragma warning restore CS8653 // A default expression introduces a null value for a type parameter.
         }
 

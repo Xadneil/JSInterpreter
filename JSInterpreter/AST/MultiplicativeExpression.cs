@@ -18,7 +18,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    public class MultiplicativeExpression : AbstractMultiplicativeExpression
+    public sealed class MultiplicativeExpression : AbstractMultiplicativeExpression
     {
         public readonly MultiplicativeOperator multiplicativeOperator;
         public readonly AbstractExponentiationExpression exponentiationExpression;

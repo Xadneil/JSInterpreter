@@ -145,8 +145,7 @@ namespace JSInterpreter.AST
             if (coercible.IsAbrupt()) return coercible;
             var propertyKey = propertyNameValue.ToPropertyKey();
             if (propertyKey.IsAbrupt()) return propertyKey;
-            //TODO detect strict mode
-            return Completion.NormalCompletion(new ReferenceValue(baseValue, propertyKey.Other!, strict: false));
+            return Completion.NormalCompletion(new ReferenceValue(baseValue, propertyKey.Other!, IsStrictMode));
         }
     }
 
@@ -168,8 +167,7 @@ namespace JSInterpreter.AST
             var baseValue = baseValueComp.value!;
             var coercible = baseValue.RequireObjectCoercible();
             if (coercible.IsAbrupt()) return coercible;
-            //TODO detect strict mode
-            return Completion.NormalCompletion(new ReferenceValue(baseValue, dotIdentifierName, strict: false));
+            return Completion.NormalCompletion(new ReferenceValue(baseValue, dotIdentifierName, IsStrictMode));
         }
     }
 }

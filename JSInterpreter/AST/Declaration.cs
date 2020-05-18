@@ -83,13 +83,13 @@ namespace JSInterpreter.AST
         Const
     }
 
-    public class LexicalDeclarationItem
+    public sealed class LexicalDeclarationItem : ParseNode
     {
         private readonly LexicalDeclarationType lexicalDeclarationType;
         public readonly string name;
         public readonly AbstractAssignmentExpression? assignmentExpression;
 
-        public LexicalDeclarationItem(LexicalDeclarationType lexicalDeclarationType, string name, AbstractAssignmentExpression? assignmentExpression)
+        public LexicalDeclarationItem(LexicalDeclarationType lexicalDeclarationType, string name, AbstractAssignmentExpression? assignmentExpression, bool isStrictMode) : base(isStrictMode)
         {
             this.lexicalDeclarationType = lexicalDeclarationType;
             this.name = name;
@@ -98,7 +98,7 @@ namespace JSInterpreter.AST
 
         public Completion Evaluate(Interpreter interpreter)
         {
-            var lhs = interpreter.ResolveBinding(name);
+            var lhs = interpreter.ResolveBinding(name, IsStrictMode);
             if (lhs.IsAbrupt()) return lhs;
             if (!(lhs.value is ReferenceValue referenceValue))
                 throw new InvalidOperationException("ResolveBinding didn't return a reference");

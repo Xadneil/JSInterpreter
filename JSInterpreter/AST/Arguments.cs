@@ -19,7 +19,7 @@ namespace JSInterpreter.AST
             foreach (var args in argListEnumerable)
             {
                 if (args.IsAbrupt()) return args;
-                argList.AddRange(args.Other);
+                argList.AddRange(args.Other!);
             }
             return Completion.NormalWith(argList);
         }

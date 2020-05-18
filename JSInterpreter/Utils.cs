@@ -168,7 +168,7 @@ namespace JSInterpreter
 
         internal static Completion IteratorBindingInitializationBindingRestIdentifier(Identifier restParameterIdentifier, LexicalEnvironment? env, ArgumentIterator arguments)
         {
-            var lhsComp = Interpreter.Instance().ResolveBinding(restParameterIdentifier.name, env);
+            var lhsComp = Interpreter.Instance().ResolveBinding(restParameterIdentifier.name, restParameterIdentifier.IsStrictMode, env);
             if (lhsComp.IsAbrupt()) return lhsComp;
             var lhs = (lhsComp.value as ReferenceValue)!;
             var A = ArrayObject.ArrayCreate(0);
@@ -190,7 +190,7 @@ namespace JSInterpreter
 
         internal static Completion IteratorBindingInitializationSingleNameBinding(Identifier identifier, AbstractAssignmentExpression? initializer, LexicalEnvironment? env, ArgumentIterator arguments)
         {
-            var lhsComp = Interpreter.Instance().ResolveBinding(identifier.name, env);
+            var lhsComp = Interpreter.Instance().ResolveBinding(identifier.name, identifier.IsStrictMode, env);
             if (lhsComp.IsAbrupt()) return lhsComp;
             var lhs = (lhsComp.value as ReferenceValue)!;
             IValue v;

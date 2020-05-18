@@ -5,7 +5,7 @@ using System.Text;
 
 namespace JSInterpreter.AST
 {
-    public class Script : Statement
+    public sealed class Script : Statement
     {
         public readonly ScriptStatementList scriptBody;
 
@@ -105,8 +105,6 @@ namespace JSInterpreter.AST
                     vn = v.name;
                 else if (d is ForBinding f)
                     vn = f.name;
-                else if (d is Identifier i)
-                    vn = i.name;
                 else
                     continue;
                 if (!declaredVarNames.Contains(vn))

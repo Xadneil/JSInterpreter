@@ -28,12 +28,10 @@ namespace JSInterpreter
         {
         }
 
-        public Completion ResolveBinding(string name, LexicalEnvironment? env = null)
+        public Completion ResolveBinding(string name, bool strict, LexicalEnvironment? env = null)
         {
             if (env == null)
                 env = RunningExecutionContext().LexicalEnvironment;
-            //TODO: get strict mode
-            var strict = false;
             return env.GetIdentifierReference(name, strict);
         }
 

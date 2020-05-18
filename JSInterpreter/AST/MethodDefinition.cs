@@ -8,7 +8,7 @@ namespace JSInterpreter.AST
     {
     }
 
-    public class MethodDefinition : IMethodDefinition
+    public sealed class MethodDefinition : IMethodDefinition
     {
         public readonly string propertyName;
         public readonly FormalParameters formalParameters;
@@ -33,8 +33,7 @@ namespace JSInterpreter.AST
 
         private CompletionOr<(string Key, FunctionObject Closure)> DefineMethod(Object @object, IValue? functionPrototype = null)
         {
-            //TODO get strict mode
-            var strict = false;
+            var strict = functionBody.IsStrictMode;
             var scope = Interpreter.Instance().RunningExecutionContext().LexicalEnvironment;
             FunctionObject.FunctionCreateKind kind;
             IValue prototype;
@@ -54,7 +53,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    public class Getter : IMethodDefinition
+    public sealed class Getter : IMethodDefinition
     {
         public readonly string propertyName;
         public readonly FunctionStatementList functionBody;
@@ -67,8 +66,7 @@ namespace JSInterpreter.AST
 
         public Completion PropertyDefinitionEvaluation(Object @object, bool enumerable)
         {
-            //TODO get strict mode
-            var strict = false;
+            var strict = functionBody.IsStrictMode;
             var scope = Interpreter.Instance().RunningExecutionContext().LexicalEnvironment;
             var closure = FunctionObject.FunctionCreate(FunctionObject.FunctionCreateKind.Method, new FormalParameters(), functionBody, scope, strict);
             closure.MakeMethod(@object);
@@ -78,7 +76,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    public class Setter : IMethodDefinition
+    public sealed class Setter : IMethodDefinition
     {
         public readonly string propertyName;
         public readonly FormalParameter setParameter;
@@ -93,8 +91,7 @@ namespace JSInterpreter.AST
 
         public Completion PropertyDefinitionEvaluation(Object @object, bool enumerable)
         {
-            //TODO get strict mode
-            var strict = false;
+            var strict = functionBody.IsStrictMode;
             var scope = Interpreter.Instance().RunningExecutionContext().LexicalEnvironment;
             var closure = FunctionObject.FunctionCreate(FunctionObject.FunctionCreateKind.Method, new FormalParameters(new List<FormalParameter>(1) { setParameter }), functionBody, scope, strict);
             closure.MakeMethod(@object);

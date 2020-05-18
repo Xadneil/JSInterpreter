@@ -21,7 +21,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    public class RelationalExpression : AbstractRelationalExpression
+    public sealed class RelationalExpression : AbstractRelationalExpression
     {
         public readonly RelationalOperator relationalOperator;
         public readonly AbstractShiftExpression shiftExpression;

@@ -12,7 +12,7 @@ namespace JSInterpreter.AST
         TryCatchFinally
     }
 
-    public class TryStatement : Statement
+    public sealed class TryStatement : Statement
     {
         public readonly TryStatementType tryStatementType;
         public readonly Block tryBlock;

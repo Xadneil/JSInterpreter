@@ -4,11 +4,11 @@ using System.Text;
 
 namespace JSInterpreter.AST
 {
-    public class Identifier
+    public sealed class Identifier : ParseNode
     {
         public readonly string name;
 
-        public Identifier(string name)
+        public Identifier(string name, bool isStrictMode) : base(isStrictMode)
         {
             this.name = name;
         }
@@ -25,7 +25,7 @@ namespace JSInterpreter.AST
                 environment.EnvironmentRecord.InitializeBinding(name, value);
                 return Completion.NormalCompletion(UndefinedValue.Instance);
             }
-            var lhsComp = Interpreter.Instance().ResolveBinding(name);
+            var lhsComp = Interpreter.Instance().ResolveBinding(name, IsStrictMode);
             if (lhsComp.IsAbrupt()) return lhsComp;
             var lhs = lhsComp.value as ReferenceValue;
             return lhs!.PutValue(value);
@@ -42,7 +42,7 @@ namespace JSInterpreter.AST
 
         public override Completion Evaluate(Interpreter interpreter)
         {
-            return interpreter.ResolveBinding(identifier.name);
+            return interpreter.ResolveBinding(identifier.name, IsStrictMode);
         }
 
         public Completion PropertyDefinitionEvaluation(Object @object, bool enumerable)

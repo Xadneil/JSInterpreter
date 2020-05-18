@@ -94,7 +94,7 @@ namespace JSInterpreter
                 return Completion.ThrowSyntaxError($"Failed to parse body \"{bodyText}\".\n{e.Message}");
             }
             //TODO detect strict mode: ContainsUseStrict
-            bool strict = false;
+            bool strict = body.IsStrictMode;
             if (!parameters.IsSimpleParameterList() && strict)
                 return Completion.ThrowSyntaxError($"parameters must be simple in strict mode. \"{P}\"");
             //TODO implement tree walking for checking if parameters or body contains a SuperCall or SuperProperty

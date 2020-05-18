@@ -11,7 +11,7 @@ namespace JSInterpreter.AST
         }
     }
 
-    public class ExponentiationExpression : AbstractExponentiationExpression
+    public sealed class ExponentiationExpression : AbstractExponentiationExpression
     {
         public readonly AbstractUpdateExpression updateExpression;
         public readonly AbstractExponentiationExpression exponentiationExpression;
