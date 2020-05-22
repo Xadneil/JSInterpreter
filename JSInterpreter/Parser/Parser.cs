@@ -1480,7 +1480,9 @@ namespace JSInterpreter.Parser
         private AbstractLeftHandSideExpression? ParseLeftHandSideExpression()
         {
             var (callExpression, memberExpression) = ParseCallExpression();
-            return (AbstractLeftHandSideExpression?)callExpression ?? memberExpression;
+            if (callExpression != null || memberExpression != null)
+                return (AbstractLeftHandSideExpression?)callExpression ?? memberExpression;
+            return ParseNewExpression();
         }
 
         private AbstractNewExpression? ParseNewExpression()
