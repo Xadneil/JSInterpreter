@@ -86,7 +86,7 @@ namespace JSInterpreter
             public EnumerableIteratorObject(IEnumerable<Completion> values)
             {
                 this.values = values.GetEnumerator();
-                DefineOwnProperty("next", new PropertyDescriptor(Utils.CreateBuiltinFunction(Next, Utils.EmptyList<string>()), false, false, false));
+                DefineOwnProperty("next", new PropertyDescriptor(Utils.CreateBuiltinFunction(Next), false, false, false));
             }
 
             private Completion Next(IValue arg1, IReadOnlyList<IValue> arg2)

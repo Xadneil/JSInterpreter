@@ -57,7 +57,7 @@ namespace JSInterpreter
 
         public static Completion valueOf(IValue @this, IReadOnlyList<IValue> arguments)
         {
-            if (!(@this is DateInstance d))
+            if (!(@this is DateObject d))
                 return Completion.ThrowTypeError("this is not a Date object");
             if (double.IsNaN(d.PrimitiveValue))
                 return Completion.NormalCompletion(new StringValue("Invalid Date"));
@@ -66,7 +66,7 @@ namespace JSInterpreter
 
         public static Completion toString(IValue @this, IReadOnlyList<IValue> arguments)
         {
-            if (!(@this is DateInstance d))
+            if (!(@this is DateObject d))
                 return Completion.ThrowTypeError("this is not a Date object");
             if (double.IsNaN(d.PrimitiveValue))
                 return Completion.NormalCompletion(new StringValue("Invalid Date"));
@@ -80,7 +80,7 @@ namespace JSInterpreter
 
         public static Completion getTimeZoneOffset(IValue @this, IReadOnlyList<IValue> arguments)
         {
-            if (!(@this is DateInstance d))
+            if (!(@this is DateObject d))
                 return Completion.ThrowTypeError("this is not a Date object");
             var t = d.PrimitiveValue;
             if (!IsFinite(t))
@@ -90,7 +90,7 @@ namespace JSInterpreter
 
         public static Completion getDate(IValue @this, IReadOnlyList<IValue> arguments)
         {
-            if (!(@this is DateInstance d))
+            if (!(@this is DateObject d))
                 return Completion.ThrowTypeError("this is not a Date object");
             var t = d.PrimitiveValue;
             if (!IsFinite(t))
@@ -100,7 +100,7 @@ namespace JSInterpreter
 
         public static Completion getHours(IValue @this, IReadOnlyList<IValue> arguments)
         {
-            if (!(@this is DateInstance d))
+            if (!(@this is DateObject d))
                 return Completion.ThrowTypeError("this is not a Date object");
             var t = d.PrimitiveValue;
             if (!IsFinite(t))
@@ -110,7 +110,7 @@ namespace JSInterpreter
 
         public static Completion getMinutes(IValue @this, IReadOnlyList<IValue> arguments)
         {
-            if (!(@this is DateInstance d))
+            if (!(@this is DateObject d))
                 return Completion.ThrowTypeError("this is not a Date object");
             var t = d.PrimitiveValue;
             if (!IsFinite(t))
@@ -120,7 +120,7 @@ namespace JSInterpreter
 
         public static Completion getMonth(IValue @this, IReadOnlyList<IValue> arguments)
         {
-            if (!(@this is DateInstance d))
+            if (!(@this is DateObject d))
                 return Completion.ThrowTypeError("this is not a Date object");
             var t = d.PrimitiveValue;
             if (!IsFinite(t))

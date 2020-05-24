@@ -52,6 +52,11 @@ namespace JSInterpreter
             Intrinsics.RangeErrorPrototype = new ErrorPrototype(Intrinsics.RangeErrorConstructor);
             Intrinsics.ReferenceErrorConstructor = new ErrorConstructor(Intrinsics.FunctionPrototype, "ReferenceError");
             Intrinsics.ReferenceErrorPrototype = new ErrorPrototype(Intrinsics.ReferenceErrorConstructor);
+
+            Intrinsics.RegExpConstructor = new RegExpConstructor(Intrinsics.FunctionPrototype, this);
+            Intrinsics.RegExpPrototype = new RegExpPrototype(Intrinsics.RegExpConstructor, this);
+            Intrinsics.RegExpConstructor.InitPrototypeProperty(Intrinsics.RegExpPrototype);
+
             Intrinsics.SyntaxErrorConstructor = new ErrorConstructor(Intrinsics.FunctionPrototype, "SyntaxError");
             Intrinsics.SyntaxErrorPrototype = new ErrorPrototype(Intrinsics.SyntaxErrorConstructor);
             Intrinsics.TypeErrorConstructor = new ErrorConstructor(Intrinsics.FunctionPrototype, "TypeError");
@@ -138,6 +143,8 @@ namespace JSInterpreter
             if (comp.IsAbrupt()) return comp;
             comp = GlobalObject.DefinePropertyOrThrow("TypeError", new PropertyDescriptor(Intrinsics.TypeErrorConstructor, true, false, true));
             if (comp.IsAbrupt()) return comp;
+            comp = GlobalObject.DefinePropertyOrThrow("RegExp", new PropertyDescriptor(Intrinsics.RegExpConstructor, true, false, true));
+            if (comp.IsAbrupt()) return comp;
             comp = GlobalObject.DefinePropertyOrThrow("URIError", new PropertyDescriptor(Intrinsics.URIErrorConstructor, true, false, true));
             if (comp.IsAbrupt()) return comp;
 
@@ -181,6 +188,8 @@ namespace JSInterpreter
         public ErrorPrototype RangeErrorPrototype;
         public ErrorConstructor ReferenceErrorConstructor;
         public ErrorPrototype ReferenceErrorPrototype;
+        public RegExpConstructor RegExpConstructor;
+        public RegExpPrototype RegExpPrototype;
         public ErrorConstructor SyntaxErrorConstructor;
         public ErrorPrototype SyntaxErrorPrototype;
         public ErrorConstructor TypeErrorConstructor;

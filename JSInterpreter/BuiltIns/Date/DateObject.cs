@@ -4,7 +4,7 @@ using System.Text;
 
 namespace JSInterpreter
 {
-    public class DateInstance : Object
+    public class DateObject : Object
     {
         // Maximum allowed value to prevent DateTime overflow
         private static readonly double Max = (DateTime.MaxValue - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalMilliseconds;
@@ -16,7 +16,7 @@ namespace JSInterpreter
 
         internal bool DateTimeRangeValid => !double.IsNaN(PrimitiveValue) && PrimitiveValue <= Max && PrimitiveValue >= Min;
 
-        public DateInstance()
+        public DateObject()
         {
             PrimitiveValue = double.NaN;
         }

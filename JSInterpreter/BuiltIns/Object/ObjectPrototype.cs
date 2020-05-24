@@ -74,22 +74,20 @@ namespace JSInterpreter
                 builtinTag = "Array";
             else if (O is StringObject)
                 builtinTag = "String";
-            else if (O.HasInternalSlot("ParameterMap"))
+            else if (O is MappedArguments)
                 builtinTag = "Arguments";
-            else if (O is Callable || O.HasInternalSlot("Call"))
+            else if (O is Callable)
                 builtinTag = "Function";
-            else if (O is ErrorConstructor || O.HasInternalSlot("ErrorData"))
+            else if (O is ErrorConstructor)
                 builtinTag = "Error";
-            else if (O is BooleanObject || O.HasInternalSlot("BooleanData"))
+            else if (O is BooleanObject)
                 builtinTag = "Boolean";
-            else if (O is NumberObject || O.HasInternalSlot("NumberData"))
+            else if (O is NumberObject)
                 builtinTag = "Number";
-            //TODO date object
-            else if (/*O is NativeError || */O.HasInternalSlot("DateValue"))
+            else if (O is DateObject)
                 builtinTag = "Date";
-            //TODO regexpmatcher object
-            else if (O is ErrorConstructor || O.HasInternalSlot("RegExpMatcher"))
-                builtinTag = "RegExp";
+            //else if (O is RegExpObject)
+            //    builtinTag = "RegExp";
             else
                 builtinTag = "Object";
             var tag = O.Get("@@toStringTag");

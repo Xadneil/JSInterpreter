@@ -49,11 +49,22 @@ namespace JSInterpreter
 
         private static Object CreateArrayIterator(Object array, string kind)
         {
-            var iterator = Utils.ObjectCreate(Interpreter.Instance().CurrentRealm().Intrinsics.ArrayIteratorPrototype, new[] { "IteratedObject", "ArrayIteratorNextIndex", "ArrayIterationKind" });
-            iterator.SetCustomInternalSlot("IteratedObject", array);
-            iterator.SetCustomInternalSlot("ArrayIteratorNextIndex", 0);
-            iterator.SetCustomInternalSlot("ArrayIterationKind", kind);
+            var iterator = Utils.ObjectCreate(Interpreter.Instance().CurrentRealm().Intrinsics.ArrayIteratorPrototype, () => new ArrayIterator(array, 0, kind));
             return iterator;
+        }
+
+        private class ArrayIterator : Object
+        {
+            public Object IteratedObject { get; private set; }
+            public int ArrayIteratorNextIndex { get; private set; }
+            public string ArrayIterationKind { get; private set; }
+
+            public ArrayIterator(Object iteratedObject, int arrayIteratorNextIndex, string arrayIterationKind)
+            {
+                IteratedObject = iteratedObject;
+                ArrayIteratorNextIndex = arrayIteratorNextIndex;
+                ArrayIterationKind = arrayIterationKind;
+            }
         }
 
         private static CompletionOr<long> ToLength(IValue value)

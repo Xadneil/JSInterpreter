@@ -11,7 +11,6 @@ namespace JSInterpreter
         public MappedArguments(Object parameterMap)
         {
             ParameterMap = parameterMap;
-            AddCustomInternalSlots(new[] { "ParameterMap" });
         }
 
         public override CompletionOr<PropertyDescriptor?> GetOwnProperty(string P)

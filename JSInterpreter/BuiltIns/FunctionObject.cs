@@ -324,7 +324,7 @@ namespace JSInterpreter
                     }
                 }
             }
-            DefinePropertyOrThrow("@@iterator", new PropertyDescriptor(Utils.CreateBuiltinFunction(ArrayPrototype.values, Utils.EmptyList<string>()), true, false, true));
+            DefinePropertyOrThrow("@@iterator", new PropertyDescriptor(Utils.CreateBuiltinFunction(ArrayPrototype.values), true, false, true));
             DefinePropertyOrThrow("callee", new PropertyDescriptor(this, true, false, true));
             return obj;
         }
@@ -333,13 +333,11 @@ namespace JSInterpreter
         {
             var getter = Utils.CreateBuiltinFunction((@this, arguments) =>
             {
-                var thisObj = @this as Object;
-                var name = thisObj!.GetCustomInternalSlot("Name") as string;
-                var env = thisObj.GetCustomInternalSlot("Env") as EnvironmentRecord;
-                return env!.GetBindingValue(name!, false);
-            }, new[] { "Name", "Env" });
-            getter.SetCustomInternalSlot("Name", name);
-            getter.SetCustomInternalSlot("Env", env);
+                var thisObj = @this as GetterSetter;
+                if (thisObj == null)
+                    return Completion.ThrowTypeError("Not allowed to call internal function on non getter/setter");
+                return thisObj.Env.GetBindingValue(thisObj.Name, false);
+            }, steps => new GetterSetter(steps, name, env));
             return getter;
         }
 
@@ -347,27 +345,41 @@ namespace JSInterpreter
         {
             var setter = Utils.CreateBuiltinFunction((@this, arguments) =>
             {
-                var thisObj = @this as Object;
-                var name = thisObj!.GetCustomInternalSlot("Name") as string;
-                var env = thisObj.GetCustomInternalSlot("Env") as EnvironmentRecord;
+                var thisObj = @this as GetterSetter;
+                if (thisObj == null)
+                    return Completion.ThrowTypeError("Not allowed to call internal function on non getter/setter");
                 var value = arguments[0];
-                return env!.SetMutableBinding(name!, value, false);
-            }, new[] { "Name", "Env" });
-            setter.SetCustomInternalSlot("Name", name);
-            setter.SetCustomInternalSlot("Env", env);
+                return thisObj.Env.SetMutableBinding(thisObj.Name, value, false);
+            }, steps => new GetterSetter(steps, name, env));
             return setter;
+        }
+
+        private class GetterSetter : BuiltinFunction
+        {
+            public string Name { get; set; }
+            public EnvironmentRecord Env { get; set; }
+
+            public GetterSetter(Func<IValue, IReadOnlyList<IValue>, Completion> steps, string name, EnvironmentRecord env) : base(steps)
+            {
+                Name = name;
+                Env = env;
+            }
         }
 
         private static Object CreateUnmappedArgumentsObject(IReadOnlyList<IValue> arguments)
         {
-            var obj = Utils.ObjectCreate(Interpreter.Instance().CurrentRealm().Intrinsics.ObjectPrototype, new[] { "ParameterMap" });
-            obj.SetCustomInternalSlot("ParameterMap", UndefinedValue.Instance);
+            var obj = Utils.ObjectCreate(Interpreter.Instance().CurrentRealm().Intrinsics.ObjectPrototype, () => new UnmappedArgumentsObject());
             obj.DefinePropertyOrThrow("length", new PropertyDescriptor(new NumberValue(arguments.Count), true, false, true));
             for (int i = 0; i < arguments.Count; i++)
             {
                 Utils.CreateDataProperty(obj, i.ToString(System.Globalization.CultureInfo.InvariantCulture), arguments[i]);
             }
             return obj;
+        }
+
+        private class UnmappedArgumentsObject : Object
+        {
+            public IValue ParameterMap { get; set; } = UndefinedValue.Instance;
         }
 
         public enum FunctionCreateKind

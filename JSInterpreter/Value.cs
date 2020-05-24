@@ -31,6 +31,16 @@ namespace JSInterpreter
             }) ? BooleanValue.True : BooleanValue.False;
         }
 
+        public CompletionOr<long> ToLength()
+        {
+            var lenComp = ToNumber();
+            if (lenComp.IsAbrupt()) return lenComp.WithEmpty<long>();
+            var len = (long)(lenComp.value as NumberValue)!.number;
+            if (len < 0)
+                return Completion.NormalWithStruct(0L);
+            return Completion.NormalWithStruct(Math.Min(len, (1L << 53) - 1));
+        }
+
         public enum PrimitiveHint
         {
             Default, String, Number

@@ -12,13 +12,11 @@ namespace JSInterpreter
         protected int lastAddedIndex = -1;
         protected readonly Dictionary<string, int> propertyNames;
         public Object? prototype;
-        private readonly Dictionary<string, object?> customInternalSlots;
 
         public Object()
         {
             properties = new SortedDictionary<int, PropertyDescriptor>();
             propertyNames = new Dictionary<string, int>();
-            customInternalSlots = new Dictionary<string, object?>();
         }
 
         public bool IsPrimitive()
@@ -35,32 +33,11 @@ namespace JSInterpreter
             return prim.value!.ToJsString();
         }
 
-        internal void AddCustomInternalSlots(IEnumerable<string> names)
-        {
-            foreach (var name in names)
-                customInternalSlots.Add(name, null);
-        }
-
         public virtual Completion ToNumber()
         {
             var prim = ((IValue)this).ToPrimitive(IValue.PrimitiveHint.Number);
             if (prim.IsAbrupt()) return prim;
             return prim.value!.ToNumber();
-        }
-
-        internal bool HasInternalSlot(string name)
-        {
-            return customInternalSlots.ContainsKey(name);
-        }
-
-        internal object? GetCustomInternalSlot(string name)
-        {
-            return customInternalSlots[name];
-        }
-
-        internal void SetCustomInternalSlot(string name, object value)
-        {
-            customInternalSlots[name] = value;
         }
 
         public BooleanCompletion HasOwnProperty(string name)

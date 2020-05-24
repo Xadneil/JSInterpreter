@@ -53,15 +53,19 @@ namespace JSInterpreter
             return Completion.NormalCompletion(target);
         }
 
-        public static Object ObjectCreate(IValue? proto, IEnumerable<string>? internalSlotsList = null)
+        public static Object ObjectCreate(IValue? proto)
         {
             var obj = new Object();
             if (proto is Object o)
                 obj.prototype = o;
-            if (internalSlotsList != null)
-            {
-                obj.AddCustomInternalSlots(internalSlotsList);
-            }
+            return obj;
+        }
+
+        public static T ObjectCreate<T>(IValue? proto, Func<T> constructor) where T : Object
+        {
+            var obj = constructor();
+            if (proto is Object o)
+                obj.prototype = o;
             return obj;
         }
 
@@ -135,12 +139,12 @@ namespace JSInterpreter
             return functionObject.Call(thisValue, argList.Other);
         }
 
-        internal static Completion OrdinaryCreateFromConstructor(Object? constructor, Func<Intrinsics, Object> intrinsicDefaultProto, IEnumerable<string>? internalSlotsList = null)
+        internal static Completion OrdinaryCreateFromConstructor(Object? constructor, Func<Intrinsics, Object> intrinsicDefaultProto)
         {
             var protoComp = GetPrototypeFromConstructor(constructor, intrinsicDefaultProto);
             if (protoComp.IsAbrupt()) return protoComp;
             var proto = protoComp.value!;
-            return Completion.NormalCompletion(ObjectCreate(proto, internalSlotsList));
+            return Completion.NormalCompletion(ObjectCreate(proto));
         }
 
         public static Completion GetPrototypeFromConstructor(Object? constructor, Func<Intrinsics, Object> intrinsicDefaultProto)
@@ -218,15 +222,13 @@ namespace JSInterpreter
             return lhs.InitializeReferencedBinding(v);
         }
 
-        public static FunctionObject CreateBuiltinFunction(Func<IValue, IReadOnlyList<IValue>, Completion> steps, IEnumerable<string>? internalSlotsList = null, Realm? realm = null, Object? prototype = null)
+        public static FunctionObject CreateBuiltinFunction(Func<IValue, IReadOnlyList<IValue>, Completion> steps, Realm? realm = null, Object? prototype = null)
         {
             if (realm == null)
                 realm = Interpreter.Instance().CurrentRealm();
             if (prototype == null)
                 prototype = realm.Intrinsics.FunctionPrototype;
             var func = new BuiltinFunction(steps);
-            if (internalSlotsList != null)
-                func.AddCustomInternalSlots(internalSlotsList);
             func.Realm = realm;
             func.prototype = prototype;
             func.IsExtensible = true;
@@ -234,19 +236,18 @@ namespace JSInterpreter
             return func;
         }
 
-        private class BuiltinFunction : FunctionObject
+        public static FunctionObject CreateBuiltinFunction<T>(Func<IValue, IReadOnlyList<IValue>, Completion> steps, Func<Func<IValue, IReadOnlyList<IValue>, Completion>, T> constructor, Realm? realm = null, Object? prototype = null) where T : BuiltinFunction
         {
-            private readonly Func<IValue, IReadOnlyList<IValue>, Completion> CallAction;
-
-            public BuiltinFunction(Func<IValue, IReadOnlyList<IValue>, Completion> callAction)
-            {
-                CallAction = callAction;
-            }
-
-            public override Completion InternalCall(IValue @this, IReadOnlyList<IValue> arguments)
-            {
-                return CallAction(@this, arguments);
-            }
+            if (realm == null)
+                realm = Interpreter.Instance().CurrentRealm();
+            if (prototype == null)
+                prototype = realm.Intrinsics.FunctionPrototype;
+            var func = constructor(steps);
+            func.Realm = realm;
+            func.prototype = prototype;
+            func.IsExtensible = true;
+            //TODO ScriptOrModule
+            return func;
         }
 
         public static Completion CheckArguments(IReadOnlyList<IValue> arguments, int requiredCount)
@@ -276,6 +277,21 @@ namespace JSInterpreter
             if (!(arguments.ElementAt(2) is T3))
                 return Completion.ThrowTypeError($"Argument 3 must be a {nameof(T3)}.");
             return Completion.NormalCompletion();
+        }
+    }
+
+    public class BuiltinFunction : FunctionObject
+    {
+        private readonly Func<IValue, IReadOnlyList<IValue>, Completion> CallAction;
+
+        public BuiltinFunction(Func<IValue, IReadOnlyList<IValue>, Completion> callAction)
+        {
+            CallAction = callAction;
+        }
+
+        public override Completion InternalCall(IValue @this, IReadOnlyList<IValue> arguments)
+        {
+            return CallAction(@this, arguments);
         }
     }
 

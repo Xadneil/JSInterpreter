@@ -94,7 +94,7 @@ namespace JSInterpreter
             }
             else if (arguments.Count == 1)
             {
-                if (arguments[0] is DateInstance date)
+                if (arguments[0] is DateObject date)
                 {
                     return Completion.NormalCompletion(Construct(date.PrimitiveValue));
                 }
@@ -172,14 +172,14 @@ namespace JSInterpreter
             }
         }
 
-        public static DateInstance Construct(DateTimeOffset value)
+        public static DateObject Construct(DateTimeOffset value)
         {
             return Construct(value.UtcDateTime);
         }
 
-        public static DateInstance Construct(DateTime value)
+        public static DateObject Construct(DateTime value)
         {
-            var instance = new DateInstance()
+            var instance = new DateObject()
             {
                 prototype = Interpreter.Instance().CurrentRealm().Intrinsics.DatePrototype,
                 PrimitiveValue = FromDateTime(value)
@@ -188,9 +188,9 @@ namespace JSInterpreter
             return instance;
         }
 
-        public static DateInstance Construct(double time)
+        public static DateObject Construct(double time)
         {
-            var instance = new DateInstance()
+            var instance = new DateObject()
             {
                 prototype = Interpreter.Instance().CurrentRealm().Intrinsics.DatePrototype,
                 PrimitiveValue = TimeClip(time)
