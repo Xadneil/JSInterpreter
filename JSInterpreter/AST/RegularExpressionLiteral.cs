@@ -16,7 +16,7 @@ namespace JSInterpreter.AST
 
         public override Completion Evaluate(Interpreter interpreter)
         {
-            throw new NotImplementedException("regular expressions");
+            return RegExpObject.RegExpAllocAndInitialize(body, flags);
         }
     }
 }
