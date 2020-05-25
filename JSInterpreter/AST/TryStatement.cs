@@ -58,32 +58,24 @@ namespace JSInterpreter.AST
 
         public override IReadOnlyList<string> VarDeclaredNames()
         {
-            switch (tryStatementType)
+            return tryStatementType switch
             {
-                case TryStatementType.TryCatch:
-                    return tryBlock.VarDeclaredNames().Concat(catchBlock!.VarDeclaredNames()).ToList();
-                case TryStatementType.TryFinally:
-                    return tryBlock.VarDeclaredNames().Concat(finallyBlock!.VarDeclaredNames()).ToList();
-                case TryStatementType.TryCatchFinally:
-                    return tryBlock.VarDeclaredNames().Concat(catchBlock!.VarDeclaredNames()).Concat(finallyBlock!.VarDeclaredNames()).ToList();
-                default:
-                    throw new InvalidOperationException($"TryStatement: tryStatementType is invalid enum with value {(int)tryStatementType}");
-            }
+                TryStatementType.TryCatch => tryBlock.VarDeclaredNames().Concat(catchBlock!.VarDeclaredNames()).ToList(),
+                TryStatementType.TryFinally => tryBlock.VarDeclaredNames().Concat(finallyBlock!.VarDeclaredNames()).ToList(),
+                TryStatementType.TryCatchFinally => tryBlock.VarDeclaredNames().Concat(catchBlock!.VarDeclaredNames()).Concat(finallyBlock!.VarDeclaredNames()).ToList(),
+                _ => throw new InvalidOperationException($"TryStatement: tryStatementType is invalid enum with value {(int)tryStatementType}"),
+            };
         }
 
         public override IReadOnlyList<IScopedDeclaration> VarScopedDeclarations()
         {
-            switch (tryStatementType)
+            return tryStatementType switch
             {
-                case TryStatementType.TryCatch:
-                    return tryBlock.VarScopedDeclarations().Concat(catchBlock!.VarScopedDeclarations()).ToList();
-                case TryStatementType.TryFinally:
-                    return tryBlock.VarScopedDeclarations().Concat(finallyBlock!.VarScopedDeclarations()).ToList();
-                case TryStatementType.TryCatchFinally:
-                    return tryBlock.VarScopedDeclarations().Concat(catchBlock!.VarScopedDeclarations()).Concat(finallyBlock!.VarScopedDeclarations()).ToList();
-                default:
-                    throw new InvalidOperationException($"TryStatement: tryStatementType is invalid enum with value {(int)tryStatementType}");
-            }
+                TryStatementType.TryCatch => tryBlock.VarScopedDeclarations().Concat(catchBlock!.VarScopedDeclarations()).ToList(),
+                TryStatementType.TryFinally => tryBlock.VarScopedDeclarations().Concat(finallyBlock!.VarScopedDeclarations()).ToList(),
+                TryStatementType.TryCatchFinally => tryBlock.VarScopedDeclarations().Concat(catchBlock!.VarScopedDeclarations()).Concat(finallyBlock!.VarScopedDeclarations()).ToList(),
+                _ => throw new InvalidOperationException($"TryStatement: tryStatementType is invalid enum with value {(int)tryStatementType}"),
+            };
         }
 
         public override IReadOnlyList<IDeclarationPart> LexicallyScopedDeclarations()

@@ -333,8 +333,7 @@ namespace JSInterpreter
         {
             var getter = Utils.CreateBuiltinFunction((@this, arguments) =>
             {
-                var thisObj = @this as GetterSetter;
-                if (thisObj == null)
+                if (!(@this is GetterSetter thisObj))
                     return Completion.ThrowTypeError("Not allowed to call internal function on non getter/setter");
                 return thisObj.Env.GetBindingValue(thisObj.Name, false);
             }, steps => new GetterSetter(steps, name, env));
@@ -345,8 +344,7 @@ namespace JSInterpreter
         {
             var setter = Utils.CreateBuiltinFunction((@this, arguments) =>
             {
-                var thisObj = @this as GetterSetter;
-                if (thisObj == null)
+                if (!(@this is GetterSetter thisObj))
                     return Completion.ThrowTypeError("Not allowed to call internal function on non getter/setter");
                 var value = arguments[0];
                 return thisObj.Env.SetMutableBinding(thisObj.Name, value, false);

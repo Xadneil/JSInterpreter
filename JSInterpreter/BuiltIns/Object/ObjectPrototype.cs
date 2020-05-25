@@ -86,8 +86,8 @@ namespace JSInterpreter
                 builtinTag = "Number";
             else if (O is DateObject)
                 builtinTag = "Date";
-            //else if (O is RegExpObject)
-            //    builtinTag = "RegExp";
+            else if (O is RegExpObject)
+                builtinTag = "RegExp";
             else
                 builtinTag = "Object";
             var tag = O.Get("@@toStringTag");
