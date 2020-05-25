@@ -15,6 +15,7 @@ namespace JSInterpreter
             prototype = realm.Intrinsics.ObjectPrototype;
 
             DefinePropertyOrThrow("exec", new PropertyDescriptor(Utils.CreateBuiltinFunction(exec, realm), true, false, true));
+            DefinePropertyOrThrow("source", new PropertyDescriptor(Utils.CreateBuiltinFunction(source, realm), null, false, true));
         }
 
         private static Completion exec(IValue thisValue, IReadOnlyList<IValue> arguments)
@@ -25,6 +26,24 @@ namespace JSInterpreter
             var S = @string.ToJsString();
             if (S.IsAbrupt()) return S;
             return RegExpBuiltinExec(R, (S.value as StringValue)!.@string);
+        }
+
+        private static Completion source(IValue thisValue, IReadOnlyList<IValue> arguments)
+        {
+            if (!(thisValue is Object))
+                return Completion.ThrowTypeError("Not valid RegExp object");
+            if (!(thisValue is RegExpObject o))
+            {
+                if (thisValue == Interpreter.Instance().CurrentRealm().Intrinsics.RegExpPrototype)
+                    return Completion.NormalCompletion(new StringValue("(?:)"));
+                return Completion.ThrowTypeError("Not valid RegExp object");
+            }
+            return Completion.NormalCompletion(new StringValue(EscapeRegExpPattern(o.OriginalSource)));
+        }
+
+        private static string EscapeRegExpPattern(string P)
+        {
+            return P.Replace("/", "\\/", StringComparison.Ordinal);
         }
 
         private static Completion RegExpBuiltinExec(RegExpObject R, string S)

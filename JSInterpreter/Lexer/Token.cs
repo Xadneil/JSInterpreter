@@ -212,7 +212,9 @@ namespace JSInterpreter.Lexer
                         hexCount++;
                         if (hexCount == 2)
                         {
-                            builder.Append((char)(hexChars[0].ToHexValue() << 4) + hexChars[1].ToHexValue());
+                            var upperBits = hexChars[0].ToHexValue() << 4;
+                            var lowerBits = hexChars[1].ToHexValue();
+                            builder.Append((char)(upperBits + lowerBits));
                             state = StringLexState.Normal;
                         }
                         break;

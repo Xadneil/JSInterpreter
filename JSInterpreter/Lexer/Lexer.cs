@@ -519,7 +519,7 @@ namespace JSInterpreter.Lexer
 
         public Token NextRegex(Token regexStart)
         {
-            if (IsLineTerminator() || currentChar == '*' || currentChar == '/')
+            if (IsLineTerminator() || (regexStart.Type == TokenType.Slash && (currentChar == '*' || currentChar == '/')))
                 throw new InvalidOperationException("invalid regex");
 
             int value_start = position;
