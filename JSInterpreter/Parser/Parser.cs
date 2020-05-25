@@ -486,6 +486,7 @@ namespace JSInterpreter.Parser
 
         private ForExpressionIterationStatement? ParseForExpression()
         {
+            using var lr = new LexerRewinder(lexer);
             AbstractExpression? start = null;
             if (!Match(TokenType.Semicolon))
             {
@@ -509,6 +510,7 @@ namespace JSInterpreter.Parser
             if (Consume(TokenType.ParenClose) == null) return null;
             var statement = ParseStatement();
             if (statement == null) return null;
+            lr.Success = true;
             return new ForExpressionIterationStatement(start, test, update, statement, Strict);
         }
 
