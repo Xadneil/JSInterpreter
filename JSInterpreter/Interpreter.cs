@@ -107,9 +107,7 @@ namespace JSInterpreter
                 if (envRec.HasThisBinding())
                     return envRec;
                 var outer = lex.Outer;
-                if (outer == null)
-                    throw new InvalidOperationException("Interpreter.GetThisEnvironment: no this environment could be found.");
-                lex = outer;
+                lex = outer ?? throw new InvalidOperationException("Interpreter.GetThisEnvironment: no this environment could be found.");
             }
         }
 
