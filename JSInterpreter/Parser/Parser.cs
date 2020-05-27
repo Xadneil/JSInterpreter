@@ -1556,7 +1556,7 @@ namespace JSInterpreter.Parser
                 Consume();
                 var expression = ParseExpression();
                 if (expression == null) return (false, null);
-                if (Consume(TokenType.BracketClose) != null) return (false, null);
+                if (Consume(TokenType.BracketClose) == null) return (false, null);
                 var tail = ParseCallExpressionTail();
                 if (!tail.success) return (false, null);
                 return (true, new CallExpressionTail(expression, tail.tail));
