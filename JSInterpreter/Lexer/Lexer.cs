@@ -213,16 +213,6 @@ namespace JSInterpreter.Lexer
                 && source[position] == b;
         }
 
-        private bool Match(char a, char b, char c)
-        {
-            if (position + 1 >= source.Length)
-                return false;
-
-            return currentChar == a
-                && source[position] == b
-                && source[position + 1] == c;
-        }
-
         private bool Match(char a, char b, char c, char d)
         {
             if (position + 2 >= source.Length)
