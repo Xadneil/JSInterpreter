@@ -11,6 +11,7 @@ namespace JSInterpreter
         public MappedArguments(Object parameterMap)
         {
             ParameterMap = parameterMap;
+            prototype = Interpreter.Instance().CurrentRealm().Intrinsics.ObjectPrototype;
         }
 
         public override CompletionOr<PropertyDescriptor?> GetOwnProperty(string P)
