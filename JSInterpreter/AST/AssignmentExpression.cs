@@ -54,7 +54,8 @@ namespace JSInterpreter.AST
                     rval = assignmentExpression.Evaluate(interpreter).GetValue();
                 if (rval.IsAbrupt())
                     return rval;
-                referenceValue.PutValue(rval.value!);
+                var comp = referenceValue.PutValue(rval.value!);
+                if (comp.IsAbrupt()) return comp;
                 return rval;
             }
             throw new NotImplementedException("Assignment to object or array literals is not implemented.");
