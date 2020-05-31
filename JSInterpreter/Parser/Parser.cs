@@ -196,15 +196,27 @@ namespace JSInterpreter.Parser
             return new Block(statementList, Strict);
         }
 
-        private StatementList? ParseStatementList(bool setStrict = false)
+        private StatementList? ParseStatementList(HashSet<TokenType>? stopTypes = null, bool setStrict = false)
         {
             var statementItems = new List<IStatementListItem>();
             bool inDirectivePrologues = setStrict && Strict == false;
             bool unsetStrict = false;
-            while (!Match(TokenType.CurlyClose) && !Match(TokenType.Eof))
+
+            if (stopTypes == null)
+                stopTypes = StatementListStopTypes.CurlyClose;
+
+            while (!stopTypes.Contains(CurrentToken.Type) && !Match(TokenType.Eof))
             {
-                IStatementListItem? item = ParseStatementListItem();
-                if (item == null) return null;
+                IStatementListItem? item;
+                using (var lr = new LexerRewinder(lexer))
+                {
+                    item = ParseStatementListItem();
+                    if (item == null)
+                    {
+                        return null;
+                    }
+                    lr.Success = true;
+                }
                 if (inDirectivePrologues)
                 {
                     if (item is ExpressionStatement statement && statement.expression is Literal l && l.literalType == LiteralType.String)
@@ -403,11 +415,19 @@ namespace JSInterpreter.Parser
                     if (statement == null) return null;
                     return new ForOfVarIterationStatement(new ForBinding(firstIdentifier, Strict), expression, statement, Strict);
                 }
-                if (Match(TokenType.Equals))
+                if (Match(TokenType.Equals) || Match(TokenType.Semicolon))
                 {
-                    //don't consume the =, since ParseInitializer will do it.
-                    var variableDeclarationList = ParseVariableDeclarationListWithInitialIdentifier(firstIdentifier);
-                    if (variableDeclarationList == null) return null;
+                    VariableDeclarationList? variableDeclarationList;
+                    if (Match(TokenType.Equals))
+                    {
+                        //don't consume the =, since ParseInitializer will do it.
+                        variableDeclarationList = ParseVariableDeclarationListWithInitialIdentifier(firstIdentifier);
+                        if (variableDeclarationList == null) return null;
+                    }
+                    else
+                    {
+                        variableDeclarationList = new VariableDeclarationList() { new VariableDeclaration(firstIdentifier, null, Strict) };
+                    }
                     if (Consume(TokenType.Semicolon) == null) return null;
                     AbstractExpression? test = null;
                     if (!Match(TokenType.Semicolon))
@@ -542,7 +562,7 @@ namespace JSInterpreter.Parser
                     foundDefault = true;
                     Consume(TokenType.Default);
                     if (Consume(TokenType.Colon) == null) return null;
-                    var defaultStatements = ParseStatementList();
+                    var defaultStatements = ParseStatementList(StatementListStopTypes.CaseDefaultCurlyClose);
                     if (defaultStatements == null) return null;
                     defaultClause = new DefaultClause(defaultStatements);
                     continue;
@@ -551,7 +571,7 @@ namespace JSInterpreter.Parser
                 var matchExpression = ParseExpression();
                 if (matchExpression == null) return null;
                 if (Consume(TokenType.Colon) == null) return null;
-                var statements = ParseStatementList();
+                var statements = ParseStatementList(StatementListStopTypes.CaseDefaultCurlyClose);
                 if (statements == null) return null;
                 var clause = new CaseClause(matchExpression, statements);
                 if (foundDefault)
@@ -753,7 +773,7 @@ namespace JSInterpreter.Parser
         {
             string? restParameter = null;
             var list = new List<FormalParameter>();
-            while (true)
+            while (CurrentToken.Type != TokenType.Eof)
             {
                 if (Match(TokenType.Ellipsis))
                 {
@@ -1645,6 +1665,7 @@ namespace JSInterpreter.Parser
 
         private AbstractMemberExpression? ParseMemberExpression()
         {
+            AbstractMemberExpression? lhs = null;
             if (Match(TokenType.New))
             {
                 Consume();
@@ -1652,13 +1673,16 @@ namespace JSInterpreter.Parser
                 if (left == null) return null;
                 var arguments = ParseArguments();
                 if (arguments == null) return null;
-                return new NewMemberExpression(left, arguments, Strict);
+                lhs = new NewMemberExpression(left, arguments, Strict);
             }
             if (Match(TokenType.Super))
             {
-                return ParseSuperProperty();
+                lhs = ParseSuperProperty();
             }
-            AbstractMemberExpression? lhs = ParsePrimaryExpression();
+            if (lhs == null)
+            {
+                lhs = ParsePrimaryExpression();
+            }
             if (lhs == null) return null;
             var (success, tail) = ParseMemberExpressionTail();
             if (!success) return null;
