@@ -94,7 +94,7 @@ namespace JSInterpreter
             return Completion.NormalWith(OrdinaryGetOwnProperty(P));
         }
 
-        public PropertyDescriptor? OrdinaryGetOwnProperty(string name)
+        protected PropertyDescriptor? OrdinaryGetOwnProperty(string name)
         {
             if (!propertyNames.TryGetValue(name, out int propertyIndex))
                 return null;
@@ -122,7 +122,7 @@ namespace JSInterpreter
             return OrdinaryDefineOwnProperty(name, property);
         }
 
-        public BooleanCompletion OrdinaryDefineOwnProperty(string P, PropertyDescriptor Desc)
+        protected BooleanCompletion OrdinaryDefineOwnProperty(string P, PropertyDescriptor Desc)
         {
             var currentComp = GetOwnProperty(P);
             if (currentComp.IsAbrupt()) return currentComp.WithEmptyBool();
@@ -130,7 +130,7 @@ namespace JSInterpreter
             return ValidateAndApplyPropertyDescriptor(this, P, IsExtensible, Desc, current);
         }
 
-        public static bool ValidateAndApplyPropertyDescriptor(Object? O, string? name, bool extensible, PropertyDescriptor Desc, PropertyDescriptor? current)
+        protected static bool ValidateAndApplyPropertyDescriptor(Object? O, string? name, bool extensible, PropertyDescriptor Desc, PropertyDescriptor? current)
         {
             if (current == null)
             {
@@ -276,7 +276,7 @@ namespace JSInterpreter
             return OrdinaryGet(name, receiver);
         }
 
-        public Completion OrdinaryGet(string name, IValue receiver)
+        protected Completion OrdinaryGet(string name, IValue receiver)
         {
             var desc = GetOwnProperty(name);
             if (desc.IsAbrupt()) return desc;
@@ -314,7 +314,7 @@ namespace JSInterpreter
             return OrdinarySet(name, value, receiver);
         }
 
-        public BooleanCompletion OrdinarySet(string name, IValue value, IValue receiver)
+        protected BooleanCompletion OrdinarySet(string name, IValue value, IValue receiver)
         {
             var ownDesc = GetOwnProperty(name);
             if (ownDesc.IsAbrupt()) return ownDesc.WithEmptyBool();
@@ -408,7 +408,7 @@ namespace JSInterpreter
         public IEnumerable<Completion> AllPropertyKeys()
         {
             var visited = new HashSet<string>();
-            foreach (var prop in properties)
+            foreach (var prop in new SortedDictionary<int, PropertyDescriptor>(properties))
             {
                 var key = propertyNames.FirstOrDefault(p => p.Value == prop.Key).Key;
                 visited.Add(key);
