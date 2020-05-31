@@ -9,9 +9,27 @@ namespace JSInterpreter
         public StringPrototype(StringConstructor constructor, Realm realm)
         {
             DefinePropertyOrThrow("constructor", new PropertyDescriptor(constructor, true, false, true));
+            DefinePropertyOrThrow("charAt", new PropertyDescriptor(Utils.CreateBuiltinFunction(charAt, realm: realm), true, false, false));
             DefinePropertyOrThrow("charCodeAt", new PropertyDescriptor(Utils.CreateBuiltinFunction(charCodeAt, realm: realm), true, false, false));
             DefinePropertyOrThrow("toString", new PropertyDescriptor(Utils.CreateBuiltinFunction(toString, realm: realm), true, false, false));
             DefinePropertyOrThrow("valueOf", new PropertyDescriptor(Utils.CreateBuiltinFunction(valueOf, realm: realm), true, false, false));
+        }
+
+        private static Completion charAt(IValue thisValue, IReadOnlyList<IValue> arguments)
+        {
+            var O = thisValue.RequireObjectCoercible();
+            if (O.IsAbrupt()) return O;
+            var sComp = O.value!.ToJsString();
+            if (sComp.IsAbrupt()) return sComp;
+            var S = (sComp.value as StringValue)!.@string;
+            var pos = arguments.At(0, UndefinedValue.Instance);
+            var positionComp = pos.ToInteger();
+            if (positionComp.IsAbrupt()) return positionComp;
+            var position = positionComp.Other;
+            var size = S.Length;
+            if (position < 0 || position >= size)
+                return Completion.NormalCompletion(StringValue.Empty);
+            return Completion.NormalCompletion(new StringValue(S.Substring(position, 1)));
         }
 
         private Completion charCodeAt(IValue @this, IReadOnlyList<IValue> arguments)

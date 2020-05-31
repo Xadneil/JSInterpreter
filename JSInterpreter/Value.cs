@@ -10,6 +10,18 @@ namespace JSInterpreter
         Completion ToNumber();
         Completion ToJsString();
 
+        public CompletionOr<int> ToInteger()
+        {
+            var comp = ToNumber();
+            if (comp.IsAbrupt()) return comp.WithEmpty<int>();
+            var number = (comp.value as NumberValue)!.number;
+            if (double.IsNaN(number))
+                return Completion.NormalWithStruct(0);
+            if (double.IsInfinity(number))
+                return Completion.NormalWithStruct(double.IsPositiveInfinity(number) ? int.MaxValue : int.MinValue);
+            return Completion.NormalWithStruct((int)number);
+        }
+
         public CompletionOr<string?> ToPropertyKey()
         {
             var key = ToPrimitive(PrimitiveHint.String);
