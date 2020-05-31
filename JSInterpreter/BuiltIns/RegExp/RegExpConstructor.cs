@@ -24,8 +24,8 @@ namespace JSInterpreter
 
         public override Completion InternalConstruct(IReadOnlyList<IValue> arguments, Object? newTarget)
         {
-            var pattern = arguments.At(0, UndefinedValue.Instance).value!;
-            var flags = arguments.At(1, UndefinedValue.Instance).value!;
+            var pattern = arguments.At(0, UndefinedValue.Instance);
+            var flags = arguments.At(1, UndefinedValue.Instance);
 
             var patternIsRegExpComp = IsRegExp(pattern);
             if (patternIsRegExpComp.IsAbrupt()) return patternIsRegExpComp;

@@ -18,9 +18,7 @@ namespace JSInterpreter
 
         public override Completion InternalCall(IValue thisValue, IReadOnlyList<IValue> arguments)
         {
-            var argComp = Utils.CheckArguments(arguments, 1);
-            if (argComp.IsAbrupt()) return argComp;
-            var b = arguments[0].ToBoolean();
+            var b = arguments.At(0, UndefinedValue.Instance).ToBoolean();
             return Completion.NormalCompletion(b);
 
         }

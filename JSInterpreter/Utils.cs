@@ -222,7 +222,7 @@ namespace JSInterpreter
             return lhs.InitializeReferencedBinding(v);
         }
 
-        public static FunctionObject CreateBuiltinFunction(Func<IValue, IReadOnlyList<IValue>, Completion> steps, Realm? realm = null, Object? prototype = null)
+        public static FunctionObject CreateBuiltinFunction(Steps steps, Realm? realm = null, Object? prototype = null)
         {
             if (realm == null)
                 realm = Interpreter.Instance().CurrentRealm();
@@ -236,7 +236,7 @@ namespace JSInterpreter
             return func;
         }
 
-        public static FunctionObject CreateBuiltinFunction<T>(Func<IValue, IReadOnlyList<IValue>, Completion> steps, Func<Func<IValue, IReadOnlyList<IValue>, Completion>, T> constructor, Realm? realm = null, Object? prototype = null) where T : BuiltinFunction
+        public static FunctionObject CreateBuiltinFunction<T>(Steps steps, Func<Steps, T> constructor, Realm? realm = null, Object? prototype = null) where T : BuiltinFunction
         {
             if (realm == null)
                 realm = Interpreter.Instance().CurrentRealm();
@@ -280,11 +280,13 @@ namespace JSInterpreter
         }
     }
 
+    public delegate Completion Steps(IValue thisValue, IReadOnlyList<IValue> arguments);
+
     public class BuiltinFunction : FunctionObject
     {
-        private readonly Func<IValue, IReadOnlyList<IValue>, Completion> CallAction;
+        private readonly Steps CallAction;
 
-        public BuiltinFunction(Func<IValue, IReadOnlyList<IValue>, Completion> callAction)
+        public BuiltinFunction(Steps callAction)
         {
             CallAction = callAction;
         }

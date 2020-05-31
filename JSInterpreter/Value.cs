@@ -114,7 +114,7 @@ namespace JSInterpreter
 
         public Completion ToJsString()
         {
-            return Completion.NormalCompletion(new StringValue(number.ToString(System.Globalization.CultureInfo.InvariantCulture)));
+            return NumberPrototype.toString(this, Utils.EmptyList<IValue>());
         }
 
         public Completion ToNumber()
@@ -192,17 +192,23 @@ namespace JSInterpreter
 
         public Completion ToNumber()
         {
-            if (string.IsNullOrWhiteSpace(@string))
+            var fixedString = @string.Replace('\u180E', ' ');
+            if (string.IsNullOrWhiteSpace(fixedString))
                 return Completion.NormalCompletion(NumberValue.PositiveZero);
-            var trimmed = @string.Trim().ToUpperInvariant();
-            if (trimmed.StartsWith("0X", StringComparison.InvariantCulture) &&
+            var trimmed = fixedString.Trim();
+            if (trimmed == "Infinity" || trimmed == "+Infinity")
+                return Completion.NormalCompletion(new NumberValue(double.PositiveInfinity));
+            if (trimmed == "-Infinity")
+                return Completion.NormalCompletion(new NumberValue(double.NegativeInfinity));
+            var upper = trimmed.ToUpperInvariant();
+            if (upper.StartsWith("0X", StringComparison.InvariantCulture) &&
                 int.TryParse(
-                    trimmed.Substring(2),
+                    upper.Substring(2),
                     System.Globalization.NumberStyles.HexNumber,
                     System.Globalization.CultureInfo.InvariantCulture,
                     out int hexResult))
                 return Completion.NormalCompletion(new NumberValue(hexResult));
-            if (!double.TryParse(@string.Trim(), out double result))
+            if (trimmed.Contains(',', StringComparison.Ordinal) || !double.TryParse(trimmed, out double result))
                 return Completion.NormalCompletion(NumberValue.DoubleNaN);
             return Completion.NormalCompletion(new NumberValue(result));
         }

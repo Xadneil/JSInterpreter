@@ -20,7 +20,7 @@ namespace JSInterpreter
 
             DefinePropertyOrThrow("hasOwnProperty", new PropertyDescriptor(Utils.CreateBuiltinFunction(hasOwnProperty, realm: realm), true, false, true));
             DefinePropertyOrThrow("isPrototypeOf", new PropertyDescriptor(Utils.CreateBuiltinFunction(isPrototypeOf, realm: realm), true, false, true));
-            DefinePropertyOrThrow("toString", new PropertyDescriptor(Utils.CreateBuiltinFunction(ToObjectString, realm: realm), true, false, true));
+            DefinePropertyOrThrow("toString", new PropertyDescriptor(Utils.CreateBuiltinFunction(toString, realm: realm), true, false, true));
             DefinePropertyOrThrow("valueOf", new PropertyDescriptor(Utils.CreateBuiltinFunction(valueOf, realm: realm), true, false, true));
         }
 
@@ -62,7 +62,7 @@ namespace JSInterpreter
             }
         }
 
-        private Completion ToObjectString(IValue @this, IReadOnlyList<IValue> arguments)
+        public static Completion toString(IValue @this, IReadOnlyList<IValue> arguments)
         {
             if (@this == UndefinedValue.Instance)
                 return Completion.NormalCompletion(new StringValue("[object Undefined]"));

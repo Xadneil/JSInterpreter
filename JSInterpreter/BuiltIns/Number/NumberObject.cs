@@ -6,11 +6,11 @@ namespace JSInterpreter
 {
     public class NumberObject : Object
     {
-        public readonly double value;
+        public readonly NumberValue value;
 
         public NumberObject(NumberValue value)
         {
-            this.value = value.number;
+            this.value = value;
             prototype = Interpreter.Instance().CurrentRealm().Intrinsics.NumberPrototype;
         }
     }

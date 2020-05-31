@@ -357,7 +357,7 @@ namespace JSInterpreter
             public string Name { get; set; }
             public EnvironmentRecord Env { get; set; }
 
-            public GetterSetter(Func<IValue, IReadOnlyList<IValue>, Completion> steps, string name, EnvironmentRecord env) : base(steps)
+            public GetterSetter(Steps steps, string name, EnvironmentRecord env) : base(steps)
             {
                 Name = name;
                 Env = env;

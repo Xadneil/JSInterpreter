@@ -20,7 +20,7 @@ namespace JSInterpreter
 
         private static Completion exec(IValue thisValue, IReadOnlyList<IValue> arguments)
         {
-            var @string = arguments.At(0, UndefinedValue.Instance).value!;
+            var @string = arguments.At(0, UndefinedValue.Instance);
             if (!(thisValue is RegExpObject R))
                 return Completion.ThrowTypeError("this value must be a RegExp object");
             var S = @string.ToJsString();

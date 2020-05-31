@@ -128,33 +128,28 @@ namespace JSInterpreter
                 if (mComp.IsAbrupt()) return mComp;
                 var m = (mComp.value as NumberValue)!.number;
 
-                var dtComp = arguments.At(2, NumberValue.One);
-                if (dtComp.IsAbrupt()) return dtComp;
-                dtComp = dtComp.value!.ToNumber();
+                var dtArg = arguments.At(2, NumberValue.One);
+                var dtComp = dtArg.ToNumber();
                 if (dtComp.IsAbrupt()) return dtComp;
                 var dt = (dtComp.value as NumberValue)!.number;
 
-                var hComp = arguments.At(3, NumberValue.PositiveZero);
-                if (hComp.IsAbrupt()) return hComp;
-                hComp = hComp.value!.ToNumber();
+                var hArg = arguments.At(3, NumberValue.PositiveZero);
+                var hComp = hArg!.ToNumber();
                 if (hComp.IsAbrupt()) return hComp;
                 var h = (hComp.value as NumberValue)!.number;
 
-                var minComp = arguments.At(4, NumberValue.PositiveZero);
-                if (minComp.IsAbrupt()) return minComp;
-                minComp = minComp.value!.ToNumber();
+                var minArg = arguments.At(4, NumberValue.PositiveZero);
+                var minComp = minArg.ToNumber();
                 if (minComp.IsAbrupt()) return minComp;
                 var min = (minComp.value as NumberValue)!.number;
 
-                var sComp = arguments.At(5, NumberValue.PositiveZero);
-                if (sComp.IsAbrupt()) return sComp;
-                sComp = sComp.value!.ToNumber();
+                var sArg = arguments.At(5, NumberValue.PositiveZero);
+                var sComp = sArg.ToNumber();
                 if (sComp.IsAbrupt()) return sComp;
                 var s = (sComp.value as NumberValue)!.number;
 
-                var milliComp = arguments.At(6, NumberValue.PositiveZero);
-                if (milliComp.IsAbrupt()) return milliComp;
-                milliComp = milliComp.value!.ToNumber();
+                var milliArg = arguments.At(6, NumberValue.PositiveZero);
+                var milliComp = milliArg.ToNumber();
                 if (milliComp.IsAbrupt()) return milliComp;
                 var milli = (milliComp.value as NumberValue)!.number;
 

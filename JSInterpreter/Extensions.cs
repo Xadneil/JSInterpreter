@@ -6,15 +6,22 @@ namespace JSInterpreter
 {
     static class Extensions
     {
-        public static Completion At(this IReadOnlyList<IValue> arguments, int index, IValue? defaultValue = null)
+        public static Completion At(this IReadOnlyList<IValue> arguments, int index)
         {
             if (arguments.Count <= index)
             {
-                if (defaultValue != null)
-                    return Completion.NormalCompletion(defaultValue);
                 return Completion.ThrowTypeError($"At least {index + 1} arguments are required");
             }
             return Completion.NormalCompletion(arguments[index]);
+        }
+
+        public static IValue At(this IReadOnlyList<IValue> arguments, int index, IValue defaultValue)
+        {
+            if (arguments.Count <= index)
+            {
+                return defaultValue;
+            }
+            return arguments[index];
         }
 
         public static bool IsHexDigit(this char c) => char.IsDigit(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
