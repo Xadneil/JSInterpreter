@@ -74,11 +74,13 @@ namespace JSInterpreter
                 if (bodyComp.IsAbrupt()) return bodyComp;
                 bodyText = (bodyComp.value as StringValue)!.@string;
             }
-            AST.FormalParameters parameters = new AST.FormalParameters();
+            AST.FormalParameters? parameters = new AST.FormalParameters();
             try
             {
                 if (!string.IsNullOrEmpty(P))
-                    parameters = new Parser.Parser(P).ParseFormalParameters()!;
+                    parameters = new Parser.Parser(P).ParseFormalParameters();
+                if (parameters == null)
+                    throw new Parser.ParseFailureException($"parameters {P} could not be parsed.");
             }
             catch (Parser.ParseFailureException e)
             {
