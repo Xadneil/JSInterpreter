@@ -19,7 +19,7 @@ namespace JSInterpreter
 
         public override Completion InternalCall(IValue thisValue, IReadOnlyList<IValue> arguments)
         {
-            throw new NotImplementedException();
+            throw new NotImplementedException("Array(...) is not implemented");
         }
 
         public override Completion InternalConstruct(IReadOnlyList<IValue> arguments, Object? newTarget)
